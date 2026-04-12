@@ -53,6 +53,9 @@ hayes_hip_and_elbow_scoring/
 │   ├── submit/                 # form submission page
 │   │   └── page.tsx
 │   │
+│   ├── checkout/               # checkout / payment page
+│   │   └── page.tsx
+│   │
 │   ├── success/                # after successful submission
 │   │   └── page.tsx
 │   │
@@ -63,23 +66,22 @@ hayes_hip_and_elbow_scoring/
 │   │           └── page.tsx
 │   │
 │   └── api/                    # backend routes
-│       ├── create-case/
-│       │   └── route.ts        # creates case in Firebase
+│       ├── cases/
+│       │   │── route.ts        # POST (create), GET (list)
+│       │   └── [id]/
+│       │       └── route.ts    # GET (read one), PATCH (update anything of one), DELETE (delete one)
 │       │
 │       ├── upload-url/
-│       │   └── route.ts        # generates S3 signed upload URL
+│       │   └── route.ts        # generates signed upload URL (S3 for amazon)
 │       │
-│       ├── complete-case/
-│       │   └── route.ts        # marks case completed
+│       ├── payment/            # stripe payment session
+│       │   └── route.ts        
 │       │
-│       ├── send-email/
-│       │   └── route.ts        # sends confirmation email
+│       ├── email/              # sends confirmation email
+│       │   └── route.ts
 │       │
-│       ├── stripe/
-│       │   └── route.ts        # stripe payment session
-│       │
-│       └── webhook/
-│           └── route.ts        # stripe webhook handler
+│       └── webhook/            # webhook handler
+│           └── route.ts
 │
 │
 │
