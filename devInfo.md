@@ -144,5 +144,8 @@ hayes_hip_and_elbow_scoring/
 ├── package.json
 └── tsconfig.json
 
+
 ## Helpful Links
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Signature plugin](https://lemonadejs.com/docs/plugins/signature)
+
