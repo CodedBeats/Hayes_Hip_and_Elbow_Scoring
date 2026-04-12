@@ -23,7 +23,7 @@ app/page            = page and component wrapper. no logic,                 **no
 components/xyz      = store state, input validation, submit handlers,       **call hook/api**
 hooks/xyz           = helper (e.g. useSubmit, useUpload),                   **call api**
 app/api/x/route     = recieve request, validate input                       **call logic**
-lib/xyz             = process data, talk to db (e.g. firebase)              **return data to api call**
+lib/xyz             = process data, talk to db/auth (e.g. firebase)         **return data to api call**
 
 
 ## using hooks
@@ -38,6 +38,7 @@ lib/xyz             = process data, talk to db (e.g. firebase)              **re
 
 
 ## Planned project structure
+```
 hayes_hip_and_elbow_scoring/
 │
 ├── app/                        # main app routes (pages)
@@ -139,10 +140,13 @@ hayes_hip_and_elbow_scoring/
 │
 │
 │
-├── .env.local                  # sneaky secrets `:)`
+├── .env.local                  # sneaky secrets :)
 │
 ├── package.json
 └── tsconfig.json
+```
 
 ## Helpful Links
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Signature plugin](https://lemonadejs.com/docs/plugins/signature)
+
