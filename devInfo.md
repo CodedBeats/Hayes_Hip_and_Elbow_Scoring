@@ -23,7 +23,7 @@ app/page            = page and component wrapper. no logic,                 **no
 components/xyz      = store state, input validation, submit handlers,       **call hook/api**
 hooks/xyz           = helper (e.g. useSubmit, useUpload),                   **call api**
 app/api/x/route     = recieve request, validate input                       **call logic**
-lib/xyz             = process data, talk to db (e.g. firebase)              **return data to api call**
+lib/xyz             = process data, talk to db/auth (e.g. firebase)         **return data to api call**
 
 
 ## using hooks
