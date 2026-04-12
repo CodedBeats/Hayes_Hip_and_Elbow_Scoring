@@ -2,7 +2,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDocs, getDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // types
+import type { Case, CaseStatus } from "../types/case";
 
 
 
@@ -21,6 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 
 
@@ -53,6 +56,7 @@ export const signOutUser = () => {
 // === FIRESTORE === //
 // ================= //
 
+// === READ === //
 // get single case data
 export const getCase = async (caseId: string) => {
     const caseRef = doc(db, "cases", caseId);
@@ -67,17 +71,36 @@ export const getCases = async () => {
     return caseDocs;
 };
 
-// create case from form input & confirmed uploaded case file
-export const createCase = async (caseData: Case, uploadedFileRef: string | null) => {
+// get signature file from storage
+export const getSignatureFile = async (signatureImgName: string) => {
+    const signatureRef = ref(storage, `signatures/${signatureImgName}`);
+    const signatureFile = await getDownloadURL(signatureRef);
+    return signatureFile;
+};
+
+
+// === CREATE === //
+// create case from form input & confirmed uploaded DICOM case file
+export const createCase = async (caseData: Case, uploadedDICOMFileRef: string | null) => {
     const combinedData = {
         ...caseData,
-        uploadedFileRef,
+        uploadedDICOMFileRef,
     }
-    const caseRef = doc(db, "cases");
+    const caseRef = collection(db, "cases");
     const caseDoc = await addDoc(caseRef, combinedData);
     return caseDoc;
 };
 
+// add signature img to storage
+export const uploadSignatureImg = async (signatureImgName: string, signatureFile: File) => {
+    // create ref for the cloud storage bucket
+    const signatureRef = ref(storage, `signatures/${signatureImgName}`);
+    const signatureUpload = await uploadBytes(signatureRef, signatureFile);
+    return signatureUpload;
+};
+
+
+// === UPLOAD === //
 // update case status (pendingReview, reviewing, completed, archived)
 export const updateCaseStatus = async (newStatus: CaseStatus, caseId: string) => {
     const caseRef = doc(db, "cases", caseId);
@@ -85,7 +108,9 @@ export const updateCaseStatus = async (newStatus: CaseStatus, caseId: string) =>
     return caseDoc;
 };
 
-// simple delete case, shouldn't be needed
+
+// === DELETE === //
+// simple delete case, shouldn't be needed due to archiving
 export const deleteCase = async (caseId: string) => {
     const caseRef = doc(db, "cases", caseId);
     const caseDoc = await deleteDoc(caseRef);
