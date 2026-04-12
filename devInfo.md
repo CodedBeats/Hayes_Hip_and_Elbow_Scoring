@@ -144,7 +144,8 @@ hayes_hip_and_elbow_scoring/
 │
 │
 │
-├── .env.local                  # sneaky secrets :)
+├── .env.local                  # sneaky secrets
+├── .env                        # even more sneaky secrets :)
 │
 ├── package.json
 └── tsconfig.json
