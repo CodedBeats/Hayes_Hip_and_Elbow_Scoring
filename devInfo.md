@@ -38,6 +38,7 @@ lib/xyz             = process data, talk to db/auth (e.g. firebase)         **re
 
 
 ## Planned project structure
+```
 hayes_hip_and_elbow_scoring/
 │
 ├── app/                        # main app routes (pages)
@@ -139,11 +140,11 @@ hayes_hip_and_elbow_scoring/
 │
 │
 │
-├── .env.local                  # sneaky secrets `:)`
+├── .env.local                  # sneaky secrets :)
 │
 ├── package.json
 └── tsconfig.json
-
+```
 
 ## Helpful Links
 - [Next.js Documentation](https://nextjs.org/docs)
