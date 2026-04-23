@@ -87,7 +87,7 @@ hayes_hip_and_elbow_scoring/
 │
 ├── components/                 # reusable UI components
 │   │
-│   ├── forms/
+│   ├── form/
 │   │   ├── CaseForm.tsx        # main submission form
 │   │   └── InputField.tsx      # reusable input
 │   │
