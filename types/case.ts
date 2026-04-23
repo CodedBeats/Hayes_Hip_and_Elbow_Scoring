@@ -1,12 +1,11 @@
 // case type
 export type Case = {
     // case details
-    id: string;
+    id?: string;
     status: CaseStatus;
     createdAt: Date;
-    updatedAt: Date;
-    // .dcm file uploaded ref
-    uploadedFileRef: string | null;
+    updatedAt?: Date;
+    uploadedDICOMFileRef: string | null; // ref to .dcm file uploaded on s3
 
     // dog details
     isDogsAustraliaRegistered: boolean;
@@ -28,11 +27,8 @@ export type Case = {
     veterinarianPhone: string;
     positiveOdentificationSighted: boolean;
     certificateOfRegistrationAndPedigreeSighted: boolean;
-    dateOfRadiograph: Date;
-    veterinarianSignature: string; // ref to file
-
-    // DICOM file ref
-    uploadedDICOMFileRef: string | null;
+    dateOfRadiograph: string;
+    veterinarianSignatureRef: string; // ref to .png/.jpg file uploaded on s3
 };
 
 export type CaseStatus = "pendingReview" | "reviewing" | "completed" | "archived";
