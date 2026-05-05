@@ -26,6 +26,8 @@ export const CaseForm = () => {
         ownerEmail: "",
         ownerAddress: "",
         memberNumber: "",
+        // owner declaration
+        ownerTelephoneNumber: "",
     
         // veterinarian details
         referringVeterinarianName: "",
@@ -41,7 +43,7 @@ export const CaseForm = () => {
 
     
 
-    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log(formData);
         setIsLoading(true);
@@ -76,7 +78,9 @@ export const CaseForm = () => {
                 ownerName: formData.ownerName,
                 ownerEmail: formData.ownerEmail,
                 ownerAddress: formData.ownerAddress,
+                ownerTelephoneNumber: formData.ownerTelephoneNumber,
                 memberNumber: formData.memberNumber,
+                ownerSignatureRef: "xyzzzzzzzzzzz", // ref to .png/.jpg file uploaded in firebase storage
             
                 // veterinarian details
                 referringVeterinarianName: formData.referringVeterinarianName,
@@ -86,7 +90,7 @@ export const CaseForm = () => {
                 positiveOdentificationSighted: formData.positiveOdentificationSighted,
                 certificateOfRegistrationAndPedigreeSighted: formData.certificateOfRegistrationAndPedigreeSighted,
                 dateOfRadiograph: formData.dateOfRadiograph,
-                veterinarianSignatureRef: "xyzzzzzzzzzzz", // ref to .png/.jpg file uploaded on s3
+                veterinarianSignatureRef: "xyzzzzzzzzzzz", // ref to .png/.jpg file uploaded in firebase storage
             }
             // create document in firestore
 
@@ -247,6 +251,30 @@ export const CaseForm = () => {
                         })
                     }
                 />
+
+                <InputField
+                    label="Owner Telephone Number"
+                    name="ownerTelephoneNumber"
+                    type="tel"
+                    placeholder="0400 000 000"
+                    value={formData.ownerTelephoneNumber}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            ownerTelephoneNumber: e.target.value,
+                        })
+                    }
+                />
+            </section>
+
+            {/* ======================= */}
+            {/* OWNER DECLARATION */}
+            {/* ======================= */}
+            <section className="space-y-4">
+                <h2 className="text-2xl font-semibold">Owner Declaration</h2>
+                <p className="text-amber-300">Owner signature upload here</p>
+
+                {/* === owner's signature === */}
             </section>
 
             {/* ======================= */}
@@ -326,7 +354,7 @@ export const CaseForm = () => {
 
                 <InputField
                     label="Positive Identification Sighted"
-                    name="positiveOdentificationSighted"
+                    name="positiveIdentificatiOnSighted"
                     type="checkbox"
                     value={formData.positiveOdentificationSighted}
                     onChange={(e) =>
@@ -350,13 +378,15 @@ export const CaseForm = () => {
                         })
                     }
                 />
+                {/* === veterinarian's signature === */}
+                <p className="text-amber-300">Veterinarian signature upload here</p>
             </section>
 
             {/* ======================= */}
             {/* FILE UPLOAD */}
             {/* ======================= */}
             <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Upload Files</h2>
+                <h2 className="text-2xl font-semibold">Upload DICOM Files</h2>
 
                 <FileUploader />
             </section>
