@@ -62,6 +62,8 @@ export const CaseForm = () => {
             const date = Date.now();
             // create new case data
             const newCase: Case = {
+                // yes I know I can x = { ...formData } but I'm doing this for clarity during dev
+                
                 // case details
                 status: "pendingReview",
                 createdAt: new Date(date),
