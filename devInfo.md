@@ -24,7 +24,7 @@ FileUploader.tsx  →  calls /api/upload-url  →  gets signed URL  →  uploads
 ```
 app/page            = page and component wrapper. no logic,                 **no api calls**
 components/xyz      = store state, input validation, submit handlers,       **call hook/api**
-hooks/xyz           = helper (e.g. useSubmit, useUpload),                   **call api**
+hooks/xyz           = helper (e.g. useSubmit, useUpload),                   **call api/logic**
 app/api/x/route     = recieve request, validate input                       **call logic**
 lib/xyz             = process data, talk to db/auth (e.g. firebase)         **return data to api call**
 ```
@@ -112,7 +112,7 @@ hayes_hip_and_elbow_scoring/
 │
 │
 ├── lib/                        # core logic
-│   ├── firebase.ts             # firebase init (db + auth)
+│   ├── firebase.ts             # firebase init (db, storage + auth)
 │   ├── s3.ts                   # AWS S3 config + helpers
 │   ├── stripe.ts               # stripe setup
 │   ├── email.ts                # email sending logic
