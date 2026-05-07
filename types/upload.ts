@@ -8,7 +8,7 @@ export type UseUploadReturn = {
     uploading: boolean;
     progress: number;
     error: string | null;
-    uploadedFiles: UploadedFile[];
-    uploadFiles: (files: FileList | File[]) => Promise<UploadedFile[]>;
+    uploadedFile: UploadedFile | undefined;
+    uploadSingleFile: (file: File) => Promise<UploadedFile>;
     resetUpload: () => void;
 };

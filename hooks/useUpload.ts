@@ -8,14 +8,14 @@ export function useUpload(): UseUploadReturn {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+    const [uploadedFile, setUploadedFile] = useState<UploadedFile>();
 
     // reset upload handler
     const resetUpload = () => {
         setUploading(false);
         setProgress(0);
         setError(null);
-        setUploadedFiles([]);
+        setUploadedFile(undefined);
     };
 
 
@@ -79,44 +79,12 @@ export function useUpload(): UseUploadReturn {
         });
     };
 
-
-    // upload multiple (but idk yet)
-    const uploadFiles = async (files: FileList | File[]): Promise<UploadedFile[]> => {
-        setUploading(true);
-        setProgress(0);
-        setError(null);
-
-        try {
-            const fileArray = Array.from(files);
-            const results: UploadedFile[] = [];
-
-            for (let i = 0; i < fileArray.length; i++) {
-                const file = fileArray[i];
-
-                const uploaded = await uploadSingleFile(file);
-                results.push(uploaded);
-
-                // overall progress for multiple files
-                const overall = Math.round(((i + 1) / fileArray.length) * 100);
-                setProgress(overall);
-            }
-
-            setUploadedFiles(results);
-            return results;
-        } catch (err) {
-            setError("one or more files failed to upload");
-            throw err;
-        } finally {
-            setUploading(false);
-        }
-    };
-
     return {
         uploading,
         progress,
         error,
-        uploadedFiles,
-        uploadFiles,
+        uploadedFile,
+        uploadSingleFile,
         resetUpload,
     };
 }
