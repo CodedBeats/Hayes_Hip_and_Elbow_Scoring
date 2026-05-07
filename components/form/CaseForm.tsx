@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 // components
 import { InputField } from "./InputField";
 import { FileUploader } from "../upload/FileUploader";
+import { ImageUploader } from "../upload/ImageUploader";
 // type
 import { Case } from "@/types/case";
 
@@ -138,7 +139,7 @@ export const CaseForm = () => {
             {/* ======================= */}
             {/* DOG DETAILS */}
             {/* ======================= */}
-            <h1 className="text-3xl">Dog Details</h1>
+            <h1 className="text-3xl mt-10">Dog Details</h1>
             {dogDetailsFields.map((field) => (
                 <InputField
                     key={field.name}
@@ -154,7 +155,7 @@ export const CaseForm = () => {
             {/* ======================= */}
             {/* Owner */}
             {/* ======================= */}
-            <h2 className="text-3xl">Owner Details</h2>
+            <h2 className="text-3xl mt-10">Owner Details</h2>
             {ownerDetailsFields.map((field) => (
                 <InputField
                     key={field.name}
@@ -168,12 +169,13 @@ export const CaseForm = () => {
             <h2 className="text-2xl font-semibold">Owner Declaration</h2>
             <p className="text-amber-300">Owner signature upload here</p>
             {/* === owner's signature === */}
+            <ImageUploader />
 
 
             {/* ======================= */}
             {/* Veterinarian DETAILS */}
             {/* ======================= */}
-            <h2 className="text-3xl">Veterinarian Details</h2>
+            <h2 className="text-3xl mt-10">Veterinarian Details</h2>
             {veterinarianDetailsFields.map((field) => (
                 <InputField
                     key={field.name}
@@ -191,7 +193,7 @@ export const CaseForm = () => {
             {/* ======================= */}
             {/* FILE UPLOAD */}
             {/* ======================= */}
-            <section className="space-y-4">
+            <section className="space-y-4 mt-10">
                 <h2 className="text-3xl font-semibold">Upload DICOM Files</h2>
 
                 <FileUploader />
