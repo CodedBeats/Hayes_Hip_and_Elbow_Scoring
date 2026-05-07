@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NextResponse } from "next/server";
 
 // aws s3 config
 const s3 = new S3Client({ 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         // validate DICOM file
         const isDicom = fileName.toLowerCase().endsWith(".dcm") || contentType === "application/dicom";
         if (!isDicom) {
-            return Response.json(
+            return NextResponse.json(
                 { error: "File must be a DICOM file (.dcm)" },
                 { status: 400 },
             );

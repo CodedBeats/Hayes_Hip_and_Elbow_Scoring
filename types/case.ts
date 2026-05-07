@@ -18,7 +18,9 @@ export type Case = {
     ownerName: string;
     ownerEmail: string;
     ownerAddress: string;
+    ownerTelephoneNumber: string;
     memberNumber: string;
+    ownerSignatureRef: string; // ref to .png/.jpg file uploaded on s3
 
     // veterinarian details
     referringVeterinarianName: string;
