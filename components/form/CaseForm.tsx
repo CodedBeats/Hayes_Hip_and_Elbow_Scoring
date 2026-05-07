@@ -109,300 +109,98 @@ export const CaseForm = () => {
         } 
     }
 
-
+    const dogDetailsFields = [
+        { name: 'isDogsAustraliaRegistered', label: 'Is Dog Registered with Dogs Australia?', type: 'checkbox' },
+        { name: 'registeredName', label: 'Registered Name', type: 'text' },
+        { name: 'registeredNumber', label: 'Registered Number', type: 'text' },
+        { name: 'microchipNumber', label: 'Microchip Number', type: 'text' },
+        { name: 'breed', label: 'Breed', type: 'text' },
+    ];
+    const ownerDetailsFields = [
+        { name: 'ownerName', label: 'Owner Name', type: 'text' },
+        { name: 'ownerEmail', label: 'Owner Email', type: 'email' },
+        { name: 'ownerAddress', label: 'Owner Address', type: 'text' },
+        { name: 'memberNumber', label: 'Member Number', type: 'text' },
+        { name: 'ownerTelephoneNumber', label: 'Owner Telephone Number', type: 'text' },
+    ];
+    const veterinarianDetailsFields = [
+        { name: 'referringVeterinarianName', label: 'Referring Veterinarian Name', type: 'text' },
+        { name: 'referringVeerinarianPractice', label: 'Referring Veterinarian Practice', type: 'text' },
+        { name: 'veterinarianAddress', label: 'Veterinarian Address', type: 'text' },
+        { name: 'veterinarianPhone', label: 'Veterinarian Phone', type: 'text' },
+        { name: 'positiveOdentificationSighted', label: 'Positive Odentification Sighted', type: 'checkbox' },
+        { name: 'certificateOfRegistrationAndPedigreeSighted', label: 'Certificate of Registration and Pedigree Sighted', type: 'checkbox' },
+        { name: 'dateOfRadiograph', label: 'Date of Radiograph', type: 'date' },
+    ];
 
     return (
-        <form
-            onSubmit={handleFormSubmit}
-            className="flex flex-col gap-10 w-full max-w-3xl mx-auto px-6 py-16"
-        >
+        <form onSubmit={handleFormSubmit}>
             {/* ======================= */}
             {/* DOG DETAILS */}
             {/* ======================= */}
-            <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Dog Details</h2>
-
+            <h1 className="text-3xl">Dog Details</h1>
+            {dogDetailsFields.map((field) => (
                 <InputField
-                    label="Dogs Australia Registered"
-                    name="isDogsAustraliaRegistered"
-                    type="checkbox"
-                    value={formData.isDogsAustraliaRegistered}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            isDogsAustraliaRegistered: e.target.checked,
-                        })
-                    }
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    type={field.type}
+                    value={formData[field.name as keyof typeof formData]}
+                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                 />
+            ))}
 
-                <InputField
-                    label="Registered Name"
-                    name="registeredName"
-                    type="text"
-                    placeholder="e.g. Champion Rover"
-                    value={formData.registeredName}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            registeredName: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Registered Number"
-                    name="registeredNumber"
-                    type="text"
-                    placeholder="e.g. 2100123456"
-                    value={formData.registeredNumber}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            registeredNumber: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Microchip Number"
-                    name="microchipNumber"
-                    type="text"
-                    placeholder="e.g. 953010004567890"
-                    value={formData.microchipNumber}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            microchipNumber: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Breed"
-                    name="breed"
-                    type="text"
-                    placeholder="e.g. Labrador Retriever"
-                    value={formData.breed}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            breed: e.target.value,
-                        })
-                    }
-                />
-            </section>
 
             {/* ======================= */}
-            {/* OWNER DETAILS */}
+            {/* Owner */}
             {/* ======================= */}
-            <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Owner Details</h2>
-
+            <h2 className="text-3xl">Owner Details</h2>
+            {ownerDetailsFields.map((field) => (
                 <InputField
-                    label="Owner Name"
-                    name="ownerName"
-                    type="text"
-                    placeholder="e.g. John Smith"
-                    value={formData.ownerName}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            ownerName: e.target.value,
-                        })
-                    }
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    type={field.type}
+                    value={formData[field.name as keyof typeof formData]}
+                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                 />
+            ))}
+            <h2 className="text-2xl font-semibold">Owner Declaration</h2>
+            <p className="text-amber-300">Owner signature upload here</p>
+            {/* === owner's signature === */}
 
-                <InputField
-                    label="Owner Email"
-                    name="ownerEmail"
-                    type="email"
-                    placeholder="john@email.com"
-                    value={formData.ownerEmail}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            ownerEmail: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Owner Address"
-                    name="ownerAddress"
-                    type="text"
-                    placeholder="123 Main Street"
-                    value={formData.ownerAddress}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            ownerAddress: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Member Number"
-                    name="memberNumber"
-                    type="text"
-                    placeholder="Optional"
-                    value={formData.memberNumber}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            memberNumber: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Owner Telephone Number"
-                    name="ownerTelephoneNumber"
-                    type="tel"
-                    placeholder="0400 000 000"
-                    value={formData.ownerTelephoneNumber}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            ownerTelephoneNumber: e.target.value,
-                        })
-                    }
-                />
-            </section>
 
             {/* ======================= */}
-            {/* OWNER DECLARATION */}
+            {/* Veterinarian DETAILS */}
             {/* ======================= */}
-            <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Owner Declaration</h2>
-                <p className="text-amber-300">Owner signature upload here</p>
-
-                {/* === owner's signature === */}
-            </section>
-
-            {/* ======================= */}
-            {/* VETERINARIAN DETAILS */}
-            {/* ======================= */}
-            <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Veterinarian Details</h2>
-
+            <h2 className="text-3xl">Veterinarian Details</h2>
+            {veterinarianDetailsFields.map((field) => (
                 <InputField
-                    label="Veterinarian Name"
-                    name="referringVeterinarianName"
-                    type="text"
-                    placeholder="Dr Jane Smith"
-                    value={formData.referringVeterinarianName}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            referringVeterinarianName: e.target.value,
-                        })
-                    }
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    type={field.type}
+                    value={formData[field.name as keyof typeof formData]}
+                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
                 />
+            ))}
+            {/* === veterinarian's signature === */}
+            <p className="text-amber-300">Veterinarian signature upload here</p>
 
-                <InputField
-                    label="Practice Name"
-                    name="referringVeerinarianPractice"
-                    type="text"
-                    placeholder="Animal Care Clinic"
-                    value={formData.referringVeerinarianPractice}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            referringVeerinarianPractice: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Veterinarian Address"
-                    name="veterinarianAddress"
-                    type="text"
-                    placeholder="45 Clinic Road"
-                    value={formData.veterinarianAddress}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            veterinarianAddress: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Veterinarian Phone"
-                    name="veterinarianPhone"
-                    type="tel"
-                    placeholder="0400 000 000"
-                    value={formData.veterinarianPhone}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            veterinarianPhone: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Date Of Radiograph"
-                    name="dateOfRadiograph"
-                    type="date"
-                    value={formData.dateOfRadiograph}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            dateOfRadiograph: e.target.value,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Positive Identification Sighted"
-                    name="positiveIdentificatiOnSighted"
-                    type="checkbox"
-                    value={formData.positiveOdentificationSighted}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            positiveOdentificationSighted: e.target.checked,
-                        })
-                    }
-                />
-
-                <InputField
-                    label="Certificate Of Registration & Pedigree Sighted"
-                    name="certificateOfRegistrationAndPedigreeSighted"
-                    type="checkbox"
-                    value={formData.certificateOfRegistrationAndPedigreeSighted}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            certificateOfRegistrationAndPedigreeSighted:
-                                e.target.checked,
-                        })
-                    }
-                />
-                {/* === veterinarian's signature === */}
-                <p className="text-amber-300">Veterinarian signature upload here</p>
-            </section>
 
             {/* ======================= */}
             {/* FILE UPLOAD */}
             {/* ======================= */}
             <section className="space-y-4">
-                <h2 className="text-2xl font-semibold">Upload DICOM Files</h2>
+                <h2 className="text-3xl font-semibold">Upload DICOM Files</h2>
 
                 <FileUploader />
             </section>
 
-            {/* ======================= */}
-            {/* SUBMIT */}
-            {/* ======================= */}
-            <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-black text-white px-6 py-3 rounded-md disabled:opacity-50"
-            >
-                {isLoading ? "Submitting..." : "Submit Case"}
+            <button type="submit" disabled={isLoading}>
+                {isLoading ? 'Submitting...' : 'Submit'}
             </button>
         </form>
     );
-}   
+};
+
