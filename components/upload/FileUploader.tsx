@@ -2,10 +2,9 @@
 "use client";
 import { useState } from "react";
 // hooks
-import { useUpload } from "@/hooks/useUpload";
+import { useFileUpload } from "@/hooks/useFileUpload";
 // type
 import { UploadedFile } from "@/types/upload";
-
 
 export const FileUploader = () => {
     const {
@@ -15,7 +14,7 @@ export const FileUploader = () => {
         uploadedFile,
         uploadSingleFile,
         resetUpload,
-    } = useUpload();
+    } = useFileUpload();
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -46,7 +45,8 @@ export const FileUploader = () => {
             </h2>
 
             <p className="mt-2 text-sm text-gray-600">
-                Select a <span className="font-medium">.dcm</span> file to upload.
+                Select a <span className="font-medium">.dcm</span> file to
+                upload.
             </p>
 
             <div className="mt-5">
@@ -76,7 +76,7 @@ export const FileUploader = () => {
                     Reset
                 </button>
             </div>
-            
+
             {uploading && (
                 <div className="mt-6">
                     <div className="mb-2 flex items-center justify-between text-sm text-gray-700">
@@ -122,6 +122,4 @@ export const FileUploader = () => {
             )}
         </div>
     );
-}
-
-
+};
