@@ -92,9 +92,9 @@ export const createCase = async (caseData: Case, uploadedDICOMFileRef: string | 
 };
 
 // add signature img to storage
-export const uploadSignatureImg = async (signatureImgName: string, signatureFile: File) => {
+export const uploadSignatureImg = async (signatureImgName: string, signatureFolderName: string, signatureFile: File) => {
     // create ref for the cloud storage bucket
-    const signatureRef = ref(storage, `signatures/${signatureImgName}`);
+    const signatureRef = ref(storage, `signatures/${signatureFolderName}/${signatureImgName}`);
     const signatureUpload = await uploadBytes(signatureRef, signatureFile);
     return signatureUpload;
 };
