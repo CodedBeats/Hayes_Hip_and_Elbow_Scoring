@@ -2,58 +2,55 @@
 "use client";
 import { useState } from "react";
 // hooks
-import { useFileUpload } from "@/hooks/useFileUpload";
-// type
-import { UploadedFile } from "@/types/upload";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
-export const FileUploader = () => {
+export const ImageUploader = () => {
     const {
         uploading,
         progress,
         error,
-        uploadedFile,
-        uploadSingleFile,
+        uploadedImage,
+        uploadSingleImage,
         resetUpload,
-    } = useFileUpload();
+    } = useImageUpload();
 
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.[0]) return;
-        setSelectedFile(e.target.files[0]);
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        setSelectedImage(e.target.files[0]);
     };
 
     const handleUpload = async () => {
-        if (!selectedFile) return;
+        if (!selectedImage) return;
 
         try {
-            await uploadSingleFile(selectedFile);
+            await uploadSingleImage(selectedImage, `${Date.now()}`);
         } catch (err) {
             console.error(err);
         }
     };
 
     const handleReset = () => {
-        setSelectedFile(null);
+        setSelectedImage(null);
         resetUpload();
     };
 
     return (
         <div className="mx-auto w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-semibold text-gray-900">
-                Upload DICOM File
+                Upload Signature Image
             </h2>
 
             <p className="mt-2 text-sm text-gray-600">
-                Select a <span className="font-medium">.dcm</span> file to
-                upload.
+                Select a <span className="font-medium">.png / .jpg / .jpeg</span> file to upload.
             </p>
 
             <div className="mt-5">
                 <input
                     type="file"
-                    accept=".dcm"
-                    onChange={handleFileChange}
+                    accept=".png, .jpg, .jpeg"
+                    onChange={handleImageChange}
                     className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700"
                 />
             </div>
@@ -62,10 +59,10 @@ export const FileUploader = () => {
                 <button
                     type="button"
                     onClick={handleUpload}
-                    disabled={uploading || !selectedFile}
+                    disabled={uploading || !selectedImage}
                     className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    {uploading ? "Uploading..." : "Upload Files"}
+                    {uploading ? "Uploading..." : "Upload Images"}
                 </button>
 
                 <button
@@ -80,7 +77,7 @@ export const FileUploader = () => {
             {uploading && (
                 <div className="mt-6">
                     <div className="mb-2 flex items-center justify-between text-sm text-gray-700">
-                        <span>Uploading file</span>
+                        <span>Uploading image</span>
                         <span>{progress}%</span>
                     </div>
 
@@ -99,22 +96,22 @@ export const FileUploader = () => {
                 </div>
             )}
 
-            {uploadedFile && (
+            {uploadedImage && (
                 <div className="mt-8">
                     <h3 className="text-lg font-semibold text-gray-900">
-                        Uploaded File
+                        Uploaded Image
                     </h3>
 
                     <div className="mt-4 space-y-3">
                         <div
-                            key={uploadedFile.key}
+                            key={uploadedImage.key}
                             className="rounded-xl border border-gray-200 bg-gray-50 p-4"
                         >
                             <p className="font-medium text-gray-900">
-                                {uploadedFile.fileName}
+                                {uploadedImage.imageName}
                             </p>
                             <p className="mt-1 break-all text-xs text-gray-500">
-                                {uploadedFile.key}
+                                {uploadedImage.key}
                             </p>
                         </div>
                     </div>
