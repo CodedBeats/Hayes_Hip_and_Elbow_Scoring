@@ -24,7 +24,7 @@ export type Case = {
 
     // veterinarian details
     referringVeterinarianName: string;
-    referringVeerinarianPractice: string;
+    referringVeterinarianPractice: string;
     veterinarianAddress: string;
     veterinarianPhone: string;
     positiveOdentificationSighted: boolean;
