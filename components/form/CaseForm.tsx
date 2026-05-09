@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 // components
 import { InputField } from "./InputField";
+import { MobileField } from "./MobileField";
 import { FileUploader } from "../upload/FileUploader";
 import { ImageUploader } from "../upload/ImageUploader";
 // type
@@ -32,7 +33,7 @@ export const CaseForm = () => {
     
         // veterinarian details
         referringVeterinarianName: "",
-        referringVeerinarianPractice: "",
+        referringVeterinarianPractice: "",
         veterinarianAddress: "",
         veterinarianPhone: "",
         positiveOdentificationSighted: false,
@@ -44,7 +45,7 @@ export const CaseForm = () => {
 
     
 
-    const handleFormSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log(formData);
         setIsLoading(true);
@@ -87,7 +88,7 @@ export const CaseForm = () => {
             
                 // veterinarian details
                 referringVeterinarianName: formData.referringVeterinarianName,
-                referringVeerinarianPractice: formData.referringVeerinarianPractice,
+                referringVeterinarianPractice: formData.referringVeterinarianPractice,
                 veterinarianAddress: formData.veterinarianAddress,
                 veterinarianPhone: formData.veterinarianPhone,
                 positiveOdentificationSighted: formData.positiveOdentificationSighted,
@@ -126,7 +127,7 @@ export const CaseForm = () => {
     ];
     const veterinarianDetailsFields = [
         { name: 'referringVeterinarianName', label: 'Referring Veterinarian Name', type: 'text' },
-        { name: 'referringVeerinarianPractice', label: 'Referring Veterinarian Practice', type: 'text' },
+        { name: 'referringVeterinarianPractice', label: 'Referring Veterinarian Practice', type: 'text' },
         { name: 'veterinarianAddress', label: 'Veterinarian Address', type: 'text' },
         { name: 'veterinarianPhone', label: 'Veterinarian Phone', type: 'text' },
         { name: 'positiveOdentificationSighted', label: 'Positive Odentification Sighted', type: 'checkbox' },
@@ -156,16 +157,24 @@ export const CaseForm = () => {
             {/* Owner */}
             {/* ======================= */}
             <h2 className="text-3xl mt-10">Owner Details</h2>
-            {ownerDetailsFields.map((field) => (
-                <InputField
-                    key={field.name}
-                    name={field.name}
-                    label={field.label}
-                    type={field.type}
-                    value={formData[field.name as keyof typeof formData]}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                />
-            ))}
+            {ownerDetailsFields.map((field) => 
+                field.name === "ownerTelephoneNumber" ? (
+                    <MobileField
+                        key={field.name}
+                        value={formData[field.name as keyof typeof formData] as string}
+                        onChange={(value) => setFormData({ ...formData, [field.name]: value })}
+                    />
+                ) : (
+                    <InputField
+                        key={field.name}
+                        name={field.name}
+                        label={field.label}
+                        type={field.type}
+                        value={formData[field.name as keyof typeof formData]}
+                        onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                    />
+                )
+            )}
             <h2 className="text-2xl font-semibold">Owner Declaration</h2>
             <p className="text-amber-300">Owner signature upload here</p>
             {/* === owner's signature === */}
@@ -176,16 +185,24 @@ export const CaseForm = () => {
             {/* Veterinarian DETAILS */}
             {/* ======================= */}
             <h2 className="text-3xl mt-10">Veterinarian Details</h2>
-            {veterinarianDetailsFields.map((field) => (
-                <InputField
-                    key={field.name}
-                    name={field.name}
-                    label={field.label}
-                    type={field.type}
-                    value={formData[field.name as keyof typeof formData]}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                />
-            ))}
+            {veterinarianDetailsFields.map((field) => 
+                field.name === "veterinarianPhone" ? (
+                    <MobileField
+                        key={field.name}
+                        value={formData[field.name]}
+                        onChange={(value) => setFormData({ ...formData, [field.name]: value})}
+                    />
+                ) : (
+                    <InputField
+                        key={field.name}
+                        name={field.name}
+                        label={field.label}
+                        type={field.type}
+                        value={formData[field.name as keyof typeof formData]}
+                        onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                    />
+                )
+            )}
             {/* === veterinarian's signature === */}
             <p className="text-amber-300">Veterinarian signature upload here</p>
 
