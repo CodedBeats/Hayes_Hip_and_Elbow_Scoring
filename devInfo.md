@@ -158,9 +158,6 @@ hayes_hip_and_elbow_scoring/
 - [Signature plugin](https://lemonadejs.com/docs/plugins/signature)
 
 
-## Model Use
-Helpful prompt additions:
-- `minimal safe refactor only`
-- `return only changed code`
-
+## Running Claude
+ollama launch claude --model qwen3:14b
 
