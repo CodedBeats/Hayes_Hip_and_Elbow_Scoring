@@ -6,7 +6,12 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 // type
 import { UploadedFile } from "@/types/upload";
 
-export const FileUploader = () => {
+
+type Props = {
+    onUploaded: (file: UploadedFile) => void;
+};
+
+export const FileUploader = ({ onUploaded }: Props) => {
     const {
         uploading,
         progress,
@@ -27,7 +32,9 @@ export const FileUploader = () => {
         if (!selectedFile) return;
 
         try {
-            await uploadSingleFile(selectedFile);
+            const uploaded = await uploadSingleFile(selectedFile);
+            onUploaded(uploaded);
+
         } catch (err) {
             console.error(err);
         }
