@@ -66,20 +66,3 @@ export async function POST(req: Request) {
         );
     }
 }
-
-
-
-
-
-// export async function POST() {
-//     const command = new PutObjectCommand({
-//         Bucket: process.env.AWS_BUCKET_NAME!,
-//         Key: `test-${Date.now()}.txt`,
-//     });
-
-//     const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
-
-//     console.log("SIGNED URL:", url);
-
-//     return Response.json({ url });
-// }

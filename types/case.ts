@@ -27,7 +27,7 @@ export type Case = {
     referringVeterinarianPractice: string;
     veterinarianAddress: string;
     veterinarianPhone: string;
-    positiveOdentificationSighted: boolean;
+    positiveIdentificationSighted: boolean;
     certificateOfRegistrationAndPedigreeSighted: boolean;
     dateOfRadiograph: string;
     veterinarianSignatureRef: string; // ref to .png/.jpg file uploaded on s3

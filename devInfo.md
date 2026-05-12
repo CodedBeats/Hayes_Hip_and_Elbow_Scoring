@@ -158,9 +158,14 @@ hayes_hip_and_elbow_scoring/
 - [Signature plugin](https://lemonadejs.com/docs/plugins/signature)
 
 
-## Model Use
-Helpful prompt additions:
-- `minimal safe refactor only`
-- `return only changed code`
+## Running Claude
+ollama launch claude --model qwen3:14b
 
+### Prompts
+To Add:
+- `Do not modify anything else.`
+- `Keep all existing functionality and structure.`
+- `Only edit the TSX file.`                           
+  `Do not execute code.`                             
+  `Do not use notebook tools.`
 
