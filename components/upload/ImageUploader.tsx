@@ -3,8 +3,16 @@
 import { useState } from "react";
 // hooks
 import { useImageUpload } from "@/hooks/useImageUpload";
+// type
+import { UploadedImage } from "@/types/upload";
 
-export const ImageUploader = () => {
+
+type Props = {
+    folderName: string;
+    onUploaded: (image: UploadedImage) => void;
+};
+
+export const ImageUploader = ({ folderName, onUploaded }: Props) => {
     const {
         uploading,
         progress,
@@ -25,7 +33,12 @@ export const ImageUploader = () => {
         if (!selectedImage) return;
 
         try {
-            await uploadSingleImage(selectedImage, `${Date.now()}`);
+            const uploaded = await uploadSingleImage(
+                selectedImage,
+                folderName
+            );
+            onUploaded(uploaded);
+            
         } catch (err) {
             console.error(err);
         }

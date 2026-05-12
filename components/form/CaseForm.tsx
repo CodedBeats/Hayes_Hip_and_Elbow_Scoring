@@ -1,12 +1,20 @@
 // dependencies
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-// components
+// === components ===
+// field
 import { InputField } from "./InputField";
 import { MobileField } from "./MobileField";
+// img and file uploader
 import { FileUploader } from "../upload/FileUploader";
 import { ImageUploader } from "../upload/ImageUploader";
+// btns
+import { StripeCheckoutButton } from "../buttons/StripeCheckoutBtn"
+import { TestLogBtn } from "../buttons/TestLogBtn";
+// util
+import { generateCurrentTime } from "@/util/dateTime";
+import { isNonEmptyString } from "@/util/stringManipulation";
 // type
 import { Case } from "@/types/case";
 
@@ -15,94 +23,100 @@ export const CaseForm = () => {
     // routing
     const router = useRouter();
     // state
+    // const [formData, setFormData] = useState({
+    //     // dog details
+    //     isDogsAustraliaRegistered: false,
+    //     registeredName: "",
+    //     registeredNumber: "",
+    //     microchipNumber: "",
+    //     breed: "",
+    
+    //     // owner details
+    //     ownerName: "",
+    //     ownerEmail: "",
+    //     ownerAddress: "",
+    //     memberNumber: "",
+    //     // owner declaration
+    //     ownerTelephoneNumber: "",
+    
+    //     // veterinarian details
+    //     referringVeterinarianName: "",
+    //     referringVeterinarianPractice: "",
+    //     veterinarianAddress: "",
+    //     veterinarianPhone: "",
+    //     positiveIdentificationSighted: false,
+    //     certificateOfRegistrationAndPedigreeSighted: false,
+    //     dateOfRadiograph: "",
+    // });
+    // temp data
     const [formData, setFormData] = useState({
         // dog details
-        isDogsAustraliaRegistered: false,
-        registeredName: "",
-        registeredNumber: "",
-        microchipNumber: "",
-        breed: "",
+        isDogsAustraliaRegistered: true,
+        registeredName: "Dog Man",
+        registeredNumber: "333registeredNumber",
+        microchipNumber: "333microchipNumber",
+        breed: "333breed",
     
         // owner details
-        ownerName: "",
-        ownerEmail: "",
-        ownerAddress: "",
-        memberNumber: "",
+        ownerName: "444ownerName",
+        ownerEmail: "444email@me.com",
+        ownerAddress: "444ownerAddress",
+        memberNumber: "444memberNumber",
         // owner declaration
-        ownerTelephoneNumber: "",
+        ownerTelephoneNumber: "0909 999 999",
     
         // veterinarian details
-        referringVeterinarianName: "",
-        referringVeterinarianPractice: "",
-        veterinarianAddress: "",
-        veterinarianPhone: "",
-        positiveOdentificationSighted: false,
-        certificateOfRegistrationAndPedigreeSighted: false,
-        dateOfRadiograph: "",
+        referringVeterinarianName: "555referringVeterinarianName",
+        referringVeterinarianPractice: "555referringVeterinarianPractice",
+        veterinarianAddress: "555veterinarianAddress",
+        veterinarianPhone: "0808 888 888",
+        positiveIdentificationSighted: true,
+        certificateOfRegistrationAndPedigreeSighted: true,
+        dateOfRadiograph: "1st of The Month",
+    });
+    const [uploadRefs, setUploadRefs] = useState({
+        dicomKey: "",
+        ownerSignatureKey: "",
+        vetSignatureKey: "",
     });
     const [isLoading, setIsLoading] = useState(false);
-
+    const [formFilesUploaded, setFormFilesUploaded] = useState(false);
+    // store name for signature folder name with initial state
+    const [initialTimeFolderName, setInitialTimeFolderName] = useState(generateCurrentTime)
 
     
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log(formData);
+        console.log(uploadRefs);
         setIsLoading(true);
 
         try {
-            // === upload .dcm file(s) in s3 ===
-            // use date as file name
-
-
-            // === upload signature in s3 ===
-            // use date as file name
-
-
-            // === create case in firestore ===
-            // get date
-            const date = Date.now();
-            // create new case data
-            const newCase: Case = {
-                // yes I know I can x = { ...formData } but I'm doing this for clarity during dev
-                
-                // case details
-                status: "pendingReview",
-                createdAt: new Date(date),
-                uploadedDICOMFileRef: "xyzzzzzzzzzzz", // ref to .dcm file uploaded on s3
-            
-                // dog details
-                isDogsAustraliaRegistered: formData.isDogsAustraliaRegistered,
-                registeredName: formData.registeredName,
-                registeredNumber: formData.registeredNumber,
-                microchipNumber: formData.microchipNumber,
-                breed: formData.breed,
-            
-                // owner details
-                ownerName: formData.ownerName,
-                ownerEmail: formData.ownerEmail,
-                ownerAddress: formData.ownerAddress,
-                ownerTelephoneNumber: formData.ownerTelephoneNumber,
-                memberNumber: formData.memberNumber,
-                ownerSignatureRef: "xyzzzzzzzzzzz", // ref to .png/.jpg file uploaded in firebase storage
-            
-                // veterinarian details
-                referringVeterinarianName: formData.referringVeterinarianName,
-                referringVeterinarianPractice: formData.referringVeterinarianPractice,
-                veterinarianAddress: formData.veterinarianAddress,
-                veterinarianPhone: formData.veterinarianPhone,
-                positiveOdentificationSighted: formData.positiveOdentificationSighted,
-                certificateOfRegistrationAndPedigreeSighted: formData.certificateOfRegistrationAndPedigreeSighted,
-                dateOfRadiograph: formData.dateOfRadiograph,
-                veterinarianSignatureRef: "xyzzzzzzzzzzz", // ref to .png/.jpg file uploaded in firebase storage
+            // validate
+            if (
+                !uploadRefs.dicomKey ||
+                !uploadRefs.ownerSignatureKey ||
+                !uploadRefs.vetSignatureKey
+            ) {
+                alert("Please upload all required files.");
+                return;
             }
-            // create document in firestore
 
+            // store formData in loacl storage
+            localStorage.setItem(
+                "caseFormData",
+                JSON.stringify(formData)
+            );
+            // store dicom and signature refs in local storage
+            localStorage.setItem(
+                "uploadRefs",
+                JSON.stringify(uploadRefs)
+            );
 
-            // push to success page after all went well
+            // can now proceed to payment
             setIsLoading(false);
-            // router.push("/success");
-
+            setFormFilesUploaded(true)
 
         } catch (err) {
             console.error(err);
@@ -130,7 +144,7 @@ export const CaseForm = () => {
         { name: 'referringVeterinarianPractice', label: 'Referring Veterinarian Practice', type: 'text' },
         { name: 'veterinarianAddress', label: 'Veterinarian Address', type: 'text' },
         { name: 'veterinarianPhone', label: 'Veterinarian Phone', type: 'text' },
-        { name: 'positiveOdentificationSighted', label: 'Positive Odentification Sighted', type: 'checkbox' },
+        { name: 'positiveIdentificationSighted', label: 'Positive Identification Sighted', type: 'checkbox' },
         { name: 'certificateOfRegistrationAndPedigreeSighted', label: 'Certificate of Registration and Pedigree Sighted', type: 'checkbox' },
         { name: 'dateOfRadiograph', label: 'Date of Radiograph', type: 'date' },
     ];
@@ -178,7 +192,15 @@ export const CaseForm = () => {
             <h2 className="text-2xl font-semibold">Owner Declaration</h2>
             <p className="text-amber-300">Owner signature upload here</p>
             {/* === owner's signature === */}
-            <ImageUploader />
+            <ImageUploader
+                folderName={`owner-signatures/${initialTimeFolderName}`}
+                onUploaded={(image) =>
+                    setUploadRefs((prev) => ({
+                        ...prev,
+                        ownerSignatureKey: image.key,
+                    }))
+                }
+            />
 
 
             {/* ======================= */}
@@ -205,20 +227,51 @@ export const CaseForm = () => {
             )}
             {/* === veterinarian's signature === */}
             <p className="text-amber-300">Veterinarian signature upload here</p>
+            <ImageUploader
+                folderName={`vet-signatures/${initialTimeFolderName}`}
+                onUploaded={(image) =>
+                    setUploadRefs((prev) => ({
+                        ...prev,
+                        vetSignatureKey: image.key,
+                    }))
+                }
+            />
 
 
             {/* ======================= */}
             {/* FILE UPLOAD */}
             {/* ======================= */}
-            <section className="space-y-4 mt-10">
-                <h2 className="text-3xl font-semibold">Upload DICOM Files</h2>
+            <h2 className="text-3xl font-semibold mt-10">Upload DICOM Files</h2>
+            <FileUploader
+                onUploaded={(file) =>
+                    setUploadRefs((prev) => ({
+                        ...prev,
+                        dicomKey: file.key,
+                    }))
+                }
+            />
 
-                <FileUploader />
-            </section>
-
-            <button type="submit" disabled={isLoading}>
-                {isLoading ? 'Submitting...' : 'Submit'}
-            </button>
+            <div className="flex flex-col mt-10">
+                <StripeCheckoutButton
+                    disabled={
+                        !isNonEmptyString(uploadRefs.dicomKey) ||
+                        !isNonEmptyString(uploadRefs.ownerSignatureKey) ||
+                        !isNonEmptyString(uploadRefs.vetSignatureKey)
+                    }
+                    text={
+                        isNonEmptyString(uploadRefs.dicomKey) &&
+                        isNonEmptyString(uploadRefs.ownerSignatureKey) &&
+                        isNonEmptyString(uploadRefs.vetSignatureKey)
+                        ? 
+                        "Process to Checkout" 
+                        : 
+                        "Please Fill All Fields & Upload Files"
+                    }
+                />
+            </div>
+            <div>
+                <TestLogBtn data={uploadRefs} />
+            </div>
         </form>
     );
 };
