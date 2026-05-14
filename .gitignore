@@ -33,8 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env.local
 
-# .dcm (DICOM files) used for testing
+# .dcm (DICOM files) & img files used for testing
 public/dicom-testing
+public/signature-testing
 
 # vercel
 .vercel
@@ -42,3 +43,6 @@ public/dicom-testing
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# other
+temp.md
