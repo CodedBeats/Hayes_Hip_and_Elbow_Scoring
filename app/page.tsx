@@ -9,6 +9,7 @@ export default function Home() {
     return (
         <div>
             <button onClick={() => router.push("/submit")}>Submit Page</button>
+            <button onClick={() => router.push("/pre-launch")}>Pre-launch Page</button>
         </div>
     );
 }
