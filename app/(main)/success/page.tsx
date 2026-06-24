@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function SuccessPage() {
+function SuccessContent() {
     const params = useSearchParams();
 
     useEffect(() => {
@@ -42,4 +42,12 @@ export default function SuccessPage() {
     }, [params]);
 
     return <div>Payment successful</div>;
+}
+
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={null}>
+            <SuccessContent />
+        </Suspense>
+    );
 }
