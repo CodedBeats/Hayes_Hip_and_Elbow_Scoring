@@ -2,7 +2,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 // components
-import { CaseForm } from "../../components/form/CaseForm";
+import { CaseForm } from "../../../components/form/CaseForm";
 
 export default function SubmitPage() {
     const router = useRouter();
