@@ -37,6 +37,14 @@ const highlights = [
 const PreLaunchPage = () => {
     return (
         <main className="font-[var(--font-plus-jakarta-sans)] bg-white">
+            {/* ── Header ────────────────────────────────────────────────── */}
+            <section className="py-10 px-10 bg-[#F9F7F3]">
+                <div className="text-center flex flex-col justify-center gap-5">
+                    <h1 className="text-5xl lg:text-6xl font-bold text-[#506147] text-center w-full">
+                        Hayes Hip & Elbow Scoring
+                    </h1>
+                </div>
+            </section>
 
             {/* ── Hero ─────────────────────────────────────────── */}
             <section className="max-w-7xl mx-auto px-10 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -46,7 +54,7 @@ const PreLaunchPage = () => {
                         Coming Soon
                     </span>
 
-                    <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
                         Professional assessment of canine hip and elbow radiographs by{' '}
                         <span className="text-[#506147]">Dr Ana Hayes</span>
                     </h1>
