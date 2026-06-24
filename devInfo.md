@@ -159,7 +159,7 @@ hayes_hip_and_elbow_scoring/
 
 
 ## Running Claude
-ollama launch claude --model qwen3:14b
+ollama
 
 ### Prompts
 To Add:
