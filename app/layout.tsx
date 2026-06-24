@@ -5,6 +5,7 @@ import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "../styles/globals.css";
 // components
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 
 // fonts
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <body className="min-h-full flex flex-col">
                 <Navbar />
                 {children}
+                <Footer />
             </body>
         </html>
     );
