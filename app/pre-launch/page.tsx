@@ -48,20 +48,23 @@ const PreLaunchPage = () => {
 
             {/* ── Hero ─────────────────────────────────────────── */}
             <section className="max-w-7xl mx-auto px-10 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5">
                     <span className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-[#7A8C70]/15 text-[#506147] text-xs font-semibold tracking-wider uppercase">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#506147] animate-pulse" />
                         Coming Soon
                     </span>
 
-                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                        Professional assessment of canine hip and elbow radiographs by{' '}
-                        <span className="text-[#506147]">Dr Ana Hayes</span>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-[#3E2B23] leading-tight">
+                        Professional assessment of canine hip and elbow radiographs by Dr Ana Hayes
                     </h1>
+
+                    <p className="text-xl lg:text-2xl font-bold text-[#506147] leading-relaxed max-w-lg">
+                        BVSc (Hons), MVS (Radiology)
+                    </p>
 
                     <p className="text-base text-gray-500 leading-relaxed max-w-lg">
                         Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia
-                        requirements. Fast, professional assessment from an experienced veterinary radiologist.
+                        requirements. Fast, professional assessment from an experienced CHED panellist.
                     </p>
 
                     <Link
@@ -84,6 +87,58 @@ const PreLaunchPage = () => {
                         priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#3E2B23]/20 to-transparent" />
+                </div>
+            </section>
+
+            {/* ── Contact & Links ──────────────────────────────── */}
+            <section className="px-50 py-10 bg-[#F2E8D5] border-t border-b border-[#C4C8BE]">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                    {/* Email & Phone */}
+                    <div className="flex items-start gap-4">
+                        <span className="w-10 h-10 rounded-xl bg-[#DDE8D5] text-[#506147] flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                            </svg>
+                        </span>
+                        <div className="flex flex-col gap-1">
+                            <p className="text-sm font-semibold text-gray-900">anahayes18@icloud.com</p>
+                            <p className="text-sm text-gray-500">(+61) 400 874 741</p>
+                        </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="flex items-center justify-center gap-4">
+                        <span className="w-10 h-10 rounded-xl bg-[#DDE8D5] text-[#506147] flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                        </span>
+                        <div className="h-full flex justify-center items-center">
+                            <p className="text-sm font-semibold text-gray-900">PO Box 36 Vermont VIC 3133</p>
+                        </div>
+                    </div>
+
+                    {/* CHED Home Page */}
+                    <div className="flex items-start justify-end gap-4">
+                        <span className="w-10 h-10 rounded-xl bg-[#DDE8D5] text-[#506147] flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                        </span>
+                        <div className="flex flex-col gap-1">
+                            <p className="text-sm font-semibold text-gray-900">CHED Scheme</p>
+                            <a
+                                href="https://orchid.ankc.org.au/Home/HomeChed"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-[#506147] hover:underline"
+                            >
+                                Dogs Australia CHED Home
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </section>
 
