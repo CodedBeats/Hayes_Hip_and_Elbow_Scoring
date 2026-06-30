@@ -185,6 +185,7 @@ submissions
 │   ├── status
 │   ├── submitterType ("owner" | "clinic")
 │   ├── clinicId (optional)
+│   ├── submissionType ("online" | "pdf")
 │   ├── createdAt
 │   ├── updatedAt
 │   │
@@ -194,6 +195,12 @@ submissions
 │   │   ├── stripePaymentIntentId
 │   │   ├── invoiceId
 │   │   └── invoiceSentAt
+│   │
+│   ├── files
+│   │   ├── dicomFilesRef
+│   │   ├── supportingDocumentsRef
+│   │   ├── vetSignatureRef
+│   │   └── ownerSignatureRef
 │   │
 │   ├── owner
 │   │   ├── name
@@ -210,20 +217,18 @@ submissions
 │   │   ├── positiveIdentificationSighted
 │   │   └── certificateSighted
 │   │
-│   └── dogs
-│       ├── dog_001
-│       │   ├── registeredName
-│       │   ├── registeredNumber
-│       │   ├── microchipNumber
-│       │   ├── breed
-│       │   ├── sex
-│       │   ├── dateOfBirth
-│       │   ├── dateOfRadiograph
-│       │   ├── isDogsAustraliaRegistered
-│       │   ├── dicomFiles
-│       │   ├── supportingDocuments
-│       │   ├── ownerSignature
-└───────└───└── veterinarianSignature
+│   └── dog
+│       ├── registeredName
+│       ├── registeredNumber
+│       ├── microchipNumber
+│       ├── breed
+│       ├── sex
+│       ├── dateOfBirth
+│       ├── dateOfRadiograph
+└───────└── isDogsAustraliaRegistered
+
+
+
 
 invoices
 ├── invoice_001
