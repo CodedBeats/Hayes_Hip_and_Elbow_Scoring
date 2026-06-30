@@ -5,11 +5,13 @@ import { useState } from "react";
 import { InputField } from "../form/InputField";
 import { MobileField } from "../form/MobileField";
 // types
-import type { DogCase, DogFiles } from "@/types/dog";
+import type { DogCase } from "@/types/dog";
+import type { OwnerDetails } from "@/types/owner";
+import type { VeterinarianDetails } from "@/types/vet";
+import type { Files } from "@/types/submission";
 import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
 
 type DogFormData = {
-    // dog
     isDogsAustraliaRegistered: boolean;
     registeredName: string;
     registeredNumber: string;
@@ -18,22 +20,9 @@ type DogFormData = {
     sex: "male" | "female";
     dateOfBirth: string;
     dateOfRadiograph: string;
-    // owner
-    ownerName: string;
-    ownerEmail: string;
-    ownerAddress: string;
-    memberNumber: string;
-    ownerTelephoneNumber: string;
-    // vet
-    referringVeterinarianName: string;
-    referringVeterinarianPractice: string;
-    veterinarianAddress: string;
-    veterinarianPhone: string;
-    positiveIdentificationSighted: boolean;
-    certificateOfRegistrationAndPedigreeSighted: boolean;
 };
 
-const EMPTY_FORM: DogFormData = {
+const EMPTY_DOG: DogFormData = {
     isDogsAustraliaRegistered: false,
     registeredName: "",
     registeredNumber: "",
@@ -42,48 +31,56 @@ const EMPTY_FORM: DogFormData = {
     sex: "male",
     dateOfBirth: "",
     dateOfRadiograph: "",
-    ownerName: "",
-    ownerEmail: "",
-    ownerAddress: "",
-    memberNumber: "",
-    ownerTelephoneNumber: "",
-    referringVeterinarianName: "",
-    referringVeterinarianPractice: "",
-    veterinarianAddress: "",
-    veterinarianPhone: "",
-    positiveIdentificationSighted: false,
-    certificateOfRegistrationAndPedigreeSighted: false,
+};
+
+const EMPTY_OWNER: OwnerDetails = {
+    name: "", email: "", phone: "", address: "", memberNumber: "",
+};
+
+const EMPTY_VET: VeterinarianDetails = {
+    veterinarianName: "", practiceName: "", address: "", phone: "",
+    positiveIdentificationSighted: false, certificateOfRegistrationSighted: false,
 };
 
 type Props = {
     submissionId: string;
     dogIndex: number;
-    onComplete: (dog: DogCase) => void;
+    onComplete: (dog: DogCase, files: Files, owner: OwnerDetails, veterinarian: VeterinarianDetails) => void;
 };
 
 export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     const [dogId] = useState(() => crypto.randomUUID());
-    const [formData, setFormData] = useState<DogFormData>(EMPTY_FORM);
+    const [dogData, setDogData] = useState<DogFormData>(EMPTY_DOG);
+    const [ownerData, setOwnerData] = useState<OwnerDetails>(EMPTY_OWNER);
+    const [vetData, setVetData] = useState<VeterinarianDetails>(EMPTY_VET);
 
-    // file selection
+    // file selection - dicom + docs are multi, signatures are single
     const [selectedDicom, setSelectedDicom] = useState<File[]>([]);
     const [selectedDocs, setSelectedDocs] = useState<File[]>([]);
-    const [selectedSigs, setSelectedSigs] = useState<File[]>([]);
+    const [ownerSigFile, setOwnerSigFile] = useState<File | null>(null);
+    const [vetSigFile, setVetSigFile] = useState<File | null>(null);
 
     // upload state
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<DogFiles | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<Files | null>(null);
 
     // completion state
     const [isComplete, setIsComplete] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
 
-    const set = (field: keyof DogFormData, value: string | boolean) =>
-        setFormData((prev) => ({ ...prev, [field]: value }));
+    const setDog = (field: keyof DogFormData, value: string | boolean) =>
+        setDogData((prev) => ({ ...prev, [field]: value }));
+
+    const setOwner = (field: keyof OwnerDetails, value: string) =>
+        setOwnerData((prev) => ({ ...prev, [field]: value }));
+
+    const setVet = (field: keyof VeterinarianDetails, value: string | boolean) =>
+        setVetData((prev) => ({ ...prev, [field]: value }));
 
     const handleUploadAll = async () => {
-        const totalFiles = selectedDicom.length + selectedDocs.length + selectedSigs.length;
+        const signatureFiles = [ownerSigFile, vetSigFile].filter(Boolean) as File[];
+        const totalFiles = selectedDicom.length + selectedDocs.length + signatureFiles.length;
         if (totalFiles === 0) {
             setUploadError("Select at least one file before uploading.");
             return;
@@ -93,6 +90,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
         setUploadError(null);
 
         try {
+            // flow/order: dicom > supporting-docs > owner-signature > vet-signature
             const fileRequests = [
                 ...selectedDicom.map((f) => ({
                     fileName: f.name,
@@ -106,7 +104,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     dogIndex,
                     category: "supporting-documents" as const,
                 })),
-                ...selectedSigs.map((f) => ({
+                ...signatureFiles.map((f) => ({
                     fileName: f.name,
                     contentType: f.type || "image/png",
                     dogIndex,
@@ -126,7 +124,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
             }
 
             const { urls }: UploadUrlResponse = await urlRes.json();
-            const allFiles = [...selectedDicom, ...selectedDocs, ...selectedSigs];
+            const allFiles = [...selectedDicom, ...selectedDocs, ...signatureFiles];
 
             const results = await Promise.all(
                 allFiles.map((file, i) =>
@@ -153,14 +151,15 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                 ),
             );
 
-            // map results back into DogFiles structure
             const dicomCount = selectedDicom.length;
             const docsCount = selectedDocs.length;
-            const dogFiles: DogFiles = {
+            const dogFiles: Files = {
                 dicomFiles: results.slice(0, dicomCount),
                 supportingDocuments: results.slice(dicomCount, dicomCount + docsCount),
-                ownerSignature: results[dicomCount + docsCount],
-                veterinarianSignature: results[dicomCount + docsCount + 1],
+                ownerSignature: ownerSigFile ? results[dicomCount + docsCount] : undefined,
+                veterinarianSignature: vetSigFile
+                    ? results[dicomCount + docsCount + (ownerSigFile ? 1 : 0)]
+                    : undefined,
             };
             setUploadedFiles(dogFiles);
         } catch (err) {
@@ -170,15 +169,21 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
         }
     };
 
+
     const handleMarkComplete = () => {
         setValidationError(null);
 
-        const required: (keyof DogFormData)[] = [
-            "registeredName", "microchipNumber", "breed", "dateOfBirth", "dateOfRadiograph",
-        ];
-        const missing = required.find((f) => !formData[f]);
-        if (missing) {
-            setValidationError(`Please fill in all required fields (${missing} is empty).`);
+        if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
+            !dogData.dateOfBirth || !dogData.dateOfRadiograph) {
+            setValidationError("Please fill in all required dog fields.");
+            return;
+        }
+        if (!ownerData.name || !ownerData.email || !ownerData.phone) {
+            setValidationError("Please fill in the owner's name, email, and phone.");
+            return;
+        }
+        if (!vetData.veterinarianName || !vetData.practiceName) {
+            setValidationError("Please fill in the veterinarian name and practice name.");
             return;
         }
         if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) {
@@ -188,23 +193,23 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
 
         const dogCase: DogCase = {
             id: dogId,
-            isDogsAustraliaRegistered: formData.isDogsAustraliaRegistered,
-            registeredName: formData.registeredName,
-            registeredNumber: formData.registeredNumber || undefined,
-            microchipNumber: formData.microchipNumber,
-            breed: formData.breed,
-            sex: formData.sex,
-            dateOfBirth: formData.dateOfBirth,
-            dateOfRadiograph: formData.dateOfRadiograph,
-            files: uploadedFiles,
+            isDogsAustraliaRegistered: dogData.isDogsAustraliaRegistered,
+            registeredName: dogData.registeredName,
+            registeredNumber: dogData.registeredNumber || undefined,
+            microchipNumber: dogData.microchipNumber,
+            breed: dogData.breed,
+            sex: dogData.sex,
+            dateOfBirth: dogData.dateOfBirth,
+            dateOfRadiograph: dogData.dateOfRadiograph,
         };
 
         setIsComplete(true);
-        onComplete(dogCase);
+        onComplete(dogCase, uploadedFiles, ownerData, vetData);
     };
 
     // completed summary view
     if (isComplete && uploadedFiles) {
+        const signatureCount = [uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length;
         return (
             <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
                 <div className="flex items-center justify-between">
@@ -216,30 +221,31 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     </div>
                     <button
                         type="button"
-                        onClick={() => setIsComplete(false)}
+                        onClick={() => { setIsComplete(false); setUploadedFiles(null); }}
                         className="text-sm text-gray-500 underline hover:text-gray-700"
                     >
                         Edit
                     </button>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-                    <span><span className="font-medium">Name:</span> {formData.registeredName}</span>
-                    <span><span className="font-medium">Breed:</span> {formData.breed}</span>
-                    <span><span className="font-medium">Microchip:</span> {formData.microchipNumber}</span>
-                    <span><span className="font-medium">Sex:</span> {formData.sex}</span>
+                    <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
+                    <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
+                    <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
+                    <span><span className="font-medium">Vet:</span> {vetData.veterinarianName}</span>
                 </div>
                 <div className="mt-2 flex gap-4 text-xs text-gray-500">
                     <span>{uploadedFiles.dicomFiles.length} DICOM</span>
-                    <span>{uploadedFiles.supportingDocuments.length} docs</span>
-                    <span>
-                        {[uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} signatures
-                    </span>
+                    <span>{uploadedFiles.supportingDocuments.length} supporting docs</span>
+                    <span>{signatureCount} signature{signatureCount !== 1 ? "s" : ""}</span>
                 </div>
             </div>
         );
     }
 
     // full entry form
+    const uploadCount = selectedDicom.length + selectedDocs.length +
+        (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
+
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-2xl font-bold text-gray-900">Dog {dogIndex}</h3>
@@ -250,23 +256,23 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                 name="isDogsAustraliaRegistered"
                 label="Is Dog Registered with Dogs Australia?"
                 type="checkbox"
-                value={formData.isDogsAustraliaRegistered}
-                onChange={(e) => set("isDogsAustraliaRegistered", e.target.checked)}
+                value={dogData.isDogsAustraliaRegistered}
+                onChange={(e) => setDog("isDogsAustraliaRegistered", e.target.checked)}
             />
             <InputField name="registeredName" label="Registered Name *" type="text"
-                value={formData.registeredName} onChange={(e) => set("registeredName", e.target.value)} />
+                value={dogData.registeredName} onChange={(e) => setDog("registeredName", e.target.value)} />
             <InputField name="registeredNumber" label="Registered Number" type="text"
-                value={formData.registeredNumber} onChange={(e) => set("registeredNumber", e.target.value)} />
+                value={dogData.registeredNumber} onChange={(e) => setDog("registeredNumber", e.target.value)} />
             <InputField name="microchipNumber" label="Microchip Number *" type="text"
-                value={formData.microchipNumber} onChange={(e) => set("microchipNumber", e.target.value)} />
+                value={dogData.microchipNumber} onChange={(e) => setDog("microchipNumber", e.target.value)} />
             <InputField name="breed" label="Breed *" type="text"
-                value={formData.breed} onChange={(e) => set("breed", e.target.value)} />
+                value={dogData.breed} onChange={(e) => setDog("breed", e.target.value)} />
 
-            <div className="mb-4 w-full ">
-                <label className="block mb-2 text-sm font-medium text-black">Sex *</label>
+            <div className="mb-4 w-full">
+                <label className="block mb-2 text-sm font-medium">Sex *</label>
                 <select
-                    value={formData.sex}
-                    onChange={(e) => set("sex", e.target.value as "male" | "female")}
+                    value={dogData.sex}
+                    onChange={(e) => setDog("sex", e.target.value as "male" | "female")}
                     className="block w-full rounded-md border border-gray-300 px-3 py-2"
                 >
                     <option value="male">Male</option>
@@ -275,48 +281,45 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
             </div>
 
             <InputField name="dateOfBirth" label="Date of Birth *" type="date"
-                value={formData.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />
+                value={dogData.dateOfBirth} onChange={(e) => setDog("dateOfBirth", e.target.value)} />
             <InputField name="dateOfRadiograph" label="Date of Radiograph *" type="date"
-                value={formData.dateOfRadiograph} onChange={(e) => set("dateOfRadiograph", e.target.value)} />
+                value={dogData.dateOfRadiograph} onChange={(e) => setDog("dateOfRadiograph", e.target.value)} />
 
             {/* -- Owner Details -- */}
-            <h4 className="mt-6 text-lg font-semibold text-gray-800">Owner Details</h4>
-            <InputField name="ownerName" label="Owner Name" type="text"
-                value={formData.ownerName} onChange={(e) => set("ownerName", e.target.value)} />
-            <InputField name="ownerEmail" label="Owner Email" type="email"
-                value={formData.ownerEmail} onChange={(e) => set("ownerEmail", e.target.value)} />
-            <InputField name="ownerAddress" label="Owner Address" type="text"
-                value={formData.ownerAddress} onChange={(e) => set("ownerAddress", e.target.value)} />
+            <h4 className="mt-8 text-lg font-semibold text-gray-800">Owner Details</h4>
+            <InputField name="ownerName" label="Name *" type="text"
+                value={ownerData.name} onChange={(e) => setOwner("name", e.target.value)} />
+            <InputField name="ownerEmail" label="Email *" type="email"
+                value={ownerData.email} onChange={(e) => setOwner("email", e.target.value)} />
+            <MobileField value={ownerData.phone} onChange={(v) => setOwner("phone", v)} />
+            <InputField name="ownerAddress" label="Address" type="text"
+                value={ownerData.address} onChange={(e) => setOwner("address", e.target.value)} />
             <InputField name="memberNumber" label="Member Number" type="text"
-                value={formData.memberNumber} onChange={(e) => set("memberNumber", e.target.value)} />
-            <MobileField
-                value={formData.ownerTelephoneNumber}
-                onChange={(value) => set("ownerTelephoneNumber", value)}
-            />
+                value={ownerData.memberNumber} onChange={(e) => setOwner("memberNumber", e.target.value)} />
 
             {/* -- Veterinarian Details -- */}
-            <h4 className="mt-6 text-lg font-semibold text-gray-800">Veterinarian Details</h4>
-            <InputField name="referringVeterinarianName" label="Referring Veterinarian Name" type="text"
-                value={formData.referringVeterinarianName} onChange={(e) => set("referringVeterinarianName", e.target.value)} />
-            <InputField name="referringVeterinarianPractice" label="Practice Name" type="text"
-                value={formData.referringVeterinarianPractice} onChange={(e) => set("referringVeterinarianPractice", e.target.value)} />
-            <InputField name="veterinarianAddress" label="Veterinarian Address" type="text"
-                value={formData.veterinarianAddress} onChange={(e) => set("veterinarianAddress", e.target.value)} />
-            <MobileField
-                value={formData.veterinarianPhone}
-                onChange={(value) => set("veterinarianPhone", value)}
-            />
+            <h4 className="mt-8 text-lg font-semibold text-gray-800">Veterinarian Details</h4>
+            <InputField name="veterinarianName" label="Veterinarian Name *" type="text"
+                value={vetData.veterinarianName} onChange={(e) => setVet("veterinarianName", e.target.value)} />
+            <InputField name="practiceName" label="Practice Name *" type="text"
+                value={vetData.practiceName} onChange={(e) => setVet("practiceName", e.target.value)} />
+            <InputField name="vetAddress" label="Address" type="text"
+                value={vetData.address} onChange={(e) => setVet("address", e.target.value)} />
+            <MobileField value={vetData.phone} onChange={(v) => setVet("phone", v)} />
             <InputField name="positiveIdentificationSighted" label="Positive Identification Sighted" type="checkbox"
-                value={formData.positiveIdentificationSighted} onChange={(e) => set("positiveIdentificationSighted", e.target.checked)} />
-            <InputField name="certificateOfRegistrationAndPedigreeSighted" label="Certificate of Registration Sighted" type="checkbox"
-                value={formData.certificateOfRegistrationAndPedigreeSighted} onChange={(e) => set("certificateOfRegistrationAndPedigreeSighted", e.target.checked)} />
+                value={vetData.positiveIdentificationSighted}
+                onChange={(e) => setVet("positiveIdentificationSighted", e.target.checked)} />
+            <InputField name="certificateOfRegistrationSighted" label="Certificate of Registration Sighted" type="checkbox"
+                value={vetData.certificateOfRegistrationSighted}
+                onChange={(e) => setVet("certificateOfRegistrationSighted", e.target.checked)} />
 
-            {/* -- File Upload -- */}
+            {/* -- Files -- */}
             <h4 className="mt-8 text-lg font-semibold text-gray-800">Files</h4>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {/* DICOM — multi */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">DICOM Files *</p>
-                    <p className="text-xs text-gray-500">.dcm</p>
+                    <p className="text-xs text-gray-500">.dcm — one or more</p>
                     <input type="file" accept=".dcm" multiple
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => setSelectedDicom(Array.from(e.target.files ?? []))} />
@@ -327,9 +330,10 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     )}
                 </div>
 
+                {/* Supporting Docs - multi */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <p className="text-sm font-medium text-gray-800">Supporting Docs</p>
-                    <p className="text-xs text-gray-500">.pdf</p>
+                    <p className="text-sm font-medium text-gray-800">Supporting Documents</p>
+                    <p className="text-xs text-gray-500">.pdf — one or more</p>
                     <input type="file" accept=".pdf" multiple
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => setSelectedDocs(Array.from(e.target.files ?? []))} />
@@ -340,17 +344,24 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     )}
                 </div>
 
+                {/* Owner Signature - single */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <p className="text-sm font-medium text-gray-800">Signatures</p>
-                    <p className="text-xs text-gray-500">.png / .jpg (owner first, vet second)</p>
-                    <input type="file" accept=".png,.jpg,.jpeg" multiple
+                    <p className="text-sm font-medium text-gray-800">Owner Signature</p>
+                    <p className="text-xs text-gray-500">.png / .jpg — one file</p>
+                    <input type="file" accept=".png,.jpg,.jpeg"
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
-                        onChange={(e) => setSelectedSigs(Array.from(e.target.files ?? []))} />
-                    {selectedSigs.length > 0 && (
-                        <ul className="mt-2 space-y-0.5">
-                            {selectedSigs.map((f) => <li key={f.name} className="truncate text-xs text-gray-600">{f.name}</li>)}
-                        </ul>
-                    )}
+                        onChange={(e) => setOwnerSigFile(e.target.files?.[0] ?? null)} />
+                    {ownerSigFile && <p className="mt-2 truncate text-xs text-gray-600">{ownerSigFile.name}</p>}
+                </div>
+
+                {/* Vet Signature - single */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">Veterinarian Signature</p>
+                    <p className="text-xs text-gray-500">.png / .jpg — one file</p>
+                    <input type="file" accept=".png,.jpg,.jpeg"
+                        className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
+                        onChange={(e) => setVetSigFile(e.target.files?.[0] ?? null)} />
+                    {vetSigFile && <p className="mt-2 truncate text-xs text-gray-600">{vetSigFile.name}</p>}
                 </div>
             </div>
 
@@ -358,12 +369,10 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                 <button
                     type="button"
                     onClick={handleUploadAll}
-                    disabled={isUploading}
+                    disabled={isUploading || uploadCount === 0}
                     className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    {isUploading
-                        ? "Uploading..."
-                        : `Upload Files (${selectedDicom.length + selectedDocs.length + selectedSigs.length})`}
+                    {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
                 </button>
                 {uploadedFiles && (
                     <span className="text-sm text-green-600">
@@ -373,15 +382,11 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                 )}
             </div>
 
-            {uploadError && (
-                <p className="mt-3 text-sm text-red-600">{uploadError}</p>
-            )}
+            {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
 
             {/* -- Mark Complete -- */}
             <div className="mt-6 border-t border-gray-100 pt-5">
-                {validationError && (
-                    <p className="mb-3 text-sm text-red-600">{validationError}</p>
-                )}
+                {validationError && <p className="mb-3 text-sm text-red-600">{validationError}</p>}
                 <button
                     type="button"
                     onClick={handleMarkComplete}
