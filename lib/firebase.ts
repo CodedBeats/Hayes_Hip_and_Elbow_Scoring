@@ -11,6 +11,7 @@ import {
     collection,
     addDoc,
     doc,
+    setDoc,
     updateDoc,
     deleteDoc,
     getDocs,
@@ -18,7 +19,11 @@ import {
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // types
-import type { Submission, SubmissionStatus } from "../types/submission";
+import type { Submission, SubmissionStatus, Files } from "../types/submission";
+import type { OwnerDetails } from "../types/owner";
+import type { VeterinarianDetails } from "../types/vet";
+import type { DogCase } from "../types/dog";
+import type { BillingInfo, PaymentStatus } from "../types/billing";
 
 // config
 const firebaseConfig = {
@@ -128,4 +133,62 @@ export const deleteCase = async (caseId: string) => {
     const caseRef = doc(db, "cases", caseId);
     const caseDoc = await deleteDoc(caseRef);
     return caseDoc;
+};
+
+
+// ===================== //
+// === SUBMISSIONS ==== //
+// ===================== //
+
+type CreateSubmissionPayload = {
+    s3SubmissionId: string;
+    dogIndex: number;
+    owner: OwnerDetails;
+    veterinarian: VeterinarianDetails;
+    dog: DogCase;
+    files: Files;
+    billing: BillingInfo;
+};
+
+// Creates one Firestore submission document per dog.
+// billing.paymentStatus always starts as "unpaid" — updated by Stripe webhook on successful payment.
+export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
+    const { s3SubmissionId, dogIndex, owner, veterinarian, dog, files, billing } = payload;
+
+    const docRef = await addDoc(collection(db, "submissions"), {
+        s3SubmissionId,
+        dogIndex,
+        status: "submitted",
+        submitterType: "owner",
+        submissionType: "online",
+        createdAt: new Date(),
+        billing,
+        owner: {
+            ...owner,
+            ownerSignatureRef: files.ownerSignature?.key ?? null,
+        },
+        veterinarian: {
+            ...veterinarian,
+            vetSignatureRef: files.veterinarianSignature?.key ?? null,
+        },
+        dog: {
+            ...dog,
+            dicomFilesRef: files.dicomFiles.map((f) => f.key),
+            supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
+        },
+    });
+
+    return docRef.id;
+};
+
+// TODO: call from Stripe webhook handler (app/api/stripe-webhook/route.ts) after payment.intent.succeeded
+export const updateSubmissionPaymentStatus = async (
+    firestoreDocId: string,
+    status: PaymentStatus,
+): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        "billing.paymentStatus": status,
+        updatedAt: new Date(),
+    });
 };

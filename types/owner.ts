@@ -1,4 +1,4 @@
-export type SubmitterDetails = {
+export type OwnerDetails = {
     name: string;
 
     email: string;
@@ -6,4 +6,6 @@ export type SubmitterDetails = {
     phone: string;
 
     address: string;
+
+    memberNumber: string;
 };

@@ -17,16 +17,4 @@ export type DogCase = {
     dateOfBirth: string;
 
     dateOfRadiograph: string;
-
-    files: DogFiles;
-};
-
-export type DogFiles = {
-    dicomFiles: UploadedFile[];
-
-    supportingDocuments: UploadedFile[];
-
-    ownerSignature?: UploadedFile;
-
-    veterinarianSignature?: UploadedFile;
 };
