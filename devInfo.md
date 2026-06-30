@@ -15,9 +15,11 @@ Example
 
 ## Data Flow
 ***USer submits a form***
+<!-- FIX -->
 CaseForm.tsx (component)  →  calls /api/create-case  →  route.ts  →  lib/cases.ts  →  Firebase
 
 ***USer uploading file***
+<!-- FIX -->
 FileUploader.tsx  →  calls /api/upload-url  →  gets signed URL  →  uploads directly to S3
 
 ***General flow between files***
@@ -153,13 +155,123 @@ hayes_hip_and_elbow_scoring/
 └── tsconfig.json
 ```
 
+## Maybe actualy project structure
+<!--  -->
+
+## Firestore Folder Structure
+clinics
+├── clinic_001
+│   ├── clinicName
+│   ├── contactName
+│   ├── email
+│   ├── phone
+│   ├── address
+│   ├── billingType
+│   ├── active
+│   ├── createdAt
+└───└── updatedAt
+
+users
+├── user_001
+│   ├── role ("admin" | "clinic")
+│   ├── clinicId
+│   ├── name
+│   ├── email
+│   ├── createdAt
+└───└── updatedAt
+
+submissions
+├── submission_001
+│   ├── status
+│   ├── submitterType ("owner" | "clinic")
+│   ├── clinicId (optional)
+│   ├── createdAt
+│   ├── updatedAt
+│   │
+│   ├── billing
+│   │   ├── paymentStatus
+│   │   ├── billingType
+│   │   ├── stripePaymentIntentId
+│   │   ├── invoiceId
+│   │   └── invoiceSentAt
+│   │
+│   ├── owner
+│   │   ├── name
+│   │   ├── email
+│   │   ├── phone
+│   │   ├── address
+│   │   └── memberNumber
+│   │
+│   ├── veterinarian
+│   │   ├── veterinarianName
+│   │   ├── practiceName
+│   │   ├── address
+│   │   ├── phone
+│   │   ├── positiveIdentificationSighted
+│   │   └── certificateSighted
+│   │
+│   └── dogs
+│       ├── dog_001
+│       │   ├── registeredName
+│       │   ├── registeredNumber
+│       │   ├── microchipNumber
+│       │   ├── breed
+│       │   ├── sex
+│       │   ├── dateOfBirth
+│       │   ├── dateOfRadiograph
+│       │   ├── isDogsAustraliaRegistered
+│       │   ├── dicomFiles
+│       │   ├── supportingDocuments
+│       │   ├── ownerSignature
+└───────└───└── veterinarianSignature
+
+invoices
+├── invoice_001
+│   ├── clinicId
+│   ├── submissionIds[]
+│   ├── amount
+│   ├── status
+│   ├── quickbooksInvoiceId
+│   ├── issuedAt
+└───└── paidAt
+
+archivedSubmissions
+├── submission_001
+│   ├── archiveDate
+│   ├── originalSubmissionId
+└───└── metadata
+
+
+## S3 Folder structure
+submissions/
+└── submission_001/
+│   │
+│   ├── dog_001/
+│   │   │
+│   │   ├── dicom/
+│   │   │   ├── hips.dcm
+│   │   │   └── elbows.dcm
+│   │   │
+│   │   ├── documents/
+│   │   │   ├── pedigree.pdf
+│   │   │   ├── vaccination.pdf
+│   │   │   └── registration.pdf
+│   │   │
+│   │   └── signatures/
+│   │       ├── owner-signature.png
+│   │       └── vet-signature.png
+│   │
+│   ├── dog_002/
+│   │   ├── dicom/
+│   │   ├── documents/
+└───└───└── signatures/
+
+
+
 ## Helpful Links
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Signature plugin](https://lemonadejs.com/docs/plugins/signature)
+- [QuickBooks Documentation](https://developer.intuit.com/app/developer/qbo/docs/get-started)
+- [Resend](https://resend.com/docs/send-with-nextjs)
 
-
-## Running Claude
-ollama
 
 ### Prompts
 To Add:
