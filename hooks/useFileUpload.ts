@@ -1,16 +1,14 @@
 // dependencies
-import { useState } from "react"
+import { useState } from "react";
 // types
-import { UploadedFile, UseUploadFileReturn } from "../types/upload"
+import { FileCategory, UploadedFile, UploadUrlResponse, UseUploadFileReturn } from "../types/upload";
 
 export function useFileUpload(): UseUploadFileReturn {
-    // state
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = useState<UploadedFile>();
 
-    // reset upload handler
     const resetUpload = () => {
         setUploading(false);
         setProgress(0);
@@ -18,67 +16,143 @@ export function useFileUpload(): UseUploadFileReturn {
         setUploadedFile(undefined);
     };
 
-
-    // upload single file(DICOM) (this one is new for me lol, pls work)
-    const uploadSingleFile = (file: File): Promise<UploadedFile> => {
+    const uploadSingleFile = (
+        file: File,
+        opts: { submissionId: string; dogIndex: number; category: FileCategory },
+    ): Promise<UploadedFile> => {
         return new Promise(async (resolve, reject) => {
             try {
-                //ask backend for signed upload URL
+                setUploading(true);
+                setError(null);
+
                 const urlRes = await fetch("/api/upload-url", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        fileName: file.name,
-                        contentType: file.type || "application/octet-stream",
+                        submissionId: opts.submissionId,
+                        files: [{
+                            fileName: file.name,
+                            contentType: file.type || "application/octet-stream",
+                            dogIndex: opts.dogIndex,
+                            category: opts.category,
+                        }],
                     }),
                 });
 
                 if (!urlRes.ok) {
-                    throw new Error("Failed to get upload URL");
+                    const body = await urlRes.json();
+                    throw new Error(body.error ?? body.errors?.[0] ?? "Failed to get upload URL");
                 }
 
-                const { uploadUrl, key } = await urlRes.json();
+                const { urls }: UploadUrlResponse = await urlRes.json();
+                const { uploadUrl, key } = urls[0];
 
-                // upload directly to S3 using XMLHttpRequest for progress tracking
                 const xhr = new XMLHttpRequest();
-
-                // set upload url
                 xhr.open("PUT", uploadUrl);
                 xhr.setRequestHeader("Content-Type", file.type);
 
-                // track progress
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
-                        const percent = Math.round(
-                            (event.loaded / event.total) * 100,
-                        );
-                        setProgress(percent);
-                    }
-                };
-                //  upload file
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve({
-                            fileName: file.name,
-                            key,
-                        });
-                    } else {
-                        reject(new Error("Upload failed"));
+                        setProgress(Math.round((event.loaded / event.total) * 100));
                     }
                 };
 
-                // handle errors
-                xhr.onerror = () => reject(new Error("Upload failed"));
-                // send file
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const uploaded: UploadedFile = {
+                            fileName: file.name,
+                            key,
+                            size: file.size,
+                            contentType: file.type,
+                            uploadedAt: new Date(),
+                        };
+                        setUploadedFile(uploaded);
+                        setUploading(false);
+                        resolve(uploaded);
+                    } else {
+                        setUploading(false);
+                        reject(new Error("Upload to S3 failed"));
+                    }
+                };
+
+                xhr.onerror = () => {
+                    setUploading(false);
+                    reject(new Error("Upload to S3 failed"));
+                };
+
                 xhr.send(file);
             } catch (err) {
+                setUploading(false);
+                setError(err instanceof Error ? err.message : "Upload failed");
                 reject(err);
             }
         });
     };
 
+    const uploadBatch = (
+        files: File[],
+        opts: { submissionId: string; dogIndex: number; category: FileCategory },
+    ): Promise<UploadedFile[]> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                setUploading(true);
+                setError(null);
+
+                const urlRes = await fetch("/api/upload-url", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        submissionId: opts.submissionId,
+                        files: files.map((f) => ({
+                            fileName: f.name,
+                            contentType: f.type || "application/octet-stream",
+                            dogIndex: opts.dogIndex,
+                            category: opts.category,
+                        })),
+                    }),
+                });
+
+                if (!urlRes.ok) {
+                    const body = await urlRes.json();
+                    throw new Error(body.error ?? body.errors?.[0] ?? "Failed to get upload URLs");
+                }
+
+                const { urls }: UploadUrlResponse = await urlRes.json();
+
+                const results = await Promise.all(
+                    files.map((file, i) =>
+                        new Promise<UploadedFile>((res, rej) => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open("PUT", urls[i].uploadUrl);
+                            xhr.setRequestHeader("Content-Type", file.type);
+                            xhr.onload = () => {
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    res({
+                                        fileName: file.name,
+                                        key: urls[i].key,
+                                        size: file.size,
+                                        contentType: file.type,
+                                        uploadedAt: new Date(),
+                                    });
+                                } else {
+                                    rej(new Error(`Upload failed for ${file.name}`));
+                                }
+                            };
+                            xhr.onerror = () => rej(new Error(`Upload failed for ${file.name}`));
+                            xhr.send(file);
+                        }),
+                    ),
+                );
+
+                setUploading(false);
+                resolve(results);
+            } catch (err) {
+                setUploading(false);
+                setError(err instanceof Error ? err.message : "Upload failed");
+                reject(err);
+            }
+        });
+    };
 
     return {
         uploading,
@@ -86,6 +160,7 @@ export function useFileUpload(): UseUploadFileReturn {
         error,
         uploadedFile,
         uploadSingleFile,
+        uploadBatch,
         resetUpload,
     };
 }
