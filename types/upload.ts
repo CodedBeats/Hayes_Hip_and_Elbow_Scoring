@@ -2,6 +2,14 @@
 export type UploadedFile = {
     fileName: string;
     key: string;
+
+    url?: string;
+
+    size: number;
+
+    contentType: string;
+
+    uploadedAt: Date;
 }
 export type UseUploadFileReturn = {
     uploading: boolean;
