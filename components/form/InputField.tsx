@@ -23,7 +23,7 @@ export function InputField({
 ) {
     return (
         <div className="mb-4 w-full">
-            <label className="block mb-2 text-sm font-medium">
+            <label className="block mb-2 text-sm font-medium text-black">
                 {label}
             </label>
 
