@@ -39,7 +39,7 @@ export const MobileField: React.FC<MobileFieldProps> = ({ value, onChange }) => 
 
 
     return (
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }} className="mt-6 text-lg font-semibold text-gray-800">
             <select
                 value={selectedCountryCode}
                 onChange={handleCountryChange}
