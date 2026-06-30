@@ -1,6 +1,8 @@
 export type BillingInfo = {
     billingType: "payNow" | "invoice";
 
+    amount: number;
+
     paymentStatus: PaymentStatus;
 
     stripePaymentIntentId?: string;
