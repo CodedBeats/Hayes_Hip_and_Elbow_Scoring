@@ -12,7 +12,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    return NextResponse.redirect(new URL('/pre-launch', request.url));
+    // un-comment for pre-launch
+    // return NextResponse.redirect(new URL('/pre-launch', request.url));
 }
 
 export const config = {
