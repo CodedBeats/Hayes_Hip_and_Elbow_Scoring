@@ -252,7 +252,7 @@ submissions/
 │   │   │   ├── hips.dcm
 │   │   │   └── elbows.dcm
 │   │   │
-│   │   ├── documents/
+│   │   ├── supporting-documents/
 │   │   │   ├── pedigree.pdf
 │   │   │   ├── vaccination.pdf
 │   │   │   └── registration.pdf
