@@ -3,10 +3,12 @@
 type Props = {
     disabled?: boolean;
     text: string;
+    onBeforeCheckout?: () => void;
 }
 
-export const StripeCheckoutButton = ({ disabled, text = "Proceed To Payment" }: Props) => {
+export const StripeCheckoutButton = ({ disabled, text = "Proceed To Payment", onBeforeCheckout }: Props) => {
     const handleCheckout = async () => {
+        onBeforeCheckout?.();
         try {
             const res = await fetch("/api/create-checkout-session", {
                 method: "POST",
