@@ -11,6 +11,11 @@
     --color-foreground: var(--foreground);
     --font-sans: var(--font-plus-jakarta-sans);
     --font-mono: var(--font-geist-mono);
+    --color-brand-green: #506147;
+    --color-brand-green-mid: #7A8C70;
+    --color-brand-brown: #3E2B23;
+    --color-cream: #F9F7F3;
+    --color-warm-sand: #F2E8D5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,5 +28,5 @@
 body {
     background: var(--background);
     color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif; /* change me later, probs with set types*/
+    font-family: var(--font-plus-jakarta-sans), Arial, Helvetica, sans-serif;
 }
