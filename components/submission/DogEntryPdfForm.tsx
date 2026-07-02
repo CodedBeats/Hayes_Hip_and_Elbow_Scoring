@@ -1,8 +1,11 @@
 "use client";
 // components
 import { UploadBox } from "../form/UploadBox"
+import { UploadedFileList } from "../form/UploadedFileList"
 // icons
 import { CloudIcon, DocumentIcon, PenIcon } from "../misc/Icons"
+// types
+import type { Files } from "@/types/submission";
 
 type Props = {
     pdfFormFile: File | null;
@@ -16,12 +19,22 @@ type Props = {
     onOwnerSigChange: (file: File | null) => void;
     onVetSigChange: (file: File | null) => void;
     resetKey: number;
+    uploadedFiles: Files | null;
 };
 
 export const DogEntryPdfForm = ({
-    pdfFormFile, selectedDicom, selectedDocs, ownerSigFile, vetSigFile,
-    onPdfFormChange, onDicomChange, onDocsChange, onOwnerSigChange, onVetSigChange,
+    pdfFormFile,
+    selectedDicom,
+    selectedDocs,
+    ownerSigFile,
+    vetSigFile,
+    onPdfFormChange,
+    onDicomChange,
+    onDocsChange,
+    onOwnerSigChange,
+    onVetSigChange,
     resetKey,
+    uploadedFiles,
 }: Props) => {
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
@@ -29,7 +42,9 @@ export const DogEntryPdfForm = ({
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-bold text-white">
                     PDF
                 </span>
-                <h3 className="text-base font-semibold text-gray-900">PDF Form Submission</h3>
+                <h3 className="text-base font-semibold text-gray-900">
+                    PDF Form Submission
+                </h3>
             </div>
 
             <UploadBox
@@ -42,10 +57,13 @@ export const DogEntryPdfForm = ({
                 accept=".pdf"
                 resetKey={resetKey}
             />
+            <UploadedFileList
+                files={ uploadedFiles?.pdfForm ? [uploadedFiles.pdfForm] : [] }
+            />
 
             <UploadBox
                 label="DICOM Files"
-                hint="Click to select .dcm files — multiple allowed"
+                hint="Select the .dcm files for Hips and/or Elbows, you can upload multiple files simultaneously"
                 icon={<CloudIcon />}
                 isRequired
                 files={selectedDicom}
@@ -54,6 +72,7 @@ export const DogEntryPdfForm = ({
                 accept=".dcm"
                 resetKey={resetKey}
             />
+            <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
 
             <UploadBox
                 label="Supporting Documents"
@@ -65,28 +84,41 @@ export const DogEntryPdfForm = ({
                 accept=".pdf"
                 resetKey={resetKey}
             />
+            <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <UploadBox
-                    label="Owner Signature"
-                    hint="Click to upload scanned signature (PNG/JPG)"
-                    icon={<PenIcon />}
-                    isRequired
-                    file={ownerSigFile}
-                    onChange={onOwnerSigChange}
-                    accept=".png,.jpg,.jpeg"
-                    resetKey={resetKey}
-                />
-                <UploadBox
-                    label="Veterinarian Signature"
-                    hint="Click to upload Vet verification scan (PNG/JPG)"
-                    icon={<PenIcon />}
-                    isRequired                
-                    file={vetSigFile}
-                    onChange={onVetSigChange}
-                    accept=".png,.jpg,.jpeg"
-                    resetKey={resetKey}
-                />
+                <div className="flex flex-col">
+                    <UploadBox
+                        label="Owner Signature"
+                        hint="Click to upload Owner signature (PNG/JPG)"
+                        icon={<PenIcon />}
+                        isRequired
+                        file={ownerSigFile}
+                        onChange={onOwnerSigChange}
+                        accept=".png,.jpg,.jpeg"
+                        resetKey={resetKey}
+                    />
+                    <UploadedFileList 
+                        files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] } 
+                    />
+                </div>
+
+
+                <div className="flex flex-col">
+                    <UploadBox
+                        label="Veterinarian Signature"
+                        hint="Click to upload Veterinarian signature (PNG/JPG)"
+                        icon={<PenIcon />}
+                        isRequired
+                        file={vetSigFile}
+                        onChange={onVetSigChange}
+                        accept=".png,.jpg,.jpeg"
+                        resetKey={resetKey}
+                    />
+                    <UploadedFileList
+                        files={ uploadedFiles?.veterinarianSignature ? [uploadedFiles.veterinarianSignature] : [] }
+                    />
+                </div>
             </div>
         </div>
     );
