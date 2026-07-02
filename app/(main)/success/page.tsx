@@ -32,6 +32,7 @@ const SuccessContent = () => {
                 const { firestoreDocIds } = JSON.parse(pending) as { firestoreDocIds: string[] };
                 await Promise.all(firestoreDocIds.map((id) => updateSubmissionPaymentStatus(id, "paid")));
                 localStorage.removeItem("stripe_pending");
+                localStorage.removeItem("submission_draft");
             }
 
             setStatus("success");
