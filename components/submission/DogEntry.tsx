@@ -213,7 +213,13 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     ? results[cursor + dicomCount + docsCount + (ownerSigFile ? 1 : 0)]
                     : undefined,
             };
-            setUploadedFiles(dogFiles);
+            setUploadedFiles(prev => ({
+                pdfForm: dogFiles.pdfForm ?? prev?.pdfForm,
+                dicomFiles: [...(prev?.dicomFiles ?? []), ...dogFiles.dicomFiles],
+                supportingDocuments: [...(prev?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
+                ownerSignature: dogFiles.ownerSignature ?? prev?.ownerSignature,
+                veterinarianSignature: dogFiles.veterinarianSignature ?? prev?.veterinarianSignature,
+            }));
             setUploadedNames((prev) => ({
                 dicom:    [...prev.dicom,    ...selectedDicom.map((f) => f.name)],
                 docs:     [...prev.docs,     ...selectedDocs.map((f) => f.name)],
@@ -393,6 +399,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     onOwnerSigChange={setOwnerSigFile}
                     onVetSigChange={setVetSigFile}
                     resetKey={uploadKey}
+                    uploadedFiles={uploadedFiles}
                 />
             ) : (
                 <DogEntryPdfForm
@@ -407,6 +414,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     onOwnerSigChange={setOwnerSigFile}
                     onVetSigChange={setVetSigFile}
                     resetKey={uploadKey}
+                    uploadedFiles={uploadedFiles}
                 />
             )}
 
