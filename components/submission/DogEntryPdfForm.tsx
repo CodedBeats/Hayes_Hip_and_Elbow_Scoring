@@ -11,6 +11,7 @@ type Props = {
     onDocsChange: (files: File[]) => void;
     onOwnerSigChange: (file: File | null) => void;
     onVetSigChange: (file: File | null) => void;
+    resetKey: number;
 };
 
 const fileBoxClass = "rounded-xl border border-gray-200 bg-gray-50 p-4";
@@ -19,15 +20,17 @@ const inputClass = "mt-3 block w-full text-xs text-gray-600 file:mr-2 file:round
 export const DogEntryPdfForm = ({
     pdfFormFile, selectedDicom, selectedDocs, ownerSigFile, vetSigFile,
     onPdfFormChange, onDicomChange, onDocsChange, onOwnerSigChange, onVetSigChange,
+    resetKey,
 }: Props) => {
     return (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {/* I could soooooooo refactor this but nah */}
             <div className={fileBoxClass}>
                 <p className="text-sm font-medium text-gray-800">
                     Canine Hip & Elbow Dysplasia Scheme Submission Form *
                 </p>
                 <p className="text-xs text-gray-500">.pdf - one file</p>
-                <input type="file" accept=".pdf" className={inputClass}
+                <input key={resetKey} type="file" accept=".pdf" className={inputClass}
                     onChange={(e) => onPdfFormChange(e.target.files?.[0] ?? null)} />
                 {pdfFormFile && <p className="mt-2 truncate text-xs text-gray-600">{pdfFormFile.name}</p>}
             </div>
@@ -35,7 +38,7 @@ export const DogEntryPdfForm = ({
             <div className={fileBoxClass}>
                 <p className="text-sm font-medium text-gray-800">DICOM Files *</p>
                 <p className="text-xs text-gray-500">.dcm - one or more</p>
-                <input type="file" accept=".dcm" multiple className={inputClass}
+                <input key={resetKey} type="file" accept=".dcm" multiple className={inputClass}
                     onChange={(e) => onDicomChange(Array.from(e.target.files ?? []))} />
                 {selectedDicom.length > 0 && (
                     <ul className="mt-2 space-y-0.5">
@@ -47,7 +50,7 @@ export const DogEntryPdfForm = ({
             <div className={fileBoxClass}>
                 <p className="text-sm font-medium text-gray-800">Supporting Documents</p>
                 <p className="text-xs text-gray-500">.pdf - one or more</p>
-                <input type="file" accept=".pdf" multiple className={inputClass}
+                <input key={resetKey} type="file" accept=".pdf" multiple className={inputClass}
                     onChange={(e) => onDocsChange(Array.from(e.target.files ?? []))} />
                 {selectedDocs.length > 0 && (
                     <ul className="mt-2 space-y-0.5">
@@ -59,7 +62,7 @@ export const DogEntryPdfForm = ({
             <div className={fileBoxClass}>
                 <p className="text-sm font-medium text-gray-800">Owner Signature</p>
                 <p className="text-xs text-gray-500">.png / .jpg - one file</p>
-                <input type="file" accept=".png,.jpg,.jpeg" className={inputClass}
+                <input key={resetKey} type="file" accept=".png,.jpg,.jpeg" className={inputClass}
                     onChange={(e) => onOwnerSigChange(e.target.files?.[0] ?? null)} />
                 {ownerSigFile && <p className="mt-2 truncate text-xs text-gray-600">{ownerSigFile.name}</p>}
             </div>
@@ -67,7 +70,7 @@ export const DogEntryPdfForm = ({
             <div className={fileBoxClass}>
                 <p className="text-sm font-medium text-gray-800">Veterinarian Signature</p>
                 <p className="text-xs text-gray-500">.png / .jpg - one file</p>
-                <input type="file" accept=".png,.jpg,.jpeg" className={inputClass}
+                <input key={resetKey} type="file" accept=".png,.jpg,.jpeg" className={inputClass}
                     onChange={(e) => onVetSigChange(e.target.files?.[0] ?? null)} />
                 {vetSigFile && <p className="mt-2 truncate text-xs text-gray-600">{vetSigFile.name}</p>}
             </div>
