@@ -1,7 +1,10 @@
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+    const { amount } = await req.json() as { amount: number };
+
     try {
         const session = await stripe.checkout.sessions.create({
             mode: "payment",
@@ -17,7 +20,7 @@ export async function POST() {
                             name: "Hip/Elbow Submission",
                         },
 
-                        unit_amount: 15000, // $150 AUD
+                        unit_amount: amount,
                     },
 
                     quantity: 1,
