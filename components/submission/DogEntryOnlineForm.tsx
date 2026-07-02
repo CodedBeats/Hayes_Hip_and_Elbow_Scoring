@@ -138,7 +138,7 @@ export const DogEntryOnlineForm = ({
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">DICOM Files *</p>
-                    <p className="text-xs text-gray-500">.dcm — one or more</p>
+                    <p className="text-xs text-gray-500">.dcm - one or more</p>
                     <input key={resetKey} type="file" accept=".dcm" multiple
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => onDicomChange(Array.from(e.target.files ?? []))} />
@@ -151,7 +151,7 @@ export const DogEntryOnlineForm = ({
 
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">Supporting Documents</p>
-                    <p className="text-xs text-gray-500">.pdf — one or more</p>
+                    <p className="text-xs text-gray-500">.pdf - one or more</p>
                     <input key={resetKey} type="file" accept=".pdf" multiple
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => onDocsChange(Array.from(e.target.files ?? []))} />
@@ -164,7 +164,7 @@ export const DogEntryOnlineForm = ({
 
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">Owner Signature *</p>
-                    <p className="text-xs text-gray-500">.png / .jpg — one file</p>
+                    <p className="text-xs text-gray-500">.png / .jpg - one file</p>
                     <input key={resetKey} type="file" accept=".png,.jpg,.jpeg"
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => onOwnerSigChange(e.target.files?.[0] ?? null)} />
@@ -173,7 +173,7 @@ export const DogEntryOnlineForm = ({
 
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">Veterinarian Signature *</p>
-                    <p className="text-xs text-gray-500">.png / .jpg — one file</p>
+                    <p className="text-xs text-gray-500">.png / .jpg - one file</p>
                     <input key={resetKey} type="file" accept=".png,.jpg,.jpeg"
                         className="mt-3 block w-full text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-xs hover:file:bg-gray-300"
                         onChange={(e) => onVetSigChange(e.target.files?.[0] ?? null)} />

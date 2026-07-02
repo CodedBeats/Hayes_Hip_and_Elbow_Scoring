@@ -35,7 +35,7 @@ type SubmissionDraft = {
     dogDrafts: Record<number, DogDraft>;
 };
 
-function loadDraft(): SubmissionDraft | null {
+const loadDraft = (): SubmissionDraft | null => {
     try {
         const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) return null;
@@ -186,7 +186,7 @@ export const SubmissionFlow = () => {
 
             {/* -- Progress saved notice -- */}
             <p className="mt-2 text-xs text-gray-400">
-                Your progress is automatically saved — form fields and uploaded files will be remembered for 7 days if you close or reload this page.
+                Your progress is automatically saved - form fields and uploaded files will be remembered for 7 days if you close or reload this page.
             </p>
 
             {/* -- Progress -- */}
@@ -232,7 +232,7 @@ export const SubmissionFlow = () => {
                     {isSubmitting
                         ? "Preparing checkout..."
                         : allComplete
-                            ? `Proceed to Checkout — $${totalAud}`
+                            ? `Proceed to Checkout - $${totalAud}`
                             : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
                 </button>
             </div>

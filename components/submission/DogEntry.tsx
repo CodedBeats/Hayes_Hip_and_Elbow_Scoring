@@ -15,7 +15,7 @@ import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
 
-// all serialisable per-dog state — persisted to localStorage by SubmissionFlow
+// all serialisable per-dog state - persisted to localStorage by SubmissionFlow
 export type DogDraft = {
     dogId: string;
     dogData: DogEntryFormData;
@@ -106,7 +106,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
             uploadedNames,
             isComplete,
         });
-    // onDraftChange intentionally omitted — parent callback identity is not meaningful here
+    // onDraftChange intentionally omitted - parent callback identity is not meaningful here
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dogId, dogData, ownerData, vetData, submissionType, uploadedFiles, uploadedNames, isComplete]);
 

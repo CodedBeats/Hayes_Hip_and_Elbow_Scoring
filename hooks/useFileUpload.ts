@@ -3,7 +3,7 @@ import { useState } from "react";
 // types
 import { FileCategory, UploadedFile, UploadUrlResponse, UseUploadFileReturn } from "../types/upload";
 
-export function useFileUpload(): UseUploadFileReturn {
+export const useFileUpload = (): UseUploadFileReturn => {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);

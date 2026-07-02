@@ -15,7 +15,7 @@ const BASE_PRICES: Record<ExamType, number> = {
     elbowsOnly: 50,
 };
 
-export function calculatePrice(examType: ExamType, isDogsAustraliaRegistered: boolean) {
+export const calculatePrice = (examType: ExamType, isDogsAustraliaRegistered: boolean) => {
     const base = BASE_PRICES[examType];
     const levy = isDogsAustraliaRegistered ? 10 : 20;
     return { base, levy, total: base + levy };
