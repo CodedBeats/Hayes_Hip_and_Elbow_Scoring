@@ -1,8 +1,9 @@
 // dependencies
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 // components
 import { DogEntry } from "./DogEntry";
+import type { DogDraft } from "./DogEntry";
 // lib
 import { createSubmission } from "@/lib/firebase";
 import { calculatePrice } from "@/lib/pricing";
@@ -13,6 +14,11 @@ import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
 import type { BillingInfo } from "@/types/billing";
 
+// ---- draft persistence ----
+
+const DRAFT_KEY = "submission_draft";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 type CompletedDogEntry = {
     submissionType: string;
     dog: DogCase;
@@ -21,13 +27,52 @@ type CompletedDogEntry = {
     veterinarian: VeterinarianDetails;
 };
 
+type SubmissionDraft = {
+    submissionId: string;
+    dogCount: number;
+    savedAt: number;
+    completedDogs: Record<number, CompletedDogEntry>;
+    dogDrafts: Record<number, DogDraft>;
+};
+
+function loadDraft(): SubmissionDraft | null {
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return null;
+        const draft = JSON.parse(raw) as SubmissionDraft;
+        if (Date.now() - draft.savedAt > DRAFT_TTL_MS) {
+            localStorage.removeItem(DRAFT_KEY);
+            return null;
+        }
+        return draft;
+    } catch {
+        return null;
+    }
+}
+
+// ---- component ----
+
 export const SubmissionFlow = () => {
-    const [submissionId] = useState(() => crypto.randomUUID());
-    const [dogCount, setDogCount] = useState(1);
-    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>({});
+    const [savedDraft] = useState<SubmissionDraft | null>(() => loadDraft());
+
+    const [submissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
+    const [dogCount, setDogCount] = useState(() => savedDraft?.dogCount ?? 1);
+    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>(
+        () => savedDraft?.completedDogs ?? {},
+    );
+    const [dogDrafts, setDogDrafts] = useState<Record<number, DogDraft>>(
+        () => savedDraft?.dogDrafts ?? {},
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // persist to localStorage whenever relevant state changes
+    useEffect(() => {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            submissionId, dogCount, savedAt: Date.now(), completedDogs, dogDrafts,
+        } satisfies SubmissionDraft));
+    }, [submissionId, dogCount, completedDogs, dogDrafts]);
 
     const handleDogComplete = (
         dogIndex: number,
@@ -40,11 +85,20 @@ export const SubmissionFlow = () => {
         setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { submissionType, dog, files, owner, veterinarian } }));
     };
 
+    const handleDraftChange = useCallback((dogIndex: number, draft: DogDraft) => {
+        setDogDrafts((prev) => ({ ...prev, [dogIndex]: draft }));
+    }, []);
+
     const handleCountChange = (newCount: number) => {
         if (newCount < 1) return;
         setDogCount(newCount);
         if (newCount < dogCount) {
             setCompletedDogs((prev) => {
+                const updated = { ...prev };
+                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
+                return updated;
+            });
+            setDogDrafts((prev) => {
                 const updated = { ...prev };
                 for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
                 return updated;
@@ -85,6 +139,7 @@ export const SubmissionFlow = () => {
             );
 
             localStorage.setItem("stripe_pending", JSON.stringify({ firestoreDocIds: docIds }));
+            localStorage.removeItem(DRAFT_KEY);
 
             const res = await fetch("/api/create-checkout-session", {
                 method: "POST",
@@ -129,6 +184,11 @@ export const SubmissionFlow = () => {
                 </div>
             </div>
 
+            {/* -- Progress saved notice -- */}
+            <p className="mt-2 text-xs text-gray-400">
+                Your progress is automatically saved — form fields and uploaded files will be remembered for 7 days if you close or reload this page.
+            </p>
+
             {/* -- Progress -- */}
             <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
                 <span>
@@ -151,9 +211,11 @@ export const SubmissionFlow = () => {
                         key={dogIndex}
                         submissionId={submissionId}
                         dogIndex={dogIndex}
+                        initialDraft={dogDrafts[dogIndex]}
                         onComplete={(submissionType, dog, files, owner, veterinarian) =>
                             handleDogComplete(dogIndex, submissionType, dog, files, owner, veterinarian)
                         }
+                        onDraftChange={(draft) => handleDraftChange(dogIndex, draft)}
                     />
                 ))}
             </div>
