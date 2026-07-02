@@ -1,7 +1,10 @@
 import { type UploadedFile } from "./upload";
+import type { ExamType } from "./form";
 
 export type DogCase = {
     id: string;
+
+    examType: ExamType;
 
     isDogsAustraliaRegistered: boolean;
 
