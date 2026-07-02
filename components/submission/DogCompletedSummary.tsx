@@ -8,6 +8,7 @@ import type { Files } from "@/types/submission";
 
 type DogCompleteSummaryProps = {
     dogIndex: number;
+    submissionType: "online" | "pdf";
     dogData: DogEntryFormData;
     ownerData: OwnerDetails;
     vetData: VeterinarianDetails;
@@ -18,6 +19,7 @@ type DogCompleteSummaryProps = {
 
 export const DogCompleteSummary = ({
     dogIndex,
+    submissionType,
     dogData,
     ownerData,
     vetData,
@@ -43,13 +45,22 @@ export const DogCompleteSummary = ({
                     Edit
                 </button>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-                <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
-                <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
-                <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
-                <span><span className="font-medium">Vet:</span> {vetData.veterinarianName}</span>
-            </div>
+
+            {submissionType === "pdf" ? (
+                <div className="mt-3 text-sm text-gray-700">
+                    <span className="font-medium">PDF submission</span>
+                </div>
+            ) : (
+                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
+                    <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
+                    <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
+                    <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
+                    <span><span className="font-medium">Vet:</span> {vetData.veterinarianName}</span>
+                </div>
+            )}
+
             <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                {uploadedFiles.pdfForm && <span>1 PDF form</span>}
                 <span>{uploadedFiles.dicomFiles.length} DICOM</span>
                 <span>{uploadedFiles.supportingDocuments.length} supporting docs</span>
                 <span>{signatureCount} signature{signatureCount !== 1 ? "s" : ""}</span>
