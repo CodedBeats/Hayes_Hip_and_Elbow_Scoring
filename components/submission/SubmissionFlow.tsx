@@ -14,6 +14,7 @@ import type { VeterinarianDetails } from "@/types/vet";
 import type { BillingInfo } from "@/types/billing";
 
 type CompletedDogEntry = {
+    submissionType: string;
     dog: DogCase;
     files: Files;
     owner: OwnerDetails;
@@ -32,12 +33,13 @@ export const SubmissionFlow = () => {
 
     const handleDogComplete = (
         dogIndex: number,
+        submissionType: string,
         dog: DogCase,
         files: Files,
         owner: OwnerDetails,
         veterinarian: VeterinarianDetails,
     ) => {
-        setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { dog, files, owner, veterinarian } }));
+        setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { submissionType, dog, files, owner, veterinarian } }));
     };
 
     const handleCountChange = (newCount: number) => {
@@ -62,10 +64,11 @@ export const SubmissionFlow = () => {
         try {
             const billing: BillingInfo = { billingType: "payNow", paymentStatus: "unpaid", amount: 0 };
             await Promise.all(
-                Object.entries(completedDogs).map(([idx, { dog, files, owner, veterinarian }]) =>
+                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) =>
                     createSubmission({
                         s3SubmissionId: submissionId,
                         dogIndex: Number(idx),
+                        submissionType,
                         owner,
                         veterinarian,
                         dog,
@@ -150,8 +153,8 @@ export const SubmissionFlow = () => {
                         key={dogIndex}
                         submissionId={submissionId}
                         dogIndex={dogIndex}
-                        onComplete={(dog, files, owner, veterinarian) =>
-                            handleDogComplete(dogIndex, dog, files, owner, veterinarian)
+                        onComplete={(submissionType, dog, files, owner, veterinarian) =>
+                            handleDogComplete(dogIndex, submissionType, dog, files, owner, veterinarian)
                         }
                     />
                 ))}
