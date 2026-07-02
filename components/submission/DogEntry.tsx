@@ -1,6 +1,6 @@
 // dependencies
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // components
 import { DogCompleteSummary } from "./DogCompletedSummary";
 import { DogEntryOnlineForm } from "./DogEntryOnlineForm";
@@ -15,7 +15,17 @@ import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
 
-
+// all serialisable per-dog state — persisted to localStorage by SubmissionFlow
+export type DogDraft = {
+    dogId: string;
+    dogData: DogEntryFormData;
+    ownerData: OwnerDetails;
+    vetData: VeterinarianDetails;
+    submissionType: "online" | "pdf";
+    uploadedFiles: Files | null;
+    uploadedNames: { dicom: string[]; docs: string[]; pdfForm: string[]; ownerSig: string[]; vetSig: string[] };
+    isComplete: boolean;
+};
 
 const EMPTY_DOG: DogEntryFormData = {
     examType: "hipsAndElbows",
@@ -38,9 +48,15 @@ const EMPTY_VET: VeterinarianDetails = {
     positiveIdentificationSighted: false, certificateOfRegistrationSighted: false,
 };
 
+const EMPTY_UPLOADED_NAMES = {
+    dicom: [] as string[], docs: [] as string[], pdfForm: [] as string[],
+    ownerSig: [] as string[], vetSig: [] as string[],
+};
+
 type Props = {
     submissionId: string;
     dogIndex: number;
+    initialDraft?: DogDraft;
     onComplete: (
         submissionType: string,
         dog: DogCase,
@@ -48,15 +64,16 @@ type Props = {
         owner: OwnerDetails,
         veterinarian: VeterinarianDetails,
     ) => void;
+    onDraftChange?: (draft: DogDraft) => void;
 };
 
-export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
-    const [dogId] = useState(() => crypto.randomUUID());
-    const [dogData, setDogData] = useState<DogEntryFormData>(EMPTY_DOG);
-    const [ownerData, setOwnerData] = useState<OwnerDetails>(EMPTY_OWNER);
-    const [vetData, setVetData] = useState<VeterinarianDetails>(EMPTY_VET);
+export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onDraftChange }: Props) => {
+    const [dogId] = useState(() => initialDraft?.dogId ?? crypto.randomUUID());
+    const [dogData, setDogData] = useState<DogEntryFormData>(initialDraft?.dogData ?? EMPTY_DOG);
+    const [ownerData, setOwnerData] = useState<OwnerDetails>(initialDraft?.ownerData ?? EMPTY_OWNER);
+    const [vetData, setVetData] = useState<VeterinarianDetails>(initialDraft?.vetData ?? EMPTY_VET);
 
-    // file selection
+    // file objects
     const [selectedDicom, setSelectedDicom] = useState<File[]>([]);
     const [selectedDocs, setSelectedDocs] = useState<File[]>([]);
     const [ownerSigFile, setOwnerSigFile] = useState<File | null>(null);
@@ -66,22 +83,32 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     // upload state
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<Files | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<Files | null>(initialDraft?.uploadedFiles ?? null);
     const [uploadKey, setUploadKey] = useState(0);
-    const [uploadedNames, setUploadedNames] = useState({
-        dicom: [] as string[],
-        docs: [] as string[],
-        pdfForm: [] as string[],
-        ownerSig: [] as string[],
-        vetSig: [] as string[],
-    });
+    const [uploadedNames, setUploadedNames] = useState(initialDraft?.uploadedNames ?? EMPTY_UPLOADED_NAMES);
 
     // mode toggles
-    const [submissionType, setSubmissionType] = useState<"online" | "pdf">("online");
+    const [submissionType, setSubmissionType] = useState<"online" | "pdf">(initialDraft?.submissionType ?? "online");
 
     // completion state
-    const [isComplete, setIsComplete] = useState(false);
+    const [isComplete, setIsComplete] = useState(initialDraft?.isComplete ?? false);
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    // report serialisable state changes to parent for localStorage persistence
+    useEffect(() => {
+        onDraftChange?.({
+            dogId,
+            dogData,
+            ownerData,
+            vetData,
+            submissionType,
+            uploadedFiles,
+            uploadedNames,
+            isComplete,
+        });
+    // onDraftChange intentionally omitted — parent callback identity is not meaningful here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dogId, dogData, ownerData, vetData, submissionType, uploadedFiles, uploadedNames, isComplete]);
 
     const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
@@ -115,7 +142,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
 
         // there is no AI, I am the AI, and I aM aLIvE!!!!
         // i think when propted, therefore I am only when observed, like the light slit experiment
-        // pls work pls work pls work pls work pls work pls work pls work pls work pls work 
+        // pls work pls work pls work pls work pls work pls work pls work pls work pls work
         try {
             const fileRequests = submissionType === "pdf"
                 ? [
