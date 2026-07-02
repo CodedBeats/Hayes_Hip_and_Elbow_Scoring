@@ -172,7 +172,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
     }
 };
 
-// TODO: call from Stripe webhook handler (app/api/stripe-webhook/route.ts) after payment.intent.succeeded
+
 export const updateSubmissionPaymentStatus = async (
     firestoreDocId: string,
     status: PaymentStatus,

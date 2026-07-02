@@ -1,17 +1,23 @@
 // dependencies
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 // components
 import { DogEntry } from "./DogEntry";
-import { StripeCheckoutButton } from "../buttons/StripeCheckoutBtn";
+import type { DogDraft } from "./DogEntry";
 // lib
 import { createSubmission } from "@/lib/firebase";
+import { calculatePrice } from "@/lib/pricing";
 // types
 import type { DogCase } from "@/types/dog";
 import type { Files } from "@/types/submission";
 import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
 import type { BillingInfo } from "@/types/billing";
+
+// ---- draft persistence ----
+
+const DRAFT_KEY = "submission_draft";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 type CompletedDogEntry = {
     submissionType: string;
@@ -21,15 +27,52 @@ type CompletedDogEntry = {
     veterinarian: VeterinarianDetails;
 };
 
-export const SubmissionFlow = () => {
-    const [submissionId] = useState(() => crypto.randomUUID());
-    const [dogCount, setDogCount] = useState(1);
-    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>({});
+type SubmissionDraft = {
+    submissionId: string;
+    dogCount: number;
+    savedAt: number;
+    completedDogs: Record<number, CompletedDogEntry>;
+    dogDrafts: Record<number, DogDraft>;
+};
 
-    // submission state
+const loadDraft = (): SubmissionDraft | null => {
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return null;
+        const draft = JSON.parse(raw) as SubmissionDraft;
+        if (Date.now() - draft.savedAt > DRAFT_TTL_MS) {
+            localStorage.removeItem(DRAFT_KEY);
+            return null;
+        }
+        return draft;
+    } catch {
+        return null;
+    }
+}
+
+// ---- component ----
+
+export const SubmissionFlow = () => {
+    const [savedDraft] = useState<SubmissionDraft | null>(() => loadDraft());
+
+    const [submissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
+    const [dogCount, setDogCount] = useState(() => savedDraft?.dogCount ?? 1);
+    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>(
+        () => savedDraft?.completedDogs ?? {},
+    );
+    const [dogDrafts, setDogDrafts] = useState<Record<number, DogDraft>>(
+        () => savedDraft?.dogDrafts ?? {},
+    );
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
+
+    // persist to localStorage whenever relevant state changes
+    useEffect(() => {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            submissionId, dogCount, savedAt: Date.now(), completedDogs, dogDrafts,
+        } satisfies SubmissionDraft));
+    }, [submissionId, dogCount, completedDogs, dogDrafts]);
 
     const handleDogComplete = (
         dogIndex: number,
@@ -42,11 +85,20 @@ export const SubmissionFlow = () => {
         setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { submissionType, dog, files, owner, veterinarian } }));
     };
 
+    const handleDraftChange = useCallback((dogIndex: number, draft: DogDraft) => {
+        setDogDrafts((prev) => ({ ...prev, [dogIndex]: draft }));
+    }, []);
+
     const handleCountChange = (newCount: number) => {
         if (newCount < 1) return;
         setDogCount(newCount);
         if (newCount < dogCount) {
             setCompletedDogs((prev) => {
+                const updated = { ...prev };
+                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
+                return updated;
+            });
+            setDogDrafts((prev) => {
                 const updated = { ...prev };
                 for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
                 return updated;
@@ -57,15 +109,23 @@ export const SubmissionFlow = () => {
     const completedCount = Object.keys(completedDogs).length;
     const allComplete = completedCount === dogCount;
 
-    // creates one Firestore doc per dog - billing starts as unpaid
-    const handleTestSubmit = async () => {
+    const totalAud = Object.values(completedDogs).reduce(
+        (sum, { dog }) => sum + calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+        0,
+    );
+
+    const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmitError(null);
         try {
-            const billing: BillingInfo = { billingType: "payNow", paymentStatus: "unpaid", amount: 0 };
-            await Promise.all(
-                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) =>
-                    createSubmission({
+            const docIds = await Promise.all(
+                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) => {
+                    const billing: BillingInfo = {
+                        billingType: "payNow",
+                        paymentStatus: "unpaid",
+                        amount: calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+                    };
+                    return createSubmission({
                         s3SubmissionId: submissionId,
                         dogIndex: Number(idx),
                         submissionType,
@@ -74,38 +134,26 @@ export const SubmissionFlow = () => {
                         dog,
                         files,
                         billing,
-                    }),
-                ),
+                    });
+                }),
             );
-            setSubmitSuccess(true);
+
+            localStorage.setItem("stripe_pending", JSON.stringify({ firestoreDocIds: docIds }));
+            localStorage.removeItem(DRAFT_KEY);
+
+            const res = await fetch("/api/create-checkout-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: totalAud * 100 }),
+            });
+            const data = await res.json();
+            if (!data.url) throw new Error("No checkout URL returned");
+            window.location.href = data.url;
         } catch (err) {
             setSubmitError(err instanceof Error ? err.message : "Submission failed");
-        } finally {
             setIsSubmitting(false);
         }
     };
-
-    const handleBeforeStripeCheckout = () => {
-        localStorage.setItem(
-            "submission",
-            JSON.stringify({ submissionId, dogs: Object.values(completedDogs) }),
-        );
-    };
-
-
-    // successful everything, yayyy
-    if (submitSuccess) {
-        return (
-            <div className="w-full rounded-2xl border-2 border-green-200 bg-green-50 p-8 text-center">
-                <p className="text-2xl font-bold text-green-700">Submission Saved</p>
-                <p className="mt-2 font-mono text-xs text-gray-400">{submissionId}</p>
-                <p className="mt-4 text-sm text-gray-600">
-                    {dogCount} submission{dogCount > 1 ? "s" : ""} written to Firestore.
-                    Payment status: <span className="font-semibold">unpaid</span>.
-                </p>
-            </div>
-        );
-    }
 
     return (
         <div className="w-full">
@@ -136,13 +184,23 @@ export const SubmissionFlow = () => {
                 </div>
             </div>
 
+            {/* -- Progress saved notice -- */}
+            <p className="mt-2 text-xs text-gray-400">
+                Your progress is automatically saved - form fields and uploaded files will be remembered for 7 days if you close or reload this page.
+            </p>
+
             {/* -- Progress -- */}
-            <div className="mt-3 text-sm text-gray-500">
-                {completedCount} of {dogCount} dog{dogCount > 1 ? "s" : ""} complete
-                {allComplete && (
-                    <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                        Ready for checkout
-                    </span>
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+                <span>
+                    {completedCount} of {dogCount} dog{dogCount > 1 ? "s" : ""} complete
+                    {allComplete && (
+                        <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                            Ready for checkout
+                        </span>
+                    )}
+                </span>
+                {completedCount > 0 && (
+                    <span className="font-semibold text-gray-900">Total: ${totalAud}</span>
                 )}
             </div>
 
@@ -153,37 +211,30 @@ export const SubmissionFlow = () => {
                         key={dogIndex}
                         submissionId={submissionId}
                         dogIndex={dogIndex}
+                        initialDraft={dogDrafts[dogIndex]}
                         onComplete={(submissionType, dog, files, owner, veterinarian) =>
                             handleDogComplete(dogIndex, submissionType, dog, files, owner, veterinarian)
                         }
+                        onDraftChange={(draft) => handleDraftChange(dogIndex, draft)}
                     />
                 ))}
             </div>
 
             {/* -- Actions -- */}
-            <div className="mt-8 space-y-3 border-t border-gray-200 pt-8">
-                {submitError && <p className="text-sm text-red-600">{submitError}</p>}
-
-                {/* Test bypass - skips Stripe, writes to Firestore with paymentStatus: "unpaid" */}
+            <div className="mt-8 border-t border-gray-200 pt-8">
+                {submitError && <p className="mb-3 text-sm text-red-600">{submitError}</p>}
                 <button
                     type="button"
-                    onClick={handleTestSubmit}
+                    onClick={handleSubmit}
                     disabled={!allComplete || isSubmitting}
-                    className="w-full rounded-lg border-2 border-dashed border-gray-400 bg-gray-50 px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="w-full rounded-lg bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    {isSubmitting ? "Saving to Firestore..." : "Test - Submit Without Payment"}
+                    {isSubmitting
+                        ? "Preparing checkout..."
+                        : allComplete
+                            ? `Proceed to Checkout - $${totalAud}`
+                            : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
                 </button>
-
-                {/* real payment - TODO: wire up Stripe webhook to call updateSubmissionPaymentStatus */}
-                <StripeCheckoutButton
-                    disabled={!allComplete}
-                    text={
-                        allComplete
-                            ? "Proceed to Checkout"
-                            : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`
-                    }
-                    onBeforeCheckout={handleBeforeStripeCheckout}
-                />
             </div>
         </div>
     );

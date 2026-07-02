@@ -1,4 +1,7 @@
+export type ExamType = "hipsAndElbows" | "hipsOnly" | "elbowsOnly";
+
 export type DogEntryFormData = {
+    examType: ExamType;
     isDogsAustraliaRegistered: boolean;
     registeredName: string;
     registeredNumber: string;

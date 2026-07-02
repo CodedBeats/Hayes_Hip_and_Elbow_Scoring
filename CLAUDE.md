@@ -80,6 +80,7 @@ types, avoid type assertions
 functions, UPPER_SNAKE_CASE for globals
 - React pages: use template `const pageName = (props) => {}; export default pageName`
 - React Components: use template `export const componentName = (props) => {}`
+- Comments: Add more comments in more complex sections
 - Comments: Explain intent, not implementation; remove
 dead code before finalizing
 - Form Patterns: Use generic form components, avoid

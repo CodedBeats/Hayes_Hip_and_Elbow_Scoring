@@ -3,6 +3,7 @@ export const isNonEmptyString = (value: string | undefined): boolean => {
 };
 
 // format number to price
+//TODO: use me lol
 export const formatPrice = (amount: number): string => {
     const formatted = new Intl.NumberFormat('en-AU', {
         style: 'currency',
