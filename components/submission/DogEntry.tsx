@@ -4,25 +4,18 @@ import { useState } from "react";
 // components
 import { InputField } from "../form/InputField";
 import { MobileField } from "../form/MobileField";
+import { DogCompleteSummary } from "./DogCompletedSummary";
 // types
+import type { DogEntryFormData } from "@/types/form";
 import type { DogCase } from "@/types/dog";
 import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
 import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
 
-type DogFormData = {
-    isDogsAustraliaRegistered: boolean;
-    registeredName: string;
-    registeredNumber: string;
-    microchipNumber: string;
-    breed: string;
-    sex: "male" | "female";
-    dateOfBirth: string;
-    dateOfRadiograph: string;
-};
 
-const EMPTY_DOG: DogFormData = {
+
+const EMPTY_DOG: DogEntryFormData = {
     isDogsAustraliaRegistered: false,
     registeredName: "",
     registeredNumber: "",
@@ -45,12 +38,18 @@ const EMPTY_VET: VeterinarianDetails = {
 type Props = {
     submissionId: string;
     dogIndex: number;
-    onComplete: (dog: DogCase, files: Files, owner: OwnerDetails, veterinarian: VeterinarianDetails) => void;
+    onComplete: (
+        submissionType: string,
+        dog: DogCase,
+        files: Files,
+        owner: OwnerDetails,
+        veterinarian: VeterinarianDetails,
+    ) => void;
 };
 
 export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     const [dogId] = useState(() => crypto.randomUUID());
-    const [dogData, setDogData] = useState<DogFormData>(EMPTY_DOG);
+    const [dogData, setDogData] = useState<DogEntryFormData>(EMPTY_DOG);
     const [ownerData, setOwnerData] = useState<OwnerDetails>(EMPTY_OWNER);
     const [vetData, setVetData] = useState<VeterinarianDetails>(EMPTY_VET);
 
@@ -65,11 +64,14 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadedFiles, setUploadedFiles] = useState<Files | null>(null);
 
+    // dog entry submission type
+    const [submissionType, setSubmissionType] = useState("online") // online/form by default
+
     // completion state
     const [isComplete, setIsComplete] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
 
-    const setDog = (field: keyof DogFormData, value: string | boolean) =>
+    const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
 
     const setOwner = (field: keyof OwnerDetails, value: string) =>
@@ -170,9 +172,11 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     };
 
 
+    // mark a dog entry as complete (files have been uploaded and fields filled)
     const handleMarkComplete = () => {
         setValidationError(null);
 
+        // validation check
         if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
             !dogData.dateOfBirth || !dogData.dateOfRadiograph) {
             setValidationError("Please fill in all required dog fields.");
@@ -204,41 +208,25 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
         };
 
         setIsComplete(true);
-        onComplete(dogCase, uploadedFiles, ownerData, vetData);
+        onComplete(submissionType, dogCase, uploadedFiles, ownerData, vetData);
     };
 
     // completed summary view
     if (isComplete && uploadedFiles) {
         const signatureCount = [uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length;
         return (
-            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold text-gray-900">Dog {dogIndex}</span>
-                        <span className="rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white">
-                            Complete
-                        </span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => { setIsComplete(false); setUploadedFiles(null); }}
-                        className="text-sm text-gray-500 underline hover:text-gray-700"
-                    >
-                        Edit
-                    </button>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-                    <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
-                    <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
-                    <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
-                    <span><span className="font-medium">Vet:</span> {vetData.veterinarianName}</span>
-                </div>
-                <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                    <span>{uploadedFiles.dicomFiles.length} DICOM</span>
-                    <span>{uploadedFiles.supportingDocuments.length} supporting docs</span>
-                    <span>{signatureCount} signature{signatureCount !== 1 ? "s" : ""}</span>
-                </div>
-            </div>
+            <DogCompleteSummary
+                dogIndex={dogIndex}
+                dogData={dogData}
+                ownerData={ownerData}
+                vetData={vetData}
+                uploadedFiles={uploadedFiles}
+                signatureCount={signatureCount}
+                onEdit={() => {
+                    setIsComplete(false);
+                    setUploadedFiles(null);
+                }}
+            />
         );
     }
 
