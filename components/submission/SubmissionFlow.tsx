@@ -196,7 +196,7 @@ export const SubmissionFlow = () => {
                         </span>
                     )}
                     {completedCount > 0 && (
-                        <span className="text-sm font-semibold text-gray-900">— ${totalAud} total</span>
+                        <span className="text-sm font-semibold text-gray-900"> ${totalAud} total</span>
                     )}
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -275,7 +275,7 @@ export const SubmissionFlow = () => {
                         {isSubmitting
                             ? "Preparing checkout..."
                             : allComplete
-                                ? `Proceed to Payment — $${totalAud}`
+                                ? `Proceed to Payment - $${totalAud}`
                                 : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
                         {!isSubmitting && (
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
