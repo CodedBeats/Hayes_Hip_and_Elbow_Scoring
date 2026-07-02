@@ -96,6 +96,7 @@ export const signOutUser = () => {
 type CreateSubmissionPayload = {
     s3SubmissionId: string;
     dogIndex: number;
+    submissionType: string;
     owner: OwnerDetails;
     veterinarian: VeterinarianDetails;
     dog: DogCase;
@@ -103,12 +104,14 @@ type CreateSubmissionPayload = {
     billing: BillingInfo;
 };
 
-// creates one firestore submission document per dog.
-
+// creates one firestore submission document per dog (though many many have same s3SubmissionId)
 export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
+
+    // get payload
     const { 
         s3SubmissionId, 
         dogIndex, 
+        submissionType,
         owner, 
         veterinarian, 
         dog, 
@@ -116,30 +119,55 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
         billing, // billing.paymentStatus always starts as "unpaid"
     } = payload;
 
-    const docRef = await addDoc(collection(db, "submissions"), {
-        s3SubmissionId,
-        dogIndex,
-        status: "submitted",
-        submitterType: "anon",
-        submissionType: "online",
-        createdAt: new Date(),
-        billing,
-        owner: {
-            ...owner,
-            ownerSignatureRef: files.ownerSignature?.key ?? null,
-        },
-        veterinarian: {
-            ...veterinarian,
-            vetSignatureRef: files.veterinarianSignature?.key ?? null,
-        },
-        dog: {
-            ...dog,
-            dicomFilesRef: files.dicomFiles.map((f) => f.key),
-            supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
-        },
-    });
+    // handle difference between online and pdf submission types
+    if (submissionType === "pdf") {
+        // create submission with just files
+        const docRef = await addDoc(collection(db, "submissions"), {
+            s3SubmissionId,
+            dogIndex,
+            status: "submitted",
+            submitterType: "anon",
+            submissionType,
+            createdAt: new Date(),
+            billing,
+            // owner and vet fields just become refs to signatures
+            owner: files.ownerSignature?.key ?? null,
+            veterinarian: files.veterinarianSignature?.key ?? null,
+            dog: {
+                dicomFilesRef: files.dicomFiles.map((f) => f.key),
+                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
+            },
+        });
 
-    return docRef.id;
+        return docRef.id;
+
+    } else {
+        // create submission with all form fields and files
+        const docRef = await addDoc(collection(db, "submissions"), {
+            s3SubmissionId,
+            dogIndex,
+            status: "submitted",
+            submitterType: "anon",
+            submissionType,
+            createdAt: new Date(),
+            billing,
+            owner: {
+                ...owner,
+                ownerSignatureRef: files.ownerSignature?.key ?? null,
+            },
+            veterinarian: {
+                ...veterinarian,
+                vetSignatureRef: files.veterinarianSignature?.key ?? null,
+            },
+            dog: {
+                ...dog,
+                dicomFilesRef: files.dicomFiles.map((f) => f.key),
+                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
+            },
+        });
+
+        return docRef.id;
+    }
 };
 
 // TODO: call from Stripe webhook handler (app/api/stripe-webhook/route.ts) after payment.intent.succeeded
