@@ -102,6 +102,75 @@ export const SubmissionFlow = () => {
         );
     };
 
+    // TEST ONLY — DELETE BEFORE LAUNCH
+    const [isTestingStripe, setIsTestingStripe] = useState(false);
+    const [testStripeError, setTestStripeError] = useState<string | null>(null);
+
+    const handleTestStripeCheckout = async () => {
+        setIsTestingStripe(true);
+        setTestStripeError(null);
+        try {
+            // create a fake firestore doc with obvious test values (no real file uploads)
+            const docId = await createSubmission({
+                s3SubmissionId: submissionId,
+                dogIndex: 1,
+                submissionType: "online",
+                owner: {
+                    name: "Test Owner",
+                    email: "test@test.com",
+                    phone: "0400000000",
+                    address: "1 Test St, Sydney NSW 2000",
+                    memberNumber: "DA99999",
+                },
+                veterinarian: {
+                    veterinarianName: "Dr Test Vet",
+                    practiceName: "Test Vet Clinic",
+                    address: "2 Test St, Sydney NSW 2000",
+                    phone: "0200000000",
+                    positiveIdentificationSighted: false,
+                    certificateOfRegistrationSighted: false,
+                },
+                dog: {
+                    id: crypto.randomUUID(),
+                    examType: "hipsAndElbows",
+                    isDogsAustraliaRegistered: true,
+                    registeredName: "Test Dog",
+                    registeredNumber: "DA-TEST-001",
+                    microchipNumber: "000000000000000",
+                    breed: "Labrador Retriever",
+                    sex: "male",
+                    dateOfBirth: "2020-01-01",
+                    dateOfRadiograph: "2024-06-01",
+                },
+                files: {
+                    dicomFiles: [{ fileName: "test-scan.dcm", key: "test/fake-dicom.dcm", size: 1024, contentType: "application/dicom", uploadedAt: new Date() }],
+                    supportingDocuments: [],
+                },
+                billing: {
+                    billingType: "payNow",
+                    paymentStatus: "unpaid",
+                    amount: 130,
+                },
+            });
+
+            // save doc id so the success page can mark it paid
+            localStorage.setItem("stripe_pending", JSON.stringify({ firestoreDocIds: [docId], amount: 13000 }));
+
+            const res = await fetch("/api/create-checkout-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: 13000 }),
+            });
+            const data = await res.json();
+            if (!data.url) throw new Error("No checkout URL returned");
+            window.location.href = data.url;
+        } catch (err) {
+            setTestStripeError(err instanceof Error ? err.message : "Test checkout failed");
+            setIsTestingStripe(false);
+        }
+    };
+    // END TEST ONLY
+
 
     // successful everything, yayyy
     if (submitSuccess) {
@@ -178,6 +247,18 @@ export const SubmissionFlow = () => {
             {/* -- Actions -- */}
             <div className="mt-8 space-y-3 border-t border-gray-200 pt-8">
                 {submitError && <p className="text-sm text-red-600">{submitError}</p>}
+
+                {/* TEST ONLY — DELETE BEFORE LAUNCH */}
+                {testStripeError && <p className="text-sm text-red-600">{testStripeError}</p>}
+                <button
+                    type="button"
+                    onClick={handleTestStripeCheckout}
+                    disabled={isTestingStripe}
+                    className="w-full rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 px-6 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                    {isTestingStripe ? "Creating test doc & redirecting..." : "TEST: Stripe Checkout ($130 fake dog)"}
+                </button>
+                {/* END TEST ONLY */}
 
                 {/* Test bypass - skips Stripe, writes to Firestore with paymentStatus: "unpaid" */}
                 <button
