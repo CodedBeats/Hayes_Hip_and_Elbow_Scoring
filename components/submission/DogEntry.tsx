@@ -248,23 +248,28 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 return;
             }
         } else {
+            // dog
             if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
-                !dogData.dateOfBirth || !dogData.dateOfRadiograph) {
+                !dogData.dateOfBirth || !dogData.sex) {
                 setValidationError("Please fill in all required dog fields.");
                 return;
             }
+            // owner
             if (!ownerData.name || !ownerData.email || !ownerData.phone) {
-                setValidationError("Please fill in the owner's name, email, and phone.");
+                setValidationError("Please fill in all required owner fields.");
                 return;
             }
-            if (!vetData.veterinarianName || !vetData.practiceName) {
-                setValidationError("Please fill in the veterinarian name and practice name.");
+            // vet
+            if (!vetData.veterinarianName || !vetData.practiceName || !vetData.phone || !dogData.dateOfRadiograph) {
+                setValidationError("Please fill in all required veterinarian fields.");
                 return;
             }
+            // dicom
             if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) {
-                setValidationError("Please upload at least one DICOM file before completing.");
+                setValidationError("Please upload at least one DICOM file.");
                 return;
             }
+            // owner and vet signatures
             if (!uploadedFiles.ownerSignature || !uploadedFiles.veterinarianSignature) {
                 setValidationError("Please upload both owner and veterinarian signatures before completing.");
                 return;
@@ -302,7 +307,6 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 signatureCount={signatureCount}
                 onEdit={() => {
                     setIsComplete(false);
-                    setUploadedFiles(null);
                 }}
             />
         );
@@ -320,22 +324,20 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     ];
 
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="text-2xl font-bold text-gray-900">Dog {dogIndex}</h3>
-
-            {/* -- Exam Type Selector -- */}
-            <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Exam Type</p>
+        <div className="space-y-4">
+            {/* -- Dog header: title + exam type -- */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <h3 className="text-xl font-bold text-gray-900">Dog {dogIndex}</h3>
                 <div className="flex gap-2">
                     {(["hipsAndElbows", "hipsOnly", "elbowsOnly"] as ExamType[]).map((type) => (
                         <button
                             key={type}
                             type="button"
                             onClick={() => setDog("examType", type)}
-                            className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                            className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition ${
                                 dogData.examType === type
-                                    ? "border-gray-800 bg-gray-800 text-white"
-                                    : "border-gray-300 bg-white text-gray-700 hover:border-gray-500"
+                                    ? "border-brand-green bg-brand-green text-white"
+                                    : "border-gray-300 bg-white text-gray-700 hover:border-brand-green-mid"
                             }`}
                         >
                             {EXAM_LABELS[type]}
@@ -344,19 +346,9 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 </div>
             </div>
 
-            {/* -- Mode Toggles -- */}
-            <div className="mt-4 flex flex-wrap gap-6">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <input
-                        type="checkbox"
-                        checked={dogData.isDogsAustraliaRegistered}
-                        onChange={(e) => setDog("isDogsAustraliaRegistered", e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300"
-                    />
-                    Dogs Australia Registered
-                </label>
-
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            {/* -- Mode + price card -- */}
+            <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer">
                     <input
                         type="checkbox"
                         checked={submissionType === "pdf"}
@@ -364,27 +356,25 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                             setSubmissionType(e.target.checked ? "pdf" : "online");
                             setUploadedFiles(null);
                         }}
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-gray-300 accent-[#506147]"
                     />
-                    Submit via PDF
+                    Submit via PDF form
                 </label>
+                {(() => {
+                    const { base, levy, total } = calculatePrice(dogData.examType, dogData.isDogsAustraliaRegistered);
+                    return (
+                        <p className="text-sm text-gray-600">
+                            <span className="font-medium text-gray-900">${base}</span>
+                            <span className="mx-1.5 text-gray-400">+</span>
+                            <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
+                            <span className="mx-1.5 text-gray-400">=</span>
+                            <span className="font-semibold text-gray-900">${total}</span>
+                        </p>
+                    );
+                })()}
             </div>
 
-            {/* -- Price -- */}
-            {(() => {
-                const { base, levy, total } = calculatePrice(dogData.examType, dogData.isDogsAustraliaRegistered);
-                return (
-                    <p className="mt-3 text-sm text-gray-600">
-                        <span className="font-medium text-gray-900">${base}</span>
-                        <span className="mx-1 text-gray-400">+</span>
-                        <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
-                        <span className="mx-1 text-gray-400">=</span>
-                        <span className="font-semibold text-gray-900">${total}</span>
-                    </p>
-                );
-            })()}
-
-            {/* -- mode specific form -- */}
+            {/* -- mode specific form sections -- */}
             {submissionType === "online" ? (
                 <DogEntryOnlineForm
                     isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
@@ -420,41 +410,45 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 />
             )}
 
-            {/* -- Upload -- */}
-            <div className="mt-4 flex items-center gap-4">
-                <button
-                    type="button"
-                    onClick={handleUploadAll}
-                    disabled={isUploading || uploadCount === 0}
-                    className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
-                </button>
-                {uploadedFiles && (
-                    <span className="text-sm text-green-600">
-                        ✓ {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
-                        [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
-                    </span>
-                )}
-            </div>
+            {/* -- Upload + Mark Complete action card -- */}
+            <div className="flex justify-between items-end rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="h-full flex flex-col align-bottom">
+                    {duplicateWarnings.length > 0 && (
+                        <p className="mt-2 text-sm text-amber-700">
+                            Already uploaded: {duplicateWarnings.join(", ")}
+                        </p>
+                    )}
+                    {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
 
-            {duplicateWarnings.length > 0 && (
-                <p className="mt-2 text-sm text-yellow-700">
-                    Already uploaded: {duplicateWarnings.join(", ")}
-                </p>
-            )}
-            {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
+                    <div className="h-full flex flex-col flex-wrap items-start gap-4">
+                        {uploadedFiles && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
+                                {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
+                                [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleUploadAll}
+                            disabled={isUploading || uploadCount === 0}
+                            className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
+                        </button>
+                    </div>
+                </div>
 
-            {/* -- Mark Complete -- */}
-            <div className="mt-6 border-t border-gray-100 pt-5">
-                {validationError && <p className="mb-3 text-sm text-red-600">{validationError}</p>}
-                <button
-                    type="button"
-                    onClick={handleMarkComplete}
-                    className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-green-500"
-                >
-                    Mark Dog {dogIndex} Complete
-                </button>
+                <div className="flex flex-col items-center gap-3 border-t border-gray-100">
+                    {validationError && <p className="text-sm text-end text-red-600">{validationError}</p>}
+                    <button
+                        type="button"
+                        onClick={handleMarkComplete}
+                        className="ml-auto rounded-lg bg-brand-green px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3d4e36]"
+                    >
+                        Mark Dog {dogIndex} Complete
+                    </button>
+                </div>
             </div>
         </div>
     );

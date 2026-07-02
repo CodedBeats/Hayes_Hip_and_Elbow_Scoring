@@ -29,7 +29,7 @@ export const DogCompleteSummary = ({
 }: DogCompleteSummaryProps) => {
 
     return (
-        <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <span className="text-xl font-bold text-gray-900">Dog {dogIndex}</span>
@@ -40,7 +40,7 @@ export const DogCompleteSummary = ({
                 <button
                     type="button"
                     onClick={() => onEdit()}
-                    className="text-sm text-gray-500 underline hover:text-gray-700"
+                    className="text-sm font-medium text-brand-green underline hover:text-[#3d4e36] transition"
                 >
                     Edit
                 </button>
@@ -59,11 +59,21 @@ export const DogCompleteSummary = ({
                 </div>
             )}
 
-            <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                {uploadedFiles.pdfForm && <span>1 PDF form</span>}
-                <span>{uploadedFiles.dicomFiles.length} DICOM</span>
-                <span>{uploadedFiles.supportingDocuments.length} supporting docs</span>
-                <span>{signatureCount} signature{signatureCount !== 1 ? "s" : ""}</span>
+            <div className="mt-3 flex flex-wrap gap-2">
+                {uploadedFiles.pdfForm && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
+                        1 PDF form
+                    </span>
+                )}
+                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
+                    {uploadedFiles.dicomFiles.length} DICOM
+                </span>
+                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
+                    {uploadedFiles.supportingDocuments.length} supporting docs
+                </span>
+                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
+                    {signatureCount} signature{signatureCount !== 1 ? "s" : ""}
+                </span>
             </div>
         </div>
     );
