@@ -10,12 +10,13 @@ const s3 = new S3Client({
     },
 });
 
-const VALID_CATEGORIES = new Set<FileCategory>(["dicom", "supporting-documents", "signatures"]);
+const VALID_CATEGORIES = new Set<FileCategory>(["dicom", "supporting-documents", "signatures", "pdf-forms"]);
 
 const CATEGORY_RULES: Record<FileCategory, { extensions: string[]; mimeTypes: string[] }> = {
     "dicom":                { extensions: [".dcm"],                  mimeTypes: ["application/dicom"] },
     "supporting-documents": { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
     "signatures":           { extensions: [".png", ".jpg", ".jpeg"], mimeTypes: ["image/png", "image/jpeg"] },
+    "pdf-forms":            { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
 };
 
 function isValidForCategory(fileName: string, contentType: string, category: FileCategory): boolean {
