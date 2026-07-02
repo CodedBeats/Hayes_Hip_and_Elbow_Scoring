@@ -130,6 +130,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
             submissionType,
             createdAt: new Date(),
             billing,
+            pdfFormRef: files.pdfForm?.key ?? null,
             // owner and vet fields just become refs to signatures
             owner: files.ownerSignature?.key ?? null,
             veterinarian: files.veterinarianSignature?.key ?? null,
@@ -161,6 +162,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
             },
             dog: {
                 ...dog,
+                registeredNumber: dog.registeredNumber ?? null,
                 dicomFilesRef: files.dicomFiles.map((f) => f.key),
                 supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
             },

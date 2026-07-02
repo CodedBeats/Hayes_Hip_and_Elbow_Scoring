@@ -34,12 +34,10 @@ export type Submission = {
 
 export type Files = {
     dicomFiles: UploadedFile[];
-
     supportingDocuments: UploadedFile[];
-
     ownerSignature?: UploadedFile;
-
     veterinarianSignature?: UploadedFile;
+    pdfForm?: UploadedFile;
 };
 
 export type SubmissionStatus =
