@@ -10,7 +10,7 @@ export type Submission = {
 
     status: SubmissionStatus;
 
-    submitterType: "owner" | "clinic";
+    submitterType: "anon" | "clinic";
     submitterId?: string; // future clinic account
     submissionType: "online" | "pdf";
     

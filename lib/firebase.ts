@@ -65,75 +65,28 @@ export const signOutUser = () => {
 // ================= //
 
 // === READ === //
-// get single case data
-export const getCase = async (caseId: string) => {
-    const caseRef = doc(db, "cases", caseId);
-    const caseDoc = await getDoc(caseRef);
-    return caseDoc;
-};
+// get single dog entry data
 
-// get all cases data
-export const getCases = async () => {
-    const caseRef = collection(db, "cases");
-    const caseDocs = await getDocs(caseRef);
-    return caseDocs;
-};
 
-// get signature file from storage
-export const getSignatureFile = async (signatureImgName: string) => {
-    const signatureRef = ref(storage, `signatures/${signatureImgName}`);
-    const signatureFile = await getDownloadURL(signatureRef);
-    return signatureFile;
-};
+// get single submission entry data
 
-// === CREATE === //
-// create case from form input & confirmed uploaded DICOM case file
-export const createCase = async (
-    caseData: Submission,
-    uploadedDICOMFileRef: string | null,
-) => {
-    const combinedData = {
-        ...caseData,
-        uploadedDICOMFileRef,
-    };
-    const caseRef = collection(db, "cases");
-    const caseDoc = await addDoc(caseRef, combinedData);
-    return caseDoc;
-};
 
-// add signature img to storage
-export const uploadSignatureImg = async (
-    signatureImgName: string,
-    signatureFolderName: string,
-    signatureFile: File,
-) => {
-    // create ref for the cloud storage bucket
-    const signatureRef = ref(
-        storage,
-        `signatures/${signatureFolderName}/${signatureImgName}`,
-    );
-    const signatureUpload = await uploadBytes(signatureRef, signatureFile);
-    return signatureUpload;
-};
+// get all dog entry data
+
+
+// get all submission entry data
+
+
 
 // === UPLOAD === //
-// update case status (pendingReview, reviewing, completed, archived)
-export const updateCaseStatus = async (
-    newStatus: SubmissionStatus,
-    caseId: string,
-) => {
-    const caseRef = doc(db, "cases", caseId);
-    const caseDoc = await updateDoc(caseRef, { status: newStatus });
-    return caseDoc;
-};
+// update submission status ("draft", "submitted", "pendingReview", "reviewing", "completed", "archived")
+
 
 // === DELETE === //
-// simple delete case, shouldn't be needed due to archiving
-export const deleteCase = async (caseId: string) => {
-    const caseRef = doc(db, "cases", caseId);
-    const caseDoc = await deleteDoc(caseRef);
-    return caseDoc;
-};
+// simple delete dog entry, shouldn't be needed due to archiving
+
+// simple delete submission, shouldn't be needed due to archiving
+
 
 
 // ===================== //
@@ -150,16 +103,24 @@ type CreateSubmissionPayload = {
     billing: BillingInfo;
 };
 
-// Creates one Firestore submission document per dog.
-// billing.paymentStatus always starts as "unpaid" — updated by Stripe webhook on successful payment.
+// creates one firestore submission document per dog.
+
 export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
-    const { s3SubmissionId, dogIndex, owner, veterinarian, dog, files, billing } = payload;
+    const { 
+        s3SubmissionId, 
+        dogIndex, 
+        owner, 
+        veterinarian, 
+        dog, 
+        files, 
+        billing, // billing.paymentStatus always starts as "unpaid"
+    } = payload;
 
     const docRef = await addDoc(collection(db, "submissions"), {
         s3SubmissionId,
         dogIndex,
         status: "submitted",
-        submitterType: "owner",
+        submitterType: "anon",
         submissionType: "online",
         createdAt: new Date(),
         billing,
