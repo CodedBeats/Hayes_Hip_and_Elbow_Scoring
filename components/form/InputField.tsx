@@ -11,7 +11,7 @@ interface InputFieldProps {
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function InputField({
+export const InputField = ({
     label,
     name,
     type,
@@ -20,7 +20,7 @@ export function InputField({
     onChange,
 }: 
     InputFieldProps
-) {
+) => {
     return (
         <div className="mb-4 w-full">
             <label className="block mb-2 text-sm font-medium text-black">

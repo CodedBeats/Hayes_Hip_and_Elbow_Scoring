@@ -19,7 +19,7 @@ export const Footer = () => {
             {/* Main content row */}
             <div className="px-10 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
 
-                {/* Column 1 — About blurb */}
+                {/* Column 1 - About blurb */}
                 <div className="flex flex-col gap-3">
                     <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
                         Hayes Hip & Elbow
@@ -30,7 +30,7 @@ export const Footer = () => {
                     </p>
                 </div>
 
-                {/* Column 2 — Quick links */}
+                {/* Column 2 - Quick links */}
                 <div className="flex flex-col gap-3">
                     <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
                         Quick Links
@@ -49,7 +49,7 @@ export const Footer = () => {
                     </ul>
                 </div>
 
-                {/* Column 3 — Resources */}
+                {/* Column 3 - Resources */}
                 <div className="flex flex-col gap-3">
                     <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
                         Resources
@@ -68,7 +68,7 @@ export const Footer = () => {
                     </ul>
                 </div>
 
-                {/* Column 4 — Contact */}
+                {/* Column 4 - Contact */}
                 <div className="flex flex-col gap-3">
                     <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
                         Contact Us
