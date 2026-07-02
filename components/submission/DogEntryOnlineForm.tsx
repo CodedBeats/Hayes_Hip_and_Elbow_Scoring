@@ -3,12 +3,14 @@
 import { InputField } from "../form/InputField";
 import { MobileField } from "../form/MobileField";
 import { UploadBox } from "../form/UploadBox"
+import { UploadedFileList } from "../form/UploadedFileList"
 // icons
-import { DogIcon, PersonIcon, ClipboardIcon, ScanIcon, PenIcon, DocumentIcon } from "../misc/Icons"
+import { DogIcon, PersonIcon, ClipboardIcon, ScanIcon, PenIcon, DocumentIcon, CloudIcon } from "../misc/Icons"
 // types
 import type { DogEntryFormData } from "@/types/form";
 import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
+import type { Files } from "@/types/submission";
 
 type Props = {
     isDogsAustraliaRegistered: boolean;
@@ -27,12 +29,13 @@ type Props = {
     onOwnerSigChange: (file: File | null) => void;
     onVetSigChange: (file: File | null) => void;
     resetKey: number;
+    uploadedFiles: Files | null;
 };
 
-// ---- shared sub-components ----
+
 const SectionHeader = ({ number, icon, title }: { number: number; icon: React.ReactNode; title: string }) => (
     <div className="flex items-center gap-3 mb-5">
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-bold text-white">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-bold text-white">
             {number}
         </span>
         {icon}
@@ -45,41 +48,66 @@ const styledSelectClass = "block w-full rounded-lg border border-gray-300 px-3 p
 // ---- main component ----
 export const DogEntryOnlineForm = ({
     isDogsAustraliaRegistered,
-    dogData, ownerData, vetData,
-    setDog, setOwner, setVet,
-    selectedDicom, selectedDocs, ownerSigFile, vetSigFile,
-    onDicomChange, onDocsChange, onOwnerSigChange, onVetSigChange,
+    dogData,
+    ownerData,
+    vetData,
+    setDog,
+    setOwner,
+    setVet,
+    selectedDicom,
+    selectedDocs,
+    ownerSigFile,
+    vetSigFile,
+    onDicomChange,
+    onDocsChange,
+    onOwnerSigChange,
+    onVetSigChange,
     resetKey,
+    uploadedFiles,
 }: Props) => {
     return (
         <div className="space-y-4">
             {/* ---- Card 1: Dog Details ---- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <SectionHeader number={1} icon={<DogIcon />} title="Dog Details" />
+                <SectionHeader
+                    number={1}
+                    icon={<DogIcon />}
+                    title="Dog Details"
+                />
 
                 {/* Registration toggle */}
                 <div className="mb-5">
-                    <p className="mb-2 text-sm font-medium text-gray-700">Dogs Australia Registration</p>
+                    <p className="mb-2 text-sm font-medium text-gray-700">
+                        Dogs Australia Registration
+                    </p>
                     <div className="flex gap-6">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="radio"
                                 name={`daReg-${dogData.registeredName}`}
                                 checked={isDogsAustraliaRegistered}
-                                onChange={() => setDog("isDogsAustraliaRegistered", true)}
+                                onChange={() =>
+                                    setDog("isDogsAustraliaRegistered", true)
+                                }
                                 className="h-4 w-4 border-gray-300 accent-[#506147]"
                             />
-                            <span className="text-sm text-gray-700">Registered</span>
+                            <span className="text-sm text-gray-700">
+                                Registered
+                            </span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="radio"
                                 name={`daReg-${dogData.registeredName}`}
                                 checked={!isDogsAustraliaRegistered}
-                                onChange={() => setDog("isDogsAustraliaRegistered", false)}
+                                onChange={() =>
+                                    setDog("isDogsAustraliaRegistered", false)
+                                }
                                 className="h-4 w-4 border-gray-300 accent-[#506147]"
                             />
-                            <span className="text-sm text-gray-700">Not Registered</span>
+                            <span className="text-sm text-gray-700">
+                                Not Registered
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -88,11 +116,21 @@ export const DogEntryOnlineForm = ({
                 <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                     <InputField
                         name="registeredName"
-                        label={isDogsAustraliaRegistered ? "Registered Name *" : "Dog Name *"}
+                        label={
+                            isDogsAustraliaRegistered
+                                ? "Registered Name *"
+                                : "Dog Name *"
+                        }
                         type="text"
-                        placeholder={isDogsAustraliaRegistered ? "e.g. Australian Champion Bluey" : "Dog's name"}
+                        placeholder={
+                            isDogsAustraliaRegistered
+                                ? "e.g. Australian Champion Bluey"
+                                : "Dog's name"
+                        }
                         value={dogData.registeredName}
-                        onChange={(e) => setDog("registeredName", e.target.value)}
+                        onChange={(e) =>
+                            setDog("registeredName", e.target.value)
+                        }
                     />
                     {isDogsAustraliaRegistered ? (
                         <InputField
@@ -101,9 +139,13 @@ export const DogEntryOnlineForm = ({
                             type="text"
                             placeholder="Enter Registration Number"
                             value={dogData.registeredNumber}
-                            onChange={(e) => setDog("registeredNumber", e.target.value)}
+                            onChange={(e) =>
+                                setDog("registeredNumber", e.target.value)
+                            }
                         />
-                    ) : <div />}
+                    ) : (
+                        <div />
+                    )}
 
                     <InputField
                         name="microchipNumber"
@@ -111,11 +153,15 @@ export const DogEntryOnlineForm = ({
                         type="text"
                         placeholder="15-digit code"
                         value={dogData.microchipNumber}
-                        onChange={(e) => setDog("microchipNumber", e.target.value)}
+                        onChange={(e) =>
+                            setDog("microchipNumber", e.target.value)
+                        }
                     />
 
                     <div className="mb-4 w-full">
-                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Breed *</label>
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">
+                            Breed *
+                        </label>
                         <input
                             type="text"
                             name="breed"
@@ -127,10 +173,17 @@ export const DogEntryOnlineForm = ({
                     </div>
 
                     <div className="mb-4 w-full">
-                        <label className="block mb-1.5 text-sm font-medium text-gray-700">Sex *</label>
+                        <label className="block mb-1.5 text-sm font-medium text-gray-700">
+                            Sex *
+                        </label>
                         <select
                             value={dogData.sex}
-                            onChange={(e) => setDog("sex", e.target.value as "male" | "female")}
+                            onChange={(e) =>
+                                setDog(
+                                    "sex",
+                                    e.target.value as "male" | "female",
+                                )
+                            }
                             className={styledSelectClass}
                         >
                             <option value="male">Male</option>
@@ -150,7 +203,11 @@ export const DogEntryOnlineForm = ({
 
             {/* ---- Card 2: Owner Details ---- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <SectionHeader number={2} icon={<PersonIcon />} title="Owner Details" />
+                <SectionHeader
+                    number={2}
+                    icon={<PersonIcon />}
+                    title="Owner Details"
+                />
 
                 <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                     <InputField
@@ -188,12 +245,13 @@ export const DogEntryOnlineForm = ({
                             label="Dogs Australia Member Number (Optional)"
                             type="text"
                             value={ownerData.memberNumber}
-                            onChange={(e) => setOwner("memberNumber", e.target.value)}
+                            onChange={(e) =>
+                                setOwner("memberNumber", e.target.value)
+                            }
                         />
                     )}
                 </div>
 
-                
                 <UploadBox
                     label="Owner Signature"
                     hint="Click to upload Owner signature (PNG/JPG)"
@@ -204,11 +262,18 @@ export const DogEntryOnlineForm = ({
                     accept=".png,.jpg,.jpeg"
                     resetKey={resetKey}
                 />
+                <UploadedFileList 
+                    files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] } 
+                />
             </div>
 
             {/* ---- Card 3: Veterinarian Details ---- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <SectionHeader number={3} icon={<ClipboardIcon />} title="Veterinarian Details" />
+                <SectionHeader
+                    number={3}
+                    icon={<ClipboardIcon />}
+                    title="Veterinarian Details"
+                />
 
                 <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                     <InputField
@@ -216,7 +281,9 @@ export const DogEntryOnlineForm = ({
                         label="Veterinarian Name *"
                         type="text"
                         value={vetData.veterinarianName}
-                        onChange={(e) => setVet("veterinarianName", e.target.value)}
+                        onChange={(e) =>
+                            setVet("veterinarianName", e.target.value)
+                        }
                     />
                     <InputField
                         name="practiceName"
@@ -246,82 +313,130 @@ export const DogEntryOnlineForm = ({
                         label="Date of Radiograph *"
                         type="date"
                         value={dogData.dateOfRadiograph}
-                        onChange={(e) => setDog("dateOfRadiograph", e.target.value)}
+                        onChange={(e) =>
+                            setDog("dateOfRadiograph", e.target.value)
+                        }
                     />
                 </div>
 
                 {/* Yes/No radio pairs */}
                 <div className="grid grid-cols-1 gap-x-6 mt-1 sm:grid-cols-2">
                     <div className="mb-4">
-                        <p className="mb-2 text-sm font-medium text-gray-700">Positive ID sighted? (Microchip/Tattoo)</p>
+                        <p className="mb-2 text-sm font-medium text-gray-700">
+                            Positive ID sighted? (Microchip/Tattoo)
+                        </p>
                         <div className="flex gap-5">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    checked={vetData.positiveIdentificationSighted}
-                                    onChange={() => setVet("positiveIdentificationSighted", true)}
+                                    checked={
+                                        vetData.positiveIdentificationSighted
+                                    }
+                                    onChange={() =>
+                                        setVet(
+                                            "positiveIdentificationSighted",
+                                            true,
+                                        )
+                                    }
                                     className="h-4 w-4 border-gray-300 accent-[#506147]"
                                 />
-                                <span className="text-sm text-gray-700">Yes</span>
+                                <span className="text-sm text-gray-700">
+                                    Yes
+                                </span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    checked={!vetData.positiveIdentificationSighted}
-                                    onChange={() => setVet("positiveIdentificationSighted", false)}
+                                    checked={
+                                        !vetData.positiveIdentificationSighted
+                                    }
+                                    onChange={() =>
+                                        setVet(
+                                            "positiveIdentificationSighted",
+                                            false,
+                                        )
+                                    }
                                     className="h-4 w-4 border-gray-300 accent-[#506147]"
                                 />
-                                <span className="text-sm text-gray-700">No</span>
+                                <span className="text-sm text-gray-700">
+                                    No
+                                </span>
                             </label>
                         </div>
                     </div>
                     <div className="mb-4">
-                        <p className="mb-2 text-sm font-medium text-gray-700">Certificate sighted?</p>
+                        <p className="mb-2 text-sm font-medium text-gray-700">
+                            Certificate sighted?
+                        </p>
                         <div className="flex gap-5">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    checked={vetData.certificateOfRegistrationSighted}
-                                    onChange={() => setVet("certificateOfRegistrationSighted", true)}
+                                    checked={
+                                        vetData.certificateOfRegistrationSighted
+                                    }
+                                    onChange={() =>
+                                        setVet(
+                                            "certificateOfRegistrationSighted",
+                                            true,
+                                        )
+                                    }
                                     className="h-4 w-4 border-gray-300 accent-[#506147]"
                                 />
-                                <span className="text-sm text-gray-700">Yes</span>
+                                <span className="text-sm text-gray-700">
+                                    Yes
+                                </span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    checked={!vetData.certificateOfRegistrationSighted}
-                                    onChange={() => setVet("certificateOfRegistrationSighted", false)}
+                                    checked={
+                                        !vetData.certificateOfRegistrationSighted
+                                    }
+                                    onChange={() =>
+                                        setVet(
+                                            "certificateOfRegistrationSighted",
+                                            false,
+                                        )
+                                    }
                                     className="h-4 w-4 border-gray-300 accent-[#506147]"
                                 />
-                                <span className="text-sm text-gray-700">No</span>
+                                <span className="text-sm text-gray-700">
+                                    No
+                                </span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                
                 <UploadBox
                     label="Veterinarian Signature"
                     hint="Click to upload Veterinarian signature (PNG/JPG)"
                     icon={<PenIcon />}
-                    isRequired                
+                    isRequired
                     file={vetSigFile}
                     onChange={onVetSigChange}
                     accept=".png,.jpg,.jpeg"
                     resetKey={resetKey}
                 />
+                <UploadedFileList
+                    files={ uploadedFiles?.veterinarianSignature ? [uploadedFiles.veterinarianSignature] : [] }
+                />
             </div>
 
             {/* ---- Card 4: DICOM Image Upload ---- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <SectionHeader number={4} icon={<ScanIcon />} title="DICOM Image Upload" />
+                <SectionHeader
+                    number={4}
+                    icon={<ScanIcon />}
+                    title="DICOM Image Upload"
+                />
 
                 {/* DICOM upload zone */}
                 <UploadBox
                     label="DICOM Files"
-                    hint="Select the .dcm files for Hips and/or Elbows. You can upload multiple files simultaneously."
-                    icon={<PenIcon />}
+                    hint="Select the .dcm files for Hips and/or Elbows, you can upload multiple files simultaneously"
+                    icon={<CloudIcon />}
                     isRequired
                     files={selectedDicom}
                     isMultiple
@@ -329,7 +444,9 @@ export const DogEntryOnlineForm = ({
                     accept=".dcm"
                     resetKey={resetKey}
                 />
+                <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
 
+                <div className="mt-15" />
                 {/* Supporting documents */}
                 <UploadBox
                     label="Supporting Documents"
@@ -341,6 +458,7 @@ export const DogEntryOnlineForm = ({
                     accept=".pdf"
                     resetKey={resetKey}
                 />
+                <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
             </div>
         </div>
     );
