@@ -6,6 +6,7 @@ import { DogEntry } from "./DogEntry";
 import { StripeCheckoutButton } from "../buttons/StripeCheckoutBtn";
 // lib
 import { createSubmission } from "@/lib/firebase";
+import { calculatePrice } from "@/lib/pricing";
 // types
 import type { DogCase } from "@/types/dog";
 import type { Files } from "@/types/submission";
@@ -57,15 +58,24 @@ export const SubmissionFlow = () => {
     const completedCount = Object.keys(completedDogs).length;
     const allComplete = completedCount === dogCount;
 
+    const totalAud = Object.values(completedDogs).reduce(
+        (sum, { dog }) => sum + calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+        0,
+    );
+
     // creates one Firestore doc per dog - billing starts as unpaid
     const handleTestSubmit = async () => {
         setIsSubmitting(true);
         setSubmitError(null);
         try {
-            const billing: BillingInfo = { billingType: "payNow", paymentStatus: "unpaid", amount: 0 };
             await Promise.all(
-                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) =>
-                    createSubmission({
+                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) => {
+                    const billing: BillingInfo = {
+                        billingType: "payNow",
+                        paymentStatus: "unpaid",
+                        amount: calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+                    };
+                    return createSubmission({
                         s3SubmissionId: submissionId,
                         dogIndex: Number(idx),
                         submissionType,
@@ -74,8 +84,8 @@ export const SubmissionFlow = () => {
                         dog,
                         files,
                         billing,
-                    }),
-                ),
+                    });
+                }),
             );
             setSubmitSuccess(true);
         } catch (err) {
@@ -137,13 +147,18 @@ export const SubmissionFlow = () => {
             </div>
 
             {/* -- Progress -- */}
-            <div className="mt-3 text-sm text-gray-500">
-                {completedCount} of {dogCount} dog{dogCount > 1 ? "s" : ""} complete
-                {allComplete && (
-                    <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                        Ready for checkout
-                    </span>
-                )}
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+                <span>
+                    {completedCount} of {dogCount} dog{dogCount > 1 ? "s" : ""} complete
+                    {allComplete && (
+                        <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                            Ready for checkout
+                        </span>
+                    )}
+                </span>
+                <span className="font-semibold text-gray-900">
+                    Total: ${totalAud}
+                </span>
             </div>
 
             {/* -- Dog entries - each has its own dog + owner + vet form -- */}
@@ -177,9 +192,10 @@ export const SubmissionFlow = () => {
                 {/* real payment - TODO: wire up Stripe webhook to call updateSubmissionPaymentStatus */}
                 <StripeCheckoutButton
                     disabled={!allComplete}
+                    amount={totalAud * 100}
                     text={
                         allComplete
-                            ? "Proceed to Checkout"
+                            ? `Proceed to Checkout — $${totalAud}`
                             : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`
                     }
                     onBeforeCheckout={handleBeforeStripeCheckout}
