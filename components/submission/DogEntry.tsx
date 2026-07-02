@@ -64,6 +64,14 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadedFiles, setUploadedFiles] = useState<Files | null>(null);
+    const [uploadKey, setUploadKey] = useState(0);
+    const [uploadedNames, setUploadedNames] = useState({
+        dicom: [] as string[],
+        docs: [] as string[],
+        pdfForm: [] as string[],
+        ownerSig: [] as string[],
+        vetSig: [] as string[],
+    });
 
     // mode toggles
     const [submissionType, setSubmissionType] = useState<"online" | "pdf">("online");
@@ -176,6 +184,19 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     : undefined,
             };
             setUploadedFiles(dogFiles);
+            setUploadedNames((prev) => ({
+                dicom:    [...prev.dicom,    ...selectedDicom.map((f) => f.name)],
+                docs:     [...prev.docs,     ...selectedDocs.map((f) => f.name)],
+                pdfForm:  [...prev.pdfForm,  ...(pdfFormFile ? [pdfFormFile.name] : [])],
+                ownerSig: [...prev.ownerSig, ...(ownerSigFile ? [ownerSigFile.name] : [])],
+                vetSig:   [...prev.vetSig,   ...(vetSigFile ? [vetSigFile.name] : [])],
+            }));
+            setSelectedDicom([]);
+            setSelectedDocs([]);
+            setOwnerSigFile(null);
+            setVetSigFile(null);
+            setPdfFormFile(null);
+            setUploadKey((k) => k + 1);
         } catch (err) {
             setUploadError(err instanceof Error ? err.message : "Upload failed");
         } finally {
@@ -259,6 +280,14 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
     const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length +
         (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
 
+    const duplicateWarnings: string[] = [
+        ...selectedDicom.filter((file) => uploadedNames.dicom.includes(file.name)).map((file) => `"${file.name}" in DICOM Files`),
+        ...selectedDocs.filter((file) => uploadedNames.docs.includes(file.name)).map((file) => `"${file.name}" in Supporting Documents`),
+        ...(pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [`"${pdfFormFile.name}" in PDF Submission Form`] : []),
+        ...(ownerSigFile && uploadedNames.ownerSig.includes(ownerSigFile.name) ? [`"${ownerSigFile.name}" in Owner Signature`] : []),
+        ...(vetSigFile && uploadedNames.vetSig.includes(vetSigFile.name) ? [`"${vetSigFile.name}" in Veterinarian Signature`] : []),
+    ];
+
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-2xl font-bold text-gray-900">Dog {dogIndex}</h3>
@@ -307,6 +336,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     onDocsChange={setSelectedDocs}
                     onOwnerSigChange={setOwnerSigFile}
                     onVetSigChange={setVetSigFile}
+                    resetKey={uploadKey}
                 />
             ) : (
                 <DogEntryPdfForm
@@ -320,6 +350,7 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                     onDocsChange={setSelectedDocs}
                     onOwnerSigChange={setOwnerSigFile}
                     onVetSigChange={setVetSigFile}
+                    resetKey={uploadKey}
                 />
             )}
 
@@ -341,6 +372,11 @@ export const DogEntry = ({ submissionId, dogIndex, onComplete }: Props) => {
                 )}
             </div>
 
+            {duplicateWarnings.length > 0 && (
+                <p className="mt-2 text-sm text-yellow-700">
+                    Already uploaded: {duplicateWarnings.join(", ")}
+                </p>
+            )}
             {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
 
             {/* -- Mark Complete -- */}
