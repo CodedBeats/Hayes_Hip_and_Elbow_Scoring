@@ -76,6 +76,13 @@ const PreLaunchPage = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                         </svg>
                     </Link>
+
+                    <Link
+                        href="/pre-launch/dev-login"
+                        className="text-xs text-gray-400 hover:text-gray-500 hover:underline self-start"
+                    >
+                        Internal Preview
+                    </Link>
                 </div>
 
                 <div className="relative h-[420px] lg:h-[480px] rounded-2xl overflow-hidden shadow-xl">
