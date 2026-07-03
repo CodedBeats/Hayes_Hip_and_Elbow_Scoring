@@ -13,8 +13,8 @@ export const Navbar = () => {
     const pathname = usePathname();
 
     return (
-        <nav className="flex items-center justify-between px-10 py-5 bg-white shadow-sm font-[var(--font-plus-jakarta-sans)]">
-            <span className="text-2xl font-bold tracking-tight text-[#506147]">
+        <nav className="flex items-center justify-between px-10 py-5 bg-white shadow-sm font-(--font-plus-jakarta-sans)">
+            <span className="text-2xl font-bold tracking-tight text-brand-green">
                 Hayes Hip & Elbow Scoring
             </span>
 
@@ -28,8 +28,8 @@ export const Navbar = () => {
                             className={[
                                 'relative text-sm font-semibold pb-1 border-b-2 transition-all duration-200',
                                 isActive
-                                    ? 'text-[#7A8C70] border-[#7A8C70] -translate-y-0.5'
-                                    : 'text-gray-500 border-transparent hover:text-[#7A8C70] hover:border-[#7A8C70] hover:-translate-y-0.5',
+                                    ? 'text-brand-green-mid border-brand-green-mid -translate-y-0.5'
+                                    : 'text-gray-500 border-transparent hover:text-brand-green-mid hover:border-brand-green-mid hover:-translate-y-0.5',
                             ].join(' ')}
                         >
                             {label}
@@ -37,11 +37,13 @@ export const Navbar = () => {
                     );
                 })}
 
-                <Link
-                    href="/admin"
-                    className="px-5 py-2 rounded-md bg-[#7A8C70] text-white text-sm font-semibold hover:bg-[#6a7b61] transition-colors duration-200"
-                >
-                    Admin Login
+                <Link href="/auth/sign-in">
+                    <button
+                        type="button"
+                        className="px-5 py-2 rounded-md bg-brand-green-mid text-white text-sm font-semibold cursor-pointer hover:bg-[#6a7b61] transition-colors duration-200"
+                    >
+                        Admin Login
+                    </button>
                 </Link>
             </div>
         </nav>
