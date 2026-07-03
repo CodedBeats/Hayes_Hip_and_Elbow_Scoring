@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { DEV_ACCESS_COOKIE_NAME } from './lib/devAccess';
 
 export const middleware = (request: NextRequest) => {
     const { pathname } = request.nextUrl;
@@ -12,8 +13,10 @@ export const middleware = (request: NextRequest) => {
         return NextResponse.next();
     }
 
+    const hasDevAccess = request.cookies.get(DEV_ACCESS_COOKIE_NAME)?.value === process.env.DEV_ACCESS_PASSWORD;
+
     // un-comment for pre-launch
-    // return NextResponse.redirect(new URL('/pre-launch', request.url));
+    if (!hasDevAccess) return NextResponse.redirect(new URL('/pre-launch', request.url));
 }
 
 export const config = {
