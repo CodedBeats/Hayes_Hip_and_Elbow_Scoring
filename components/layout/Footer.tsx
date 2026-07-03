@@ -2,15 +2,15 @@ import Link from 'next/link';
 
 const quickLinks = [
     { label: 'Submit Case', href: '/submit' },
-    { label: 'Scoring Fees', href: '/temp' },
-    { label: 'Contact US', href: '/contact' },
+    { label: 'Scoring Fees', href: '/about#pricing' }, // link to pricing in about page
+    { label: 'Contact Us', href: '/about#contact' },// link to contact in about page
 ];
 
 const resourceLinks = [
-    { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Terms of Use', href: '/terms' },
-    { label: 'Refund Policy', href: '/temp' }, //link to whatever
-    { label: 'FAQ', href: '/faq' }, //link to section of about page
+    { label: 'Privacy Policy', href: '/misc/privacy-policy' },
+    { label: 'Terms of Service', href: '/misc/terms-of-service' },
+    { label: 'Appeal Process', href: '/misc/appeals' }, 
+    { label: 'FAQ', href: '/about#faq' }, //link to section of about page
 ];
 
 export const Footer = () => {
