@@ -1,5 +1,5 @@
-export const DogIcon = () => (
-    <svg className="w-4 h-4 text-brand-green-mid flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const DogIcon = ({ className = "w-4 h-4 text-brand-green-mid flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
     </svg>
 );
@@ -10,14 +10,14 @@ export const PersonIcon = () => (
     </svg>
 );
 
-export const ClipboardIcon = () => (
-    <svg className="w-4 h-4 text-brand-green-mid flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const ClipboardIcon = ({ className = "w-4 h-4 text-brand-green-mid flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
     </svg>
 );
 
-export const ScanIcon = () => (
-    <svg className="w-4 h-4 text-brand-green-mid flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const ScanIcon = ({ className = "w-4 h-4 text-brand-green-mid flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
     </svg>
@@ -35,26 +35,26 @@ export const DocumentIcon = () => (
     </svg>
 );
 
-export const CloudIcon = () => (
-    <svg className="mx-auto w-10 h-10 text-brand-green-mid mb-1" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const CloudIcon = ({ className = "mx-auto w-10 h-10 text-brand-green-mid mb-1" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
     </svg>
 );
 
-export const ShieldCheckIcon = () => (
-    <svg className="w-7 h-7 text-brand-green" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const ShieldCheckIcon = ({ className = "w-7 h-7 text-brand-green" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
     </svg>
 );
 
-export const EnvelopeIcon = () => (
-    <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const EnvelopeIcon = ({ className = "w-4 h-4 text-gray-500 flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
     </svg>
 );
 
-export const LockClosedIcon = () => (
-    <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+export const LockClosedIcon = ({ className = "w-4 h-4 text-gray-500 flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
     </svg>
 );
@@ -75,5 +75,47 @@ export const EyeSlashIcon = () => (
 export const ArrowRightOnRectangleIcon = () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+    </svg>
+);
+
+export const ScaleIcon = ({ className = "w-7 h-7 text-brand-green" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0-17.25c-1.472 0-2.882.265-4.185.75M12 3c1.472 0 2.882.265 4.185.75M5.106 8.25L3 12.75a3.375 3.375 0 006 0L6.894 8.25a48.4 48.4 0 013.212-.756M18.894 8.25L21 12.75a3.375 3.375 0 01-6 0l2.106-4.5a48.4 48.4 0 00-3.212-.756M5.106 8.25c1.052-.11 2.11-.185 3.181-.223M18.894 8.25c-1.052-.11-2.11-.185-3.181-.223m-7.44 0a48.72 48.72 0 018.62 0M3 20.25h18" />
+    </svg>
+);
+
+export const ReceiptIcon = ({ className = "w-7 h-7 text-brand-green" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0116.5 0m-16.5 0V6.375c0-1.036.84-1.875 1.875-1.875h12.75c1.035 0 1.875.84 1.875 1.875V18.75m-16.5 0a1.5 1.5 0 001.5 1.5H21m-16.5-1.5a1.5 1.5 0 011.5-1.5h13.5a1.5 1.5 0 011.5 1.5m-16.5 0v-9m16.5 9v-9m-16.5 0h16.5M6.75 9.75h.75m3 0h6m-9 3h.75m3 0h6" />
+    </svg>
+);
+
+export const ChevronDownIcon = ({ className = "w-5 h-5 text-brand-brown flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+);
+
+export const MagnifyingGlassIcon = ({ className = "w-4 h-4 text-brand-green-mid flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+    </svg>
+);
+
+export const CheckCircleIcon = ({ className = "w-5 h-5 text-brand-green flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+export const PhoneIcon = ({ className = "w-4 h-4 text-gray-500 flex-shrink-0" }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+    </svg>
+);
+
+export const ArrowUpRightIcon = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
     </svg>
 );
