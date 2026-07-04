@@ -183,3 +183,52 @@ export const updateSubmissionPaymentStatus = async (
         updatedAt: new Date(),
     });
 };
+
+// Used by the admin dashboard's ChangeStatusButton. Called directly from that client
+// component (same pattern as updateSubmissionPaymentStatus above, e.g. from
+// app/(main)/success/page.tsx) rather than through an API route, since Firestore rules
+// currently allow this write without auth.
+export const updateSubmissionStatus = async (
+    firestoreDocId: string,
+    status: SubmissionStatus,
+): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        status,
+        updatedAt: new Date(),
+    });
+};
+
+// Mirrors getAuthErrorMessage's style above. Kept in this client-safe file (not
+// lib/firebaseAdmin.ts) since it has no actual dependency on firebase-admin - it's pure
+// error-shape inspection, and the admin dashboard's error.tsx boundary that uses it must
+// be a Client Component (Next.js requirement), which can never import firebase-admin
+// without breaking the browser bundle.
+//
+// Note the Admin SDK surfaces Firestore errors as numeric gRPC status codes (e.g.
+// 7 = PERMISSION_DENIED), NOT the string codes ("permission-denied") the client SDK
+// uses - both are matched below since either could theoretically show up.
+export const getFirestoreErrorMessage = (error: unknown): string => {
+    if (error && typeof error === "object" && "code" in error) {
+        switch (String((error as { code: unknown }).code)) {
+            case "permission-denied":
+            case "7":
+                return "You don't have permission to view this data. Please contact the site administrator.";
+            case "unavailable":
+            case "14":
+                return "Unable to reach the database right now. Please check your connection and try again.";
+            case "not-found":
+            case "5":
+                return "The requested data could not be found.";
+            case "cancelled":
+            case "1":
+                return "The request was cancelled. Please try again.";
+            case "deadline-exceeded":
+            case "4":
+                return "The request took too long. Please try again.";
+            default:
+                return "Something went wrong loading data. Please try again.";
+        }
+    }
+    return error instanceof Error ? error.message : "Something went wrong loading data. Please try again.";
+};
