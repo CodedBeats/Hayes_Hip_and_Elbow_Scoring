@@ -1,9 +1,15 @@
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { CasesTable } from "@/components/admin/CasesTable";
-import { mockSubmissions } from "@/lib/mockSubmissions";
+import { getAllSubmissions } from "@/lib/firebaseAdmin";
 
-const ArchivePage = () => {
-    const cases = mockSubmissions
+// Always render on request rather than prerender at build time - admin case data changes
+// constantly, and static generation would otherwise require live Firestore credentials
+// just to build.
+export const dynamic = "force-dynamic";
+
+const ArchivePage = async () => {
+    const allSubmissions = await getAllSubmissions();
+    const cases = allSubmissions
         .filter((s) => s.status === "archived")
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 

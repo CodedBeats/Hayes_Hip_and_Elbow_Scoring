@@ -1,20 +1,31 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { mockSubmissions } from "@/lib/mockSubmissions";
+import { getSubmissionById } from "@/lib/firebaseAdmin";
+import { enrichUploadedFile } from "@/lib/s3";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { ChangeStatusButton } from "@/components/admin/ChangeStatusButton";
 import { DogDetailsCard } from "@/components/admin/DogDetailsCard";
 import { OwnerInfoCard } from "@/components/admin/OwnerInfoCard";
 import { VetPracticeCard } from "@/components/admin/VetPracticeCard";
+import { PdfSubmissionNotice } from "@/components/admin/PdfSubmissionNotice";
 import { AssetManagementCard } from "@/components/admin/AssetManagementCard";
 import { SupportingDocumentsCard } from "@/components/admin/SupportingDocumentsCard";
 import { ArrowLeftIcon } from "@/components/misc/Icons";
+import type { UploadedFile } from "@/types/upload";
+
+// Always render on request rather than prerender at build time - this page depends on
+// the dynamic [id] param plus live Firestore/S3 reads, neither of which are available
+// (or meaningful) at build time.
+export const dynamic = "force-dynamic";
 
 const formatSubmittedAt = (date: Date) =>
     date.toLocaleDateString("en-AU", { year: "numeric", month: "short", day: "numeric" }) +
     " • " +
     date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" });
+
+// Only undefined/null goes through unenriched - real files get backfilled with S3 data.
+const enrichIfPresent = (file: UploadedFile | undefined) => (file ? enrichUploadedFile(file) : Promise.resolve(undefined));
 
 interface CasePageProps {
     params: Promise<{ id: string }>;
@@ -22,11 +33,25 @@ interface CasePageProps {
 
 const CasePage = async ({ params }: CasePageProps) => {
     const { id } = await params;
-    const submission = mockSubmissions.find((s) => s.id === id);
+    const submission = await getSubmissionById(id);
 
     if (!submission) {
         notFound();
     }
+
+    // File-related S3 work (presigned download URLs + HeadObject metadata) only happens
+    // here, on the single-case page, and only for files this page actually renders -
+    // never on the list views, which don't show any file data at all. Running every file
+    // through this in parallel is what the sibling loading.tsx is covering for.
+    const [dicomFiles, supportingDocuments, ownerSignature, veterinarianSignature, pdfForm] = await Promise.all([
+        Promise.all(submission.files.dicomFiles.map(enrichUploadedFile)),
+        Promise.all(submission.files.supportingDocuments.map(enrichUploadedFile)),
+        enrichIfPresent(submission.files.ownerSignature),
+        enrichIfPresent(submission.files.veterinarianSignature),
+        enrichIfPresent(submission.submissionType === "pdf" ? submission.files.pdfForm : undefined),
+    ]);
+
+    const isPdfSubmission = submission.submissionType === "pdf";
 
     return (
         <div className="flex flex-col gap-6">
@@ -50,24 +75,36 @@ const CasePage = async ({ params }: CasePageProps) => {
                         </span>
                     </div>
                 </div>
-                <ChangeStatusButton currentStatus={submission.status} />
+                <ChangeStatusButton submissionId={id} currentStatus={submission.status} />
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-                <DogDetailsCard dog={submission.dog} />
-                <OwnerInfoCard owner={submission.owner} />
+                {isPdfSubmission ? (
+                    <PdfSubmissionNotice title="Dog Details" />
+                ) : (
+                    <DogDetailsCard dog={submission.dog} />
+                )}
+                {isPdfSubmission ? (
+                    <PdfSubmissionNotice title="Owner" />
+                ) : (
+                    <OwnerInfoCard owner={submission.owner} />
+                )}
             </div>
 
             <AssetManagementCard
-                dicomFiles={submission.files.dicomFiles}
-                ownerSignature={submission.files.ownerSignature}
-                veterinarianSignature={submission.files.veterinarianSignature}
-                pdfForm={submission.submissionType === "pdf" ? submission.files.pdfForm : undefined}
+                dicomFiles={dicomFiles}
+                ownerSignature={ownerSignature}
+                veterinarianSignature={veterinarianSignature}
+                pdfForm={pdfForm}
             />
 
-            <SupportingDocumentsCard files={submission.files.supportingDocuments} />
+            <SupportingDocumentsCard files={supportingDocuments} />
 
-            <VetPracticeCard vet={submission.veterinarian} radiographDate={submission.dog.dateOfRadiograph} />
+            {isPdfSubmission ? (
+                <PdfSubmissionNotice title="Veterinary Practice Information" />
+            ) : (
+                <VetPracticeCard vet={submission.veterinarian} radiographDate={submission.dog.dateOfRadiograph} />
+            )}
         </div>
     );
 };
