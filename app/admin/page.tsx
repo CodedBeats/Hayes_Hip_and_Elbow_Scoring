@@ -1,36 +1,52 @@
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { StatTile } from "@/components/admin/StatTile";
 import { CasesTable } from "@/components/admin/CasesTable";
-import { mockSubmissions } from "@/lib/mockSubmissions";
+import { getAllSubmissions } from "@/lib/firebaseAdmin";
 import { ClipboardIcon, ScanIcon, CheckCircleIcon } from "@/components/misc/Icons";
 
-const AdminDashboardPage = () => {
-    const cases = mockSubmissions
+// Always render on request rather than prerender at build time - admin case data changes
+// constantly, and static generation would otherwise require live Firestore credentials
+// just to build.
+export const dynamic = "force-dynamic";
+
+const AdminDashboardPage = async () => {
+    const allSubmissions = await getAllSubmissions();
+
+    const cases = allSubmissions
         .filter((s) => s.status !== "draft")
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const totalActive = allSubmissions.filter(
+        (s) => s.status === "submitted" || s.status === "pendingReview" || s.status === "reviewing",
+    ).length;
+    const pendingReviews = allSubmissions.filter(
+        (s) => s.status === "pendingReview" || s.status === "reviewing",
+    ).length;
+    const completedAndArchived = allSubmissions.filter(
+        (s) => s.status === "completed" || s.status === "archived",
+    ).length;
 
     return (
         <div className="flex flex-col gap-6">
             <AdminTopBar title="Welcome back" subtitle="Manage veterinary scoring cases" />
 
-            {/* Stat values are static until wired up to real Firestore counts. */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <StatTile
                     icon={<ClipboardIcon className="h-5 w-5" />}
                     label="Total Active Cases"
-                    value={0}
+                    value={totalActive}
                     tone="green"
                 />
                 <StatTile
                     icon={<ScanIcon className="h-5 w-5" />}
                     label="Pending Reviews"
-                    value={0}
+                    value={pendingReviews}
                     tone="orange"
                 />
                 <StatTile
                     icon={<CheckCircleIcon className="h-5 w-5" />}
                     label="Completed & Archived"
-                    value={0}
+                    value={completedAndArchived}
                     tone="blue"
                 />
             </div>
