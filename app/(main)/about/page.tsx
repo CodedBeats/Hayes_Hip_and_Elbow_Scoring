@@ -167,7 +167,7 @@ const AboutPage = () => {
                     <SectionHeading
                         eyebrow="MEET OUR EXPERT"
                         title="About Dr Ana Hayes"
-                        subtitle="Experienced veterinary radiologist and CHED panellist providing professional canine hip and elbow scoring services."
+                        subtitle="Experienced Dogs Australia CHED panellist providing professional canine hip and elbow scoring services."
                     />
                 </div>
             </section>
