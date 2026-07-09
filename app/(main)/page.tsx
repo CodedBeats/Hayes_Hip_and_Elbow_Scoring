@@ -89,7 +89,7 @@ const Home = () => {
             <ImageCTASection
                 image={{ src: "/images/Golden Retriever.png", alt: "Golden Retriever" }}
                 title="Professional assessment of canine hip and elbow radiographs by Dr Ana Hayes"
-                subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements. Fast, professional assessment from an experienced veterinary radiologist."
+                subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements."
                 minHeightClassName="min-h-[560px] sm:min-h-[640px]"
             >
                 <Button href="/submit" variant="solid">Start Submission</Button>
@@ -97,10 +97,14 @@ const Home = () => {
             </ImageCTASection>
 
             <ImageTextSection image={{ src: "/images/Ana portrait.jpg", alt: "Dr Ana Hayes" }} imagePosition="left">
-                <h2 className="text-3xl font-bold text-brand-brown">Meet Dr Ana Hayes</h2>
+                <div>
+                    <h2 className="text-3xl font-bold text-brand-brown">Meet Dr Ana Hayes</h2>
+                    <p className="text-lg lg:text-xl font-bold text-brand-green leading-relaxed max-w-lg">
+                        BVSc (Hons), MVS (Radiology)
+                    </p>
+                </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    Dr Ana Hayes graduated from the University of Melbourne in 1983 and completed an internship in
-                    Radiology and Small Animal Medicine at the University of Melbourne Teaching Hospital in Werribee.
+                    Dr Ana Hayes graduated from the University of Melbourne in 1983 and completed a two year internship in Radiology and Small Animal Medicine at the University of Melbourne Teaching Hospital in Werribee.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
                     She obtained her Master of Veterinary Studies (Radiology) in 1987 and has provided radiology
