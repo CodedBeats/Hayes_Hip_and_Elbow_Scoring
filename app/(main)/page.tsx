@@ -99,8 +99,7 @@ const Home = () => {
             <ImageTextSection image={{ src: "/images/Ana portrait.jpg", alt: "Dr Ana Hayes" }} imagePosition="left">
                 <h2 className="text-3xl font-bold text-brand-brown">Meet Dr Ana Hayes</h2>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    Dr Ana Hayes graduated from the University of Melbourne in 1983 and completed an internship in
-                    Radiology and Small Animal Medicine at the University of Melbourne Teaching Hospital in Werribee.
+                    Dr Ana Hayes graduated from the University of Melbourne in 1983 and completed a two year internship in Radiology and Small Animal Medicine at the University of Melbourne Teaching Hospital in Werribee.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
                     She obtained her Master of Veterinary Studies (Radiology) in 1987 and has provided radiology
