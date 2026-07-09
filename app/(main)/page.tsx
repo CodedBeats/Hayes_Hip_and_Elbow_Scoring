@@ -89,7 +89,7 @@ const Home = () => {
             <ImageCTASection
                 image={{ src: "/images/Golden Retriever.png", alt: "Golden Retriever" }}
                 title="Professional assessment of canine hip and elbow radiographs by Dr Ana Hayes"
-                subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements. Fast, professional assessment from an experienced veterinary radiologist."
+                subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements."
                 minHeightClassName="min-h-[560px] sm:min-h-[640px]"
             >
                 <Button href="/submit" variant="solid">Start Submission</Button>
