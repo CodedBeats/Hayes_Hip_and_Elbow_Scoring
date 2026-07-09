@@ -59,7 +59,7 @@ const PreLaunchPage = () => {
                     </h1>
 
                     <p className="text-xl lg:text-2xl font-bold text-brand-green leading-relaxed max-w-lg">
-                        BVSc (Hons), MVS (Radiology)
+                        BVSc (Hons), MVS (Radiology), CHED panellist
                     </p>
 
                     <p className="text-base text-gray-500 leading-relaxed max-w-lg">
