@@ -253,6 +253,11 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 setValidationError("Please upload at least one DICOM file before completing.");
                 return;
             }
+            // supporting document only required when Not DA Registered
+            if (!dogData.isDogsAustraliaRegistered && uploadedFiles.supportingDocuments.length === 0) {
+                setValidationError("Please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number.");
+                return;
+            }
         } else {
             // dog
             if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
@@ -403,6 +408,8 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 />
             ) : (
                 <DogEntryPdfForm
+                    isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
+                    setDog={setDog}
                     pdfFormFile={pdfFormFile}
                     selectedDicom={selectedDicom}
                     selectedDocs={selectedDocs}
