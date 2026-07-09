@@ -36,8 +36,11 @@ const AppealsPage = () => {
 
                     <PolicySection icon={<ScaleIcon />} title="Appeals Process">
                         <p className="mb-4">
-                            If you&apos;d like to formally appeal a score, an appeal fee applies depending on the
-                            type of assessment. This is modelled on the established ANKC/CHED appeal scheme.
+                            The appeals process itself is handled entirely by Dogs Australia (ANKC) - we don&apos;t
+                            manage, review, or have any involvement in appeals. Our role is limited to providing the
+                            pricing and information below and pointing you to Dogs Australia&apos;s official
+                            resources. If you&apos;d like to formally appeal a score, an appeal fee applies depending
+                            on the type of assessment, set by the established Dogs Australia CHED appeal scheme.
                         </p>
 
                         <div className="overflow-hidden rounded-xl border border-brand-green-mid/20">
@@ -59,8 +62,8 @@ const AppealsPage = () => {
                             </table>
                         </div>
                         <p className="mt-2 text-xs text-gray-500">
-                            Fees current as of the last update above - confirm against the official ANKC website. Their
-                            current (at time of last update to this page) Appeal Procedure can be seen below.
+                            Fees current as of the last update above - confirm against the official Dogs Australia
+                            website, as fees and process are set and maintained by them, not by us.
                         </p>
 
                         <a
@@ -70,7 +73,17 @@ const AppealsPage = () => {
                             className="mt-4 flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
                         >
                             <ArrowUpRightIcon />
-                            View the full CHED Appeal Procedure (PDF)
+                            View the official CHED Appeal Procedure (PDF)
+                        </a>
+
+                        <a
+                            href="https://dogsaustralia.org.au/members/health-wellbeing/cheds-canine-hip-and-elbow-dysplasia-scheme/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                        >
+                            <ArrowUpRightIcon />
+                            Visit the Dogs Australia CHED Scheme page
                         </a>
                     </PolicySection>
 
@@ -78,17 +91,18 @@ const AppealsPage = () => {
                         <p>
                             Had a payment issue, a duplicate charge, or something didn&apos;t go as expected on our
                             end? These situations are rare, but if one comes up, just reach out to Anna directly and
-                            she&apos;ll sort it out.
+                            she&apos;ll sort it out. This is separate from the appeals process above, which is
+                            handled by Dogs Australia.
                         </p>
                     </PolicySection>
                 </div>
 
                 <div className="mt-6 rounded-2xl bg-warm-sand p-6 text-center text-sm text-brand-brown">
-                    Questions about a payment or appeal? Contact{" "}
+                    Questions about a payment? Contact{" "}
                     <a href="mailto:anahayes18@icloud.com" className="font-semibold text-brand-green underline">
                         anahayes18@icloud.com
                     </a>
-                    .
+                    . For questions about an appeal itself, please contact Dogs Australia directly.
                 </div>
             </main>
         </div>

@@ -3,6 +3,7 @@ export const UploadBox = ({
     hint,
     icon,
     isRequired,
+    description,
     file,
     files,
     isMultiple,
@@ -15,6 +16,7 @@ export const UploadBox = ({
     hint: string;
     icon: React.ReactNode;
     isRequired?: boolean;
+    description?: string;
     file?: File | null;
     files?: File[];
     isMultiple?: boolean;
@@ -30,6 +32,9 @@ export const UploadBox = ({
                 {label}
                 {isRequired && <span className="text-red-700">{" *"}</span>}
             </p>
+            {description && (
+                <p className="mb-2 text-xs text-gray-500">{description}</p>
+            )}
             <label className="block cursor-pointer">
                 <div
                     className={`rounded-xl border-2 border-dashed p-5 text-center transition ${hasFile ? "border-brand-green-mid bg-cream" : "border-gray-300 hover:border-brand-green-mid"}`}

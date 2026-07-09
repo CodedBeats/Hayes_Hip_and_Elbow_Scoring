@@ -5,9 +5,12 @@ import { UploadedFileList } from "../form/UploadedFileList"
 // icons
 import { CloudIcon, DocumentIcon, PenIcon } from "../misc/Icons"
 // types
+import type { DogEntryFormData } from "@/types/form";
 import type { Files } from "@/types/submission";
 
 type Props = {
+    isDogsAustraliaRegistered: boolean;
+    setDog: (field: keyof DogEntryFormData, value: string | boolean) => void;
     pdfFormFile: File | null;
     selectedDicom: File[];
     selectedDocs: File[];
@@ -23,6 +26,8 @@ type Props = {
 };
 
 export const DogEntryPdfForm = ({
+    isDogsAustraliaRegistered,
+    setDog,
     pdfFormFile,
     selectedDicom,
     selectedDocs,
@@ -45,6 +50,43 @@ export const DogEntryPdfForm = ({
                 <h3 className="text-base font-semibold text-gray-900">
                     PDF Form Submission
                 </h3>
+            </div>
+
+            {/* Registration toggle */}
+            <div className="mb-5">
+                <p className="mb-2 text-sm font-medium text-gray-700">
+                    Dogs Australia Registration
+                </p>
+                <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="daReg-pdf"
+                            checked={isDogsAustraliaRegistered}
+                            onChange={() =>
+                                setDog("isDogsAustraliaRegistered", true)
+                            }
+                            className="h-4 w-4 border-gray-300 accent-[#506147]"
+                        />
+                        <span className="text-sm text-gray-700">
+                            Registered
+                        </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="daReg-pdf"
+                            checked={!isDogsAustraliaRegistered}
+                            onChange={() =>
+                                setDog("isDogsAustraliaRegistered", false)
+                            }
+                            className="h-4 w-4 border-gray-300 accent-[#506147]"
+                        />
+                        <span className="text-sm text-gray-700">
+                            Not Registered
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <UploadBox
@@ -78,6 +120,11 @@ export const DogEntryPdfForm = ({
                 label="Supporting Documents"
                 hint="Click to upload supporting PDF documents (optional)"
                 icon={<DocumentIcon />}
+                description={
+                    !isDogsAustraliaRegistered
+                        ? "For dogs not registered with Dogs Australia, please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number."
+                        : undefined
+                }
                 files={selectedDocs}
                 isMultiple
                 onMultiChange={onDocsChange}
