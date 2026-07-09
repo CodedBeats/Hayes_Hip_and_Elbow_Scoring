@@ -54,8 +54,9 @@ const TermsOfServicePage = () => {
 
                     <PolicySection icon={<ScaleIcon />} title="Appeals">
                         <p>
-                            If you believe a score is incorrect, you can lodge a formal appeal. Appeal fees and the
-                            process are outlined on our{" "}
+                            If you believe a score is incorrect, you can lodge a formal appeal. The appeals process
+                            itself is handled entirely by Dogs Australia (ANKC) - we have no involvement in it.
+                            Pricing and links to Dogs Australia&apos;s official appeal information are on our{" "}
                             <Link href="/misc/appeals" className="font-semibold text-brand-green underline">
                                 Appeals Process
                             </Link>{" "}
