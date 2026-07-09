@@ -98,7 +98,7 @@ const PreLaunchPage = () => {
             </section>
 
             {/* ── Contact & Links ──────────────────────────────── */}
-            <section className="px-50 py-10 bg-warm-sand border-t border-b border-[#C4C8BE]">
+            <section className="px-6 sm:px-10 lg:px-24 py-10 bg-warm-sand border-t border-b border-[#C4C8BE]">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
 
                     {/* Email & Phone */}
@@ -115,7 +115,7 @@ const PreLaunchPage = () => {
                     </div>
 
                     {/* Address */}
-                    <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center justify-start md:justify-center gap-4">
                         <span className="w-10 h-10 rounded-xl bg-[#DDE8D5] text-brand-green flex items-center justify-center flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -128,7 +128,7 @@ const PreLaunchPage = () => {
                     </div>
 
                     {/* CHED Home Page */}
-                    <div className="flex items-start justify-end gap-4">
+                    <div className="flex items-start justify-start md:justify-end gap-4">
                         <span className="w-10 h-10 rounded-xl bg-[#DDE8D5] text-brand-green flex items-center justify-center flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
