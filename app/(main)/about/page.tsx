@@ -137,11 +137,12 @@ const faqItems = [
         title: "How do I appeal a score?",
         content: (
             <>
-                Formal appeals, including the fee schedule and process, are outlined on our{" "}
+                The appeals process is handled entirely by Dogs Australia (ANKC) - we&apos;re not involved in it.
+                Our{" "}
                 <Link href="/misc/appeals" className="font-semibold text-brand-green underline">
                     Appeals Process
                 </Link>{" "}
-                page.
+                page has the fee schedule plus links to Dogs Australia&apos;s official appeal information.
             </>
         ),
     },
