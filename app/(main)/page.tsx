@@ -212,7 +212,7 @@ const Home = () => {
                 title="Ready to Submit?"
                 subtitle="Upload your radiographs and submit your assessment request online."
                 align="center"
-                minHeightClassName="min-h-[700px]"
+                minHeightClassName="min-h-[560px] sm:min-h-[700px]"
             >
                 <Button href="/submit" variant="solid">Start Submission</Button>
             </ImageCTASection>
