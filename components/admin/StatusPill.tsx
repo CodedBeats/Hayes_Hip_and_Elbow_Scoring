@@ -1,18 +1,18 @@
 import type { SubmissionStatus } from "@/types/submission";
 
 export const statusLabels: Record<SubmissionStatus, string> = {
-    draft: "Draft",
-    submitted: "Submitted",
+    unpaid: "Unpaid",
     pendingReview: "Pending Review",
+    draft: "Draft",
     reviewing: "In Review",
     completed: "Completed",
     archived: "Archived",
 };
 
 const statusClasses: Record<SubmissionStatus, string> = {
-    draft: "bg-gray-100 text-gray-500",
-    submitted: "bg-blue-100 text-blue-700",
+    unpaid: "bg-red-100 text-red-700",
     pendingReview: "bg-orange-100 text-orange-700",
+    draft: "bg-gray-100 text-gray-500",
     reviewing: "bg-amber-100 text-amber-700",
     completed: "bg-green-100 text-green-700",
     archived: "bg-gray-200 text-gray-600",

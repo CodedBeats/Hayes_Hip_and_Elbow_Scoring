@@ -17,13 +17,13 @@ const AdminDashboardPage = async () => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     const totalActive = allSubmissions.filter(
-        (s) => s.status === "submitted" || s.status === "pendingReview" || s.status === "reviewing",
-    ).length;
-    const pendingReviews = allSubmissions.filter(
         (s) => s.status === "pendingReview" || s.status === "reviewing",
     ).length;
+    const pendingReviews = allSubmissions.filter(
+        (s) => s.status === "pendingReview",
+    ).length;
     const completedAndArchived = allSubmissions.filter(
-        (s) => s.status === "completed" || s.status === "archived",
+        (s) => s.status === "archived",
     ).length;
 
     return (
