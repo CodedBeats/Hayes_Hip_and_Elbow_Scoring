@@ -1,11 +1,14 @@
 "use client";
 
+// dependencies
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { signOutUser } from "@/lib/firebase";
+// components
 import { Sidebar } from "@/components/admin/Sidebar";
 import { DesktopOnlyGate } from "@/components/layout/DesktopOnlyGate";
+// hook and lib
+import { useAuth } from "@/hooks/useAuth";
+import { signOutUser } from "@/lib/firebase";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
