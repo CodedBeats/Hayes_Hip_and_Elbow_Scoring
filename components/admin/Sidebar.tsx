@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Squares2x2Icon,
     ClipboardIcon,
     ArchiveBoxIcon,
     Cog6ToothIcon,
-    QuestionMarkCircleIcon,
     PersonIcon,
     ArrowRightOnRectangleIcon,
 } from "@/components/misc/Icons";
@@ -17,6 +16,9 @@ const navItems = [
     { label: "Pending Reviews", href: "/admin/pending-reviews", icon: ClipboardIcon },
     { label: "Archive", href: "/admin/archive", icon: ArchiveBoxIcon },
 ];
+const navSupportItems = [
+    { label: "Settings", href: "/admin/admin-settings", icon: Cog6ToothIcon },
+];
 
 interface SidebarProps {
     userEmail: string;
@@ -25,6 +27,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ userEmail, onSignOut }: SidebarProps) => {
     const pathname = usePathname();
+    const router = useRouter();
 
     return (
         <aside className="fixed inset-y-0 left-0 flex h-screen w-64 flex-shrink-0 flex-col justify-between border-r border-gray-200 bg-cream px-5 py-6">
@@ -64,24 +67,30 @@ export const Sidebar = ({ userEmail, onSignOut }: SidebarProps) => {
             </div>
 
             <div className="flex flex-col gap-1 border-t border-gray-200 pt-4">
-                <button
-                    type="button"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-brand-green-mid/10 hover:text-brand-brown"
-                >
-                    <Cog6ToothIcon className="h-5 w-5 flex-shrink-0" />
-                    Settings
-                </button>
-                <button
-                    type="button"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-brand-green-mid/10 hover:text-brand-brown"
-                >
-                    <QuestionMarkCircleIcon className="h-5 w-5 flex-shrink-0" />
-                    Support
-                </button>
+                
+                
+                {navSupportItems.map(({ label, href, icon: Icon }) => {
+                    const isActive = pathname === href;
+                    return (
+                        <Link
+                            key={href}
+                            href={href}
+                            className={[
+                                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+                                isActive
+                                    ? "bg-brand-green-mid text-white"
+                                    : "text-gray-600 hover:bg-brand-green-mid/10 hover:text-brand-brown",
+                            ].join(" ")}
+                        >
+                            <Icon className="h-5 w-5 flex-shrink-0" />
+                            {label}
+                        </Link>
+                    );
+                })}
                 <button
                     type="button"
                     onClick={onSignOut}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 cursor-pointer transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
                 >
                     <ArrowRightOnRectangleIcon />
                     Sign out
