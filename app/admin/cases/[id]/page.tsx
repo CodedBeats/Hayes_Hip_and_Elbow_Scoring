@@ -1,7 +1,13 @@
+// dependencies
 import { notFound } from "next/navigation";
 import Link from "next/link";
+// lib
 import { getSubmissionById } from "@/lib/firebaseAdmin";
+import { getAdminCaseDisplayStatus } from "@/lib/status";
 import { enrichUploadedFile } from "@/lib/s3";
+// types
+import type { UploadedFile } from "@/types/upload";
+// components
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { ChangeStatusButton } from "@/components/admin/ChangeStatusButton";
@@ -12,7 +18,6 @@ import { PdfSubmissionNotice } from "@/components/admin/PdfSubmissionNotice";
 import { AssetManagementCard } from "@/components/admin/AssetManagementCard";
 import { SupportingDocumentsCard } from "@/components/admin/SupportingDocumentsCard";
 import { ArrowLeftIcon } from "@/components/misc/Icons";
-import type { UploadedFile } from "@/types/upload";
 
 // Always render on request rather than prerender at build time - this page depends on
 // the dynamic [id] param plus live Firestore/S3 reads, neither of which are available
@@ -69,7 +74,7 @@ const CasePage = async ({ params }: CasePageProps) => {
                 <div>
                     <h1 className="text-3xl font-bold text-brand-brown">Case #{submission.id}</h1>
                     <div className="mt-2 flex items-center gap-3">
-                        <StatusPill status={submission.status} />
+                        <StatusPill status={getAdminCaseDisplayStatus(submission)} />
                         <span className="text-sm text-gray-500">
                             Submitted {formatSubmittedAt(submission.createdAt)}
                         </span>

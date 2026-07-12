@@ -41,9 +41,10 @@ export type Files = {
 };
 
 export type SubmissionStatus =
-    | "draft"
-    | "submitted"
+    | "unpaid"
     | "pendingReview"
     | "reviewing"
+    | "draft"
     | "completed"
     | "archived";
+    

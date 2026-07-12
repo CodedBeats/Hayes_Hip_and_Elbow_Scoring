@@ -1,8 +1,12 @@
 "use client";
-
+// dependencies
 import { useState } from "react";
 import Link from "next/link";
-import type { Submission } from "@/types/submission";
+// types
+import { type Submission } from "@/types/submission";
+// lib
+import { getAdminCaseDisplayStatus } from "@/lib/status";
+// components
 import { StatusPill } from "@/components/admin/StatusPill";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -62,7 +66,7 @@ export const CasesTable = ({ submissions, title, pageSize = 4 }: CasesTableProps
                                 </td>
                                 <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
                                 <td className="px-6 py-4">
-                                    <StatusPill status={submission.status} />
+                                    <StatusPill status={getAdminCaseDisplayStatus(submission)} />
                                 </td>
                                 <td className="px-6 py-4">
                                     <Link
