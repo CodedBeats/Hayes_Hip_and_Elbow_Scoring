@@ -42,7 +42,7 @@ export const ContactForm = ({ className = "" }: ContactFormProps) => {
     if (submitted) {
         return (
             <div className={["rounded-2xl border-2 border-brand-green-mid/20 bg-white p-8 text-center", className].join(" ")}>
-                <p className="text-base font-semibold text-brand-brown">Message sent — thank you.</p>
+                <p className="text-base font-semibold text-brand-brown">Message sent - thank you.</p>
                 <p className="mt-1 text-sm text-gray-500">Dr Hayes will be in touch shortly.</p>
             </div>
         );
