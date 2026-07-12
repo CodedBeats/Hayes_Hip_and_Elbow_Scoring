@@ -125,7 +125,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
         const docRef = await addDoc(collection(db, "submissions"), {
             s3SubmissionId,
             dogIndex,
-            status: "submitted",
+            status: "pendingReview",
             submitterType: "anon",
             submissionType,
             createdAt: new Date(),
@@ -147,7 +147,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
         const docRef = await addDoc(collection(db, "submissions"), {
             s3SubmissionId,
             dogIndex,
-            status: "submitted",
+            status: "pendingReview",
             submitterType: "anon",
             submissionType,
             createdAt: new Date(),
