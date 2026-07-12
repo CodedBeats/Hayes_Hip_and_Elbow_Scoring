@@ -1,10 +1,14 @@
 "use client";
 
+// dependencies
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+// components
+import { Sidebar } from "@/components/admin/Sidebar";
+import { DesktopOnlyGate } from "@/components/layout/DesktopOnlyGate";
+// hook and lib
 import { useAuth } from "@/hooks/useAuth";
 import { signOutUser } from "@/lib/firebase";
-import { Sidebar } from "@/components/admin/Sidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -30,9 +34,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div className="min-h-screen bg-cream">
-            <Sidebar userEmail={user.email ?? ""} onSignOut={handleSignOut} />
-            <main className="ml-64 px-10 py-8">{children}</main>
-        </div>
+        <DesktopOnlyGate>
+            <div className="min-h-screen bg-cream">
+                <Sidebar userEmail={user.email ?? ""} onSignOut={handleSignOut} />
+                <main className="ml-64 px-10 py-8">{children}</main>
+            </div>
+        </DesktopOnlyGate>
     );
 }

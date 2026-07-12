@@ -52,13 +52,13 @@ export const CasesTable = ({ submissions, title, pageSize = 4 }: CasesTableProps
                             <tr key={submission.id} className="border-b border-gray-100 last:border-b-0">
                                 <td className="px-6 py-4 font-bold text-brand-brown">#{submission.id}</td>
                                 <td className="px-6 py-4 text-gray-700">
-                                    {submission.submissionType === "pdf" ? "N/A — PDF submission" : submission.dog.registeredName}
+                                    {submission.submissionType === "pdf" ? "N/A - PDF submission" : submission.dog.registeredName}
                                 </td>
                                 <td className="px-6 py-4 text-gray-700">
-                                    {submission.submissionType === "pdf" ? "N/A — PDF submission" : submission.dog.breed}
+                                    {submission.submissionType === "pdf" ? "N/A - PDF submission" : submission.dog.breed}
                                 </td>
                                 <td className="px-6 py-4 text-gray-700">
-                                    {submission.submissionType === "pdf" ? "N/A — PDF submission" : submission.owner.name}
+                                    {submission.submissionType === "pdf" ? "N/A - PDF submission" : submission.owner.name}
                                 </td>
                                 <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
                                 <td className="px-6 py-4">
