@@ -36,7 +36,7 @@ export const DogDetailsCard = ({ dog }: DogDetailsCardProps) => {
                 </div>
                 <div>
                     <p className="text-gray-500">Registration Number</p>
-                    <p className="mt-0.5 font-semibold text-brand-brown">{dog.registeredNumber ?? "—"}</p>
+                    <p className="mt-0.5 font-semibold text-brand-brown">{dog.registeredNumber ?? "-"}</p>
                 </div>
                 <div>
                     <p className="text-gray-500">Exam Type</p>

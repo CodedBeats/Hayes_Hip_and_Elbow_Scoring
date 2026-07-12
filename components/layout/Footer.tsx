@@ -20,7 +20,7 @@ export const Footer = () => {
     return (
         <footer className="bg-[#3E2B23] text-white font-[var(--font-plus-jakarta-sans)] mt-auto">
             {/* Main content row */}
-            <div className="px-10 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div className="px-6 sm:px-10 py-10 sm:py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
 
                 {/* Column 1 - About blurb */}
                 <div className="flex flex-col gap-3">
@@ -111,7 +111,7 @@ export const Footer = () => {
             </div>
 
             {/* Divider + copyright */}
-            <div className="border-t border-white/10 px-10 py-5">
+            <div className="border-t border-white/10 px-6 sm:px-10 py-4 sm:py-5">
                 <p className="text-xs text-white/40 text-center">
                     &copy; 2026 Hayes Hip &amp; Elbow Scoring. All rights reserved.
                 </p>
