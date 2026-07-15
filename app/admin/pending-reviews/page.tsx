@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const PendingReviewsPage = async () => {
     const allSubmissions = await getAllSubmissions();
     const cases = allSubmissions
-        .filter((s) => s.status === "pendingReview" || s.status === "reviewing")
+        .filter((s) => (s.status === "pendingReview" || s.status === "reviewing") && s.billing.paymentStatus !== "unpaid")
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return (
