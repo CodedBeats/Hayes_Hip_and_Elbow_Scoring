@@ -1,9 +1,9 @@
 "use client";
 // dependencies
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 // types
-import { type Submission, type SubmissionStatus } from "@/types/submission";
+import { type Submission, type SubmissionStatus, type CaseSubmissionSortOrder } from "@/types/submission";
 // lib
 import { getAdminCaseDisplayStatus } from "@/lib/status";
 // components
@@ -18,6 +18,8 @@ interface CasesTableProps {
     statusFilter: SubmissionStatus | "all";
     onStatusFilterChange: (status: SubmissionStatus | "all") => void;
     availableStatuses: SubmissionStatus[];
+    sortOrder: CaseSubmissionSortOrder;
+    onSortOrderChange: (order: CaseSubmissionSortOrder) => void;
 }
 
 const formatDate = (date: Date) =>
@@ -30,14 +32,18 @@ export const CasesTable = ({
     statusFilter,
     onStatusFilterChange,
     availableStatuses,
+    sortOrder,
+    onSortOrderChange,
 }: CasesTableProps) => {
     const [visibleCount, setVisibleCount] = useState(pageSize);
 
     // A new (e.g. searched/filtered) submissions array should always restart the
-    // Load More count rather than keep whatever was previously scrolled through.
-    useEffect(() => {
+    // Load More count rather than keep whatever was previously scrolled through
+    const [prevSubmissions, setPrevSubmissions] = useState(submissions);
+    if (prevSubmissions !== submissions) {
+        setPrevSubmissions(submissions);
         setVisibleCount(pageSize);
-    }, [submissions, pageSize]);
+    }
 
     const visible = submissions.slice(0, visibleCount);
     const hasMore = visibleCount < submissions.length;
@@ -53,21 +59,32 @@ export const CasesTable = ({
                             : `Showing ${visible.length} of ${submissions.length} cases`}
                     </p>
                 </div>
-                <div className="relative">
-                    <FunnelIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <div className="flex items-center gap-3">
                     <select
-                        value={statusFilter}
-                        onChange={(e) => onStatusFilterChange(e.target.value as SubmissionStatus | "all")}
-                        aria-label="Filter by status"
-                        className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-8 text-sm font-medium text-brand-brown hover:bg-gray-50 focus:outline-none focus:border-[#506147] focus:ring-2 focus:ring-[#506147]/20 transition"
+                        value={sortOrder}
+                        onChange={(e) => onSortOrderChange(e.target.value as CaseSubmissionSortOrder)}
+                        aria-label="Sort by submission date"
+                        className="appearance-none rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm font-medium text-brand-brown hover:bg-gray-50 focus:outline-none focus:border-[#506147] focus:ring-2 focus:ring-[#506147]/20 transition"
                     >
-                        <option value="all">All Statuses</option>
-                        {availableStatuses.map((status) => (
-                            <option key={status} value={status}>
-                                {statusLabels[status]}
-                            </option>
-                        ))}
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
                     </select>
+                    <div className="relative">
+                        <FunnelIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => onStatusFilterChange(e.target.value as SubmissionStatus | "all")}
+                            aria-label="Filter by status"
+                            className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-8 text-sm font-medium text-brand-brown hover:bg-gray-50 focus:outline-none focus:border-[#506147] focus:ring-2 focus:ring-[#506147]/20 transition"
+                        >
+                            <option value="all">All Statuses</option>
+                            {availableStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                    {statusLabels[status]}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
