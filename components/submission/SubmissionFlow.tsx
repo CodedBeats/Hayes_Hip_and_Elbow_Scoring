@@ -185,7 +185,7 @@ export const SubmissionFlow = () => {
                         <p className="text-sm font-semibold text-brand-green mb-2">Submission Instructions</p>
                         <ul className="text-sm text-gray-700 space-y-1">
                             <li>• Ensure your DICOM (.dcm) files are clearly labeled with the Dog&apos;s microchip number.</li>
-                            <li>• Digital signatures are required for both Owner and Veterinarian when submitting online — PDF submissions should already include both signatures within the uploaded form.</li>
+                            <li>• Digital signatures are required for both Owner and Veterinarian when submitting online - PDF submissions should already include both signatures within the uploaded form.</li>
                             <li>• Processing typically takes 3-5 business days from receipt of payment.</li>
                         </ul>
                     </div>

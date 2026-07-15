@@ -2,7 +2,7 @@
 // dependencies
 import { useMemo, useState } from "react";
 // types
-import { type Submission, type SubmissionStatus } from "@/types/submission";
+import { type Submission, type SubmissionStatus, type CaseSubmissionSortOrder } from "@/types/submission";
 // lib
 import { getAdminCaseDisplayStatus } from "@/lib/status";
 // components
@@ -26,6 +26,7 @@ export const CasesListSection = ({
 }: CasesListSectionProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "all">("all");
+    const [sortOrder, setSortOrder] = useState<CaseSubmissionSortOrder>("newest");
 
     // Computed from the raw, unfiltered submissions so the dropdown's options don't
     // shrink away as the admin narrows the results down.
@@ -37,7 +38,7 @@ export const CasesListSection = ({
     const filtered = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
 
-        return submissions.filter((submission) => {
+        const matches = submissions.filter((submission) => {
             if (statusFilter !== "all" && getAdminCaseDisplayStatus(submission) !== statusFilter) {
                 return false;
             }
@@ -50,11 +51,17 @@ export const CasesListSection = ({
             return (
                 idMatch ||
                 submission.dog.registeredName.toLowerCase().includes(query) ||
-                submission.dog.breed.toLowerCase().includes(query) ||
-                submission.owner.name.toLowerCase().includes(query)
+                submission.owner.name.toLowerCase().includes(query) ||
+                submission.veterinarian.veterinarianName.toLowerCase().includes(query)
             );
         });
-    }, [submissions, searchTerm, statusFilter]);
+
+        return matches.sort((a, b) =>
+            sortOrder === "newest"
+                ? b.createdAt.getTime() - a.createdAt.getTime()
+                : a.createdAt.getTime() - b.createdAt.getTime(),
+        );
+    }, [submissions, searchTerm, statusFilter, sortOrder]);
 
     return (
         <>
@@ -71,6 +78,8 @@ export const CasesListSection = ({
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
                 availableStatuses={availableStatuses}
+                sortOrder={sortOrder}
+                onSortOrderChange={setSortOrder}
             />
         </>
     );
