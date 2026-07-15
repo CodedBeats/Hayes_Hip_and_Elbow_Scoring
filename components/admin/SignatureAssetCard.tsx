@@ -18,7 +18,7 @@ export const SignatureAssetCard = ({ label, file }: SignatureAssetCardProps) => 
             <div className="mt-3 flex h-20 items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
                 {file?.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={file.url} alt={label} className="h-full w-full object-contain" />
+                    <img src={file.url} alt={label} className="h-full w-full text-gray-500 object-contain" />
                 ) : (
                     <span className="text-xs text-gray-400">No preview</span>
                 )}
