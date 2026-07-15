@@ -144,7 +144,7 @@ export const CasesTable = ({
                     <Button
                         variant="outline"
                         size="sm"
-                        className="!border-gray-300 !text-brand-brown hover:!bg-gray-50"
+                        className="!border-gray-300 !text-brand-brown cursor-pointer hover:bg-gray-300!"
                         onClick={() => setVisibleCount((count) => count + pageSize)}
                     >
                         Load More
