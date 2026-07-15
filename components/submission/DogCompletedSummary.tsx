@@ -71,9 +71,11 @@ export const DogCompleteSummary = ({
                 <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
                     {uploadedFiles.supportingDocuments.length} supporting docs
                 </span>
-                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
-                    {signatureCount} signature{signatureCount !== 1 ? "s" : ""}
-                </span>
+                {submissionType === "online" && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
+                        {signatureCount} signature{signatureCount !== 1 ? "s" : ""}
+                    </span>
+                )}
             </div>
         </div>
     );

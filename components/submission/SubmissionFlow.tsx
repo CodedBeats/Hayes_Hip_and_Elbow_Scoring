@@ -1,6 +1,7 @@
 // dependencies
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 // components
 import { DogEntry } from "./DogEntry";
 import type { DogDraft } from "./DogEntry";
@@ -165,6 +166,13 @@ export const SubmissionFlow = () => {
                     All DICOM files are reviewed and handled securely.
                 </p>
                 <p className="mt-2 font-mono text-xs text-gray-400">{submissionId}</p>
+                <p className="mt-2 text-sm text-gray-600">
+                    Need the official CHED forms or scheme details? See our{" "}
+                    <Link href="/about#ched-resources" className="font-semibold text-brand-green underline">
+                        CHED Resources
+                    </Link>{" "}
+                    section.
+                </p>
             </div>
 
             {/* -- Instruction box -- */}
@@ -177,7 +185,7 @@ export const SubmissionFlow = () => {
                         <p className="text-sm font-semibold text-brand-green mb-2">Submission Instructions</p>
                         <ul className="text-sm text-gray-700 space-y-1">
                             <li>• Ensure your DICOM (.dcm) files are clearly labeled with the Dog&apos;s microchip number.</li>
-                            <li>• Digital signatures are required for both Owner and Veterinarian.</li>
+                            <li>• Digital signatures are required for both Owner and Veterinarian when submitting online - PDF submissions should already include both signatures within the uploaded form.</li>
                             <li>• Processing typically takes 3-5 business days from receipt of payment.</li>
                         </ul>
                     </div>

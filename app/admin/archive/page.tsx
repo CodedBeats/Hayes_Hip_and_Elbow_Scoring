@@ -1,5 +1,4 @@
-import { AdminTopBar } from "@/components/admin/AdminTopBar";
-import { CasesTable } from "@/components/admin/CasesTable";
+import { CasesListSection } from "@/components/admin/CasesListSection";
 import { getAllSubmissions } from "@/lib/firebaseAdmin";
 
 // Always render on request rather than prerender at build time - admin case data changes
@@ -15,8 +14,12 @@ const ArchivePage = async () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <AdminTopBar title="Welcome back" subtitle="Manage veterinary scoring cases" />
-            <CasesTable submissions={cases} title="Archived Cases" />
+            <CasesListSection
+                submissions={cases}
+                tableTitle="Archived Cases"
+                topBarTitle="Welcome back"
+                topBarSubtitle="Manage veterinary scoring cases"
+            />
         </div>
     );
 };

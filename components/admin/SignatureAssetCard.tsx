@@ -9,16 +9,16 @@ interface SignatureAssetCardProps {
 
 export const SignatureAssetCard = ({ label, file }: SignatureAssetCardProps) => {
     return (
-        <div className="rounded-xl border border-gray-200 p-4">
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <PenIcon />
+        <div className="w-full rounded-xl border border-gray-200 p-4">
+            <p className="flex items-center justify-start gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <PenIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 {label}
             </p>
 
             <div className="mt-3 flex h-20 items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
                 {file?.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={file.url} alt={label} className="h-full w-full object-contain" />
+                    <img src={file.url} alt={label} className="h-full w-full text-gray-500 object-contain" />
                 ) : (
                     <span className="text-xs text-gray-400">No preview</span>
                 )}
@@ -31,7 +31,7 @@ export const SignatureAssetCard = ({ label, file }: SignatureAssetCardProps) => 
                 disabled={!file?.url}
                 className="mt-3 w-full !border-gray-300 !text-brand-brown hover:!bg-gray-50"
             >
-                Preview PDF
+                Preview File
             </Button>
         </div>
     );

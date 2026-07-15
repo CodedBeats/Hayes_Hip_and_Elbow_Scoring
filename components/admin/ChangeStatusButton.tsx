@@ -7,7 +7,8 @@ import { statusLabels, StatusPill } from "@/components/admin/StatusPill";
 import { ChevronDownIcon } from "@/components/misc/Icons";
 import { updateSubmissionStatus } from "@/lib/firebase";
 
-const allStatuses = Object.keys(statusLabels) as SubmissionStatus[];
+// "unpaid" is a derived display status, not one admins set directly - exclude it here.
+const allStatuses = (Object.keys(statusLabels) as SubmissionStatus[]).filter((status) => status !== "unpaid");
 
 interface ChangeStatusButtonProps {
     submissionId: string;
