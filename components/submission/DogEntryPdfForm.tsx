@@ -3,7 +3,7 @@
 import { UploadBox } from "../form/UploadBox"
 import { UploadedFileList } from "../form/UploadedFileList"
 // icons
-import { CloudIcon, DocumentIcon, PenIcon } from "../misc/Icons"
+import { CloudIcon, DocumentIcon } from "../misc/Icons"
 // types
 import type { DogEntryFormData } from "@/types/form";
 import type { Files } from "@/types/submission";
@@ -14,13 +14,9 @@ type Props = {
     pdfFormFile: File | null;
     selectedDicom: File[];
     selectedDocs: File[];
-    ownerSigFile: File | null;
-    vetSigFile: File | null;
     onPdfFormChange: (file: File | null) => void;
     onDicomChange: (files: File[]) => void;
     onDocsChange: (files: File[]) => void;
-    onOwnerSigChange: (file: File | null) => void;
-    onVetSigChange: (file: File | null) => void;
     resetKey: number;
     uploadedFiles: Files | null;
 };
@@ -31,13 +27,9 @@ export const DogEntryPdfForm = ({
     pdfFormFile,
     selectedDicom,
     selectedDocs,
-    ownerSigFile,
-    vetSigFile,
     onPdfFormChange,
     onDicomChange,
     onDocsChange,
-    onOwnerSigChange,
-    onVetSigChange,
     resetKey,
     uploadedFiles,
 }: Props) => {
@@ -132,41 +124,6 @@ export const DogEntryPdfForm = ({
                 resetKey={resetKey}
             />
             <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div className="flex flex-col">
-                    <UploadBox
-                        label="Owner Signature"
-                        hint="Click to upload Owner signature (PNG/JPG)"
-                        icon={<PenIcon />}
-                        isRequired
-                        file={ownerSigFile}
-                        onChange={onOwnerSigChange}
-                        accept=".png,.jpg,.jpeg"
-                        resetKey={resetKey}
-                    />
-                    <UploadedFileList 
-                        files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] } 
-                    />
-                </div>
-
-
-                <div className="flex flex-col">
-                    <UploadBox
-                        label="Veterinarian Signature"
-                        hint="Click to upload Veterinarian signature (PNG/JPG)"
-                        icon={<PenIcon />}
-                        isRequired
-                        file={vetSigFile}
-                        onChange={onVetSigChange}
-                        accept=".png,.jpg,.jpeg"
-                        resetKey={resetKey}
-                    />
-                    <UploadedFileList
-                        files={ uploadedFiles?.veterinarianSignature ? [uploadedFiles.veterinarianSignature] : [] }
-                    />
-                </div>
-            </div>
         </div>
     );
 };
