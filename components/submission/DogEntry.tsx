@@ -413,13 +413,9 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     pdfFormFile={pdfFormFile}
                     selectedDicom={selectedDicom}
                     selectedDocs={selectedDocs}
-                    ownerSigFile={ownerSigFile}
-                    vetSigFile={vetSigFile}
                     onPdfFormChange={setPdfFormFile}
                     onDicomChange={setSelectedDicom}
                     onDocsChange={setSelectedDocs}
-                    onOwnerSigChange={setOwnerSigFile}
-                    onVetSigChange={setVetSigFile}
                     resetKey={uploadKey}
                     uploadedFiles={uploadedFiles}
                 />
