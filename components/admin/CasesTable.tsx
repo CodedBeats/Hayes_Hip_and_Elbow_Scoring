@@ -1,41 +1,74 @@
 "use client";
 // dependencies
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 // types
-import { type Submission } from "@/types/submission";
+import { type Submission, type SubmissionStatus } from "@/types/submission";
 // lib
 import { getAdminCaseDisplayStatus } from "@/lib/status";
 // components
-import { StatusPill } from "@/components/admin/StatusPill";
+import { StatusPill, statusLabels } from "@/components/admin/StatusPill";
 import { Button } from "@/components/ui/Button";
-import { IconButton } from "@/components/ui/IconButton";
-import { FunnelIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/misc/Icons";
+import { FunnelIcon } from "@/components/misc/Icons";
 
 interface CasesTableProps {
     submissions: Submission[];
     title: string;
     pageSize?: number;
+    statusFilter: SubmissionStatus | "all";
+    onStatusFilterChange: (status: SubmissionStatus | "all") => void;
+    availableStatuses: SubmissionStatus[];
 }
 
 const formatDate = (date: Date) =>
     date.toLocaleDateString("en-AU", { year: "numeric", month: "short", day: "numeric" });
 
-export const CasesTable = ({ submissions, title, pageSize = 4 }: CasesTableProps) => {
-    const [page, setPage] = useState(1);
+export const CasesTable = ({
+    submissions,
+    title,
+    pageSize = 4,
+    statusFilter,
+    onStatusFilterChange,
+    availableStatuses,
+}: CasesTableProps) => {
+    const [visibleCount, setVisibleCount] = useState(pageSize);
 
-    const totalPages = Math.max(1, Math.ceil(submissions.length / pageSize));
-    const start = (page - 1) * pageSize;
-    const visible = submissions.slice(start, start + pageSize);
+    // A new (e.g. searched/filtered) submissions array should always restart the
+    // Load More count rather than keep whatever was previously scrolled through.
+    useEffect(() => {
+        setVisibleCount(pageSize);
+    }, [submissions, pageSize]);
+
+    const visible = submissions.slice(0, visibleCount);
+    const hasMore = visibleCount < submissions.length;
 
     return (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center justify-between px-6 py-5">
-                <h3 className="text-lg font-bold text-brand-brown">{title}</h3>
-                <Button variant="outline" size="sm" className="!border-gray-300 !text-brand-brown hover:!bg-gray-50">
-                    <FunnelIcon className="h-4 w-4" />
-                    Filter
-                </Button>
+                <div>
+                    <h3 className="text-lg font-bold text-brand-brown">{title}</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                        {submissions.length === 0
+                            ? "Showing 0 cases"
+                            : `Showing ${visible.length} of ${submissions.length} cases`}
+                    </p>
+                </div>
+                <div className="relative">
+                    <FunnelIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => onStatusFilterChange(e.target.value as SubmissionStatus | "all")}
+                        aria-label="Filter by status"
+                        className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-8 text-sm font-medium text-brand-brown hover:bg-gray-50 focus:outline-none focus:border-[#506147] focus:ring-2 focus:ring-[#506147]/20 transition"
+                    >
+                        <option value="all">All Statuses</option>
+                        {availableStatuses.map((status) => (
+                            <option key={status} value={status}>
+                                {statusLabels[status]}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -89,38 +122,18 @@ export const CasesTable = ({ submissions, title, pageSize = 4 }: CasesTableProps
                 </table>
             </div>
 
-            <div className="flex items-center justify-between px-6 py-4">
-                <p className="text-sm text-gray-500">
-                    {submissions.length === 0
-                        ? "Showing 0 cases"
-                        : `Showing ${start + 1} to ${Math.min(start + pageSize, submissions.length)} of ${submissions.length} cases`}
-                </p>
-                <div className="flex items-center gap-1">
-                    <IconButton
-                        icon={<ChevronLeftIcon />}
-                        ariaLabel="Previous page"
-                        disabled={page <= 1}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    />
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                        <Button
-                            key={p}
-                            size="sm"
-                            variant={p === page ? "solid" : "outline"}
-                            className={p === page ? "" : "!border-gray-300 !text-gray-600 hover:!bg-gray-50"}
-                            onClick={() => setPage(p)}
-                        >
-                            {p}
-                        </Button>
-                    ))}
-                    <IconButton
-                        icon={<ChevronRightIcon />}
-                        ariaLabel="Next page"
-                        disabled={page >= totalPages}
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    />
+            {hasMore && (
+                <div className="flex justify-center px-6 py-4">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="!border-gray-300 !text-brand-brown hover:!bg-gray-50"
+                        onClick={() => setVisibleCount((count) => count + pageSize)}
+                    >
+                        Load More
+                    </Button>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
