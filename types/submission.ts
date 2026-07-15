@@ -47,4 +47,7 @@ export type SubmissionStatus =
     | "draft"
     | "completed"
     | "archived";
+
+
+export type CaseSubmissionSortOrder = "newest" | "oldest";
     
