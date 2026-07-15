@@ -28,12 +28,16 @@ export const AssetManagementCard = ({
             <div className="mt-5 flex flex-col gap-6">
                 {/* signatures & pdf submission form? */}
                 <div className="flex w-full">
-                    <div className="flex-1">
-                        <SignatureAssetCard label="Owner Signature" file={ownerSignature} />
-                    </div>
-                    <div className="flex-1">
-                        <SignatureAssetCard label="Vet Signature" file={veterinarianSignature} />
-                    </div>
+                    {ownerSignature && (
+                        <div className="flex-1">
+                            <SignatureAssetCard label="Owner Signature" file={ownerSignature} />
+                        </div>
+                    )}
+                    {veterinarianSignature && (
+                        <div className="flex-1">
+                            <SignatureAssetCard label="Vet Signature" file={veterinarianSignature} />
+                        </div>
+                    )}
                     {pdfForm && (
                         <div className="flex-1">
                             <SignatureAssetCard label="Submission PDF Form" file={pdfForm} />
