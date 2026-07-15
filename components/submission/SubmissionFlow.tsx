@@ -1,6 +1,7 @@
 // dependencies
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 // components
 import { DogEntry } from "./DogEntry";
 import type { DogDraft } from "./DogEntry";
@@ -165,6 +166,13 @@ export const SubmissionFlow = () => {
                     All DICOM files are reviewed and handled securely.
                 </p>
                 <p className="mt-2 font-mono text-xs text-gray-400">{submissionId}</p>
+                <p className="mt-2 text-sm text-gray-600">
+                    Need the official CHED forms or scheme details? See our{" "}
+                    <Link href="/about#ched-resources" className="font-semibold text-brand-green underline">
+                        CHED Resources
+                    </Link>{" "}
+                    section.
+                </p>
             </div>
 
             {/* -- Instruction box -- */}

@@ -18,6 +18,7 @@ import {
     MagnifyingGlassIcon,
     ShieldCheckIcon,
     CheckCircleIcon,
+    ArrowUpRightIcon,
 } from "@/components/misc/Icons";
 
 const steps = [
@@ -95,6 +96,34 @@ const Home = () => {
                 <Button href="/submit" variant="solid">Start Submission</Button>
                 <Button href="/about" variant="outline">Learn More</Button>
             </ImageCTASection>
+
+            <section className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-10 text-center sm:px-10">
+                <h2 className="text-xl font-bold text-brand-brown">Looking for official CHED information?</h2>
+                <p className="max-w-2xl text-sm text-gray-600 leading-relaxed">
+                    ORCHID is the official Dogs Australia portal for the Canine Hip and Elbow Dysplasia (CHED)
+                    scheme, including scheme details and submission forms.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                        href="https://orchid.ankc.org.au/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the ORCHID Website
+                    </a>
+                    <a
+                        href="https://orchid.ankc.org.au/Home/HomeChed"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the CHED Home Page
+                    </a>
+                </div>
+            </section>
 
             <ImageTextSection image={{ src: "/images/Ana portrait.jpg", alt: "Dr Ana Hayes" }} imagePosition="left">
                 <div>
