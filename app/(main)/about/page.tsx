@@ -16,6 +16,7 @@ import {
     DogIcon,
     ScaleIcon,
     EnvelopeIcon,
+    ArrowUpRightIcon,
 } from "@/components/misc/Icons";
 // types
 import type { ExamType } from "@/types/form";
@@ -231,6 +232,33 @@ const AboutPage = () => {
                     ))}
                 </div>
             </ImageTextSection>
+
+            <section id="ched-resources" className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-16 text-center sm:px-10">
+                <SectionHeading
+                    title="Official CHED Resources"
+                    subtitle="ORCHID is the official Dogs Australia portal for the Canine Hip and Elbow Dysplasia (CHED) scheme - it's where you'll find all official scheme information and submission forms."
+                />
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                        href="https://orchid.ankc.org.au/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the ORCHID Website
+                    </a>
+                    <a
+                        href="https://orchid.ankc.org.au/Home/HomeChed"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the CHED Home Page
+                    </a>
+                </div>
+            </section>
 
             <section id="positioning" className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16 sm:px-10">
                 <SectionHeading
