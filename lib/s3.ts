@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, HeadObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { UploadedFile } from "@/types/upload";
 
@@ -36,6 +36,17 @@ export const getFileMetadata = async (
         // missing/broken file should never take down the whole case page.
         return null;
     }
+};
+
+// Used by the drafts-cleanup cron job (app/api/cron/cleanup-drafts) to remove orphaned
+// uploads. DeleteObjectsCommand caps out at 1000 keys per call - not chunked here since a
+// single dog's file set will never come close to that.
+export const deleteObjects = async (keys: string[]): Promise<void> => {
+    if (keys.length === 0) return;
+    await s3.send(new DeleteObjectsCommand({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Delete: { Objects: keys.map((Key) => ({ Key })) },
+    }));
 };
 
 // Takes a Firestore-derived stub (key + best-effort filename only, see

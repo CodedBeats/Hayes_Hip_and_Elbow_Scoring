@@ -14,6 +14,7 @@ import type { Files } from "@/types/submission";
 import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
+import { saveDraftFiles } from "@/lib/firebase";
 
 // all serialisable per-dog state - persisted to localStorage by SubmissionFlow
 export type DogDraft = {
@@ -213,13 +214,26 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     ? results[cursor + dicomCount + docsCount + (ownerSigFile ? 1 : 0)]
                     : undefined,
             };
-            setUploadedFiles(prev => ({
-                pdfForm: dogFiles.pdfForm ?? prev?.pdfForm,
-                dicomFiles: [...(prev?.dicomFiles ?? []), ...dogFiles.dicomFiles],
-                supportingDocuments: [...(prev?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
-                ownerSignature: dogFiles.ownerSignature ?? prev?.ownerSignature,
-                veterinarianSignature: dogFiles.veterinarianSignature ?? prev?.veterinarianSignature,
-            }));
+            const mergedFiles: Files = {
+                pdfForm: dogFiles.pdfForm ?? uploadedFiles?.pdfForm,
+                dicomFiles: [...(uploadedFiles?.dicomFiles ?? []), ...dogFiles.dicomFiles],
+                supportingDocuments: [...(uploadedFiles?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
+                ownerSignature: dogFiles.ownerSignature ?? uploadedFiles?.ownerSignature,
+                veterinarianSignature: dogFiles.veterinarianSignature ?? uploadedFiles?.veterinarianSignature,
+            };
+            setUploadedFiles(mergedFiles);
+
+            // Record these files in Firestore as a "draft" submission as soon as they're
+            // confirmed in S3 - this is what lets the cleanup cron job
+            // (app/api/cron/cleanup-drafts) find and delete orphaned uploads if the
+            // customer never marks this dog complete / never checks out. A failure here
+            // must never block the user's upload, which already succeeded - just log it.
+            try {
+                await saveDraftFiles(submissionId, dogIndex, submissionType, mergedFiles);
+            } catch (draftErr) {
+                console.error("Failed to save draft submission record:", draftErr);
+            }
+
             setUploadedNames((prev) => ({
                 dicom:    [...prev.dicom,    ...selectedDicom.map((f) => f.name)],
                 docs:     [...prev.docs,     ...selectedDocs.map((f) => f.name)],
@@ -365,7 +379,6 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                         checked={submissionType === "pdf"}
                         onChange={(e) => {
                             setSubmissionType(e.target.checked ? "pdf" : "online");
-                            setUploadedFiles(null);
                         }}
                         className="h-4 w-4 rounded border-gray-300 accent-[#506147]"
                     />
