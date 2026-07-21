@@ -18,7 +18,6 @@ import type { BillingInfo } from "@/types/billing";
 // ---- draft persistence ----
 
 const DRAFT_KEY = "submission_draft";
-const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 type CompletedDogEntry = {
     submissionType: string;
@@ -40,12 +39,7 @@ const loadDraft = (): SubmissionDraft | null => {
     try {
         const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) return null;
-        const draft = JSON.parse(raw) as SubmissionDraft;
-        if (Date.now() - draft.savedAt > DRAFT_TTL_MS) {
-            localStorage.removeItem(DRAFT_KEY);
-            return null;
-        }
-        return draft;
+        return JSON.parse(raw) as SubmissionDraft;
     } catch {
         return null;
     }
@@ -230,7 +224,7 @@ export const SubmissionFlow = () => {
 
             {/* -- Progress saved notice -- */}
             <p className="mb-6 text-xs text-gray-400 text-center">
-                Your progress is automatically saved - form fields and uploaded files will be remembered for 7 days if you close or reload this page.
+                Your progress is automatically saved - form fields and uploaded files will be remembered if you close or reload this page.
             </p>
 
             {/* -- Progress -- */}
