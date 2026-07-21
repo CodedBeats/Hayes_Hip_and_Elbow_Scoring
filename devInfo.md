@@ -158,7 +158,9 @@ hayes_hip_and_elbow_scoring/
 ## Maybe actualy project structure
 <!--  -->
 
-## Firestore Folder Structure
+## DB Structure
+
+### Firestore Folder Structure
 clinics
 ├── clinic_001
 │   ├── clinicName
@@ -247,7 +249,7 @@ archivedSubmissions
 └───└── metadata
 
 
-## S3 Folder structure
+### S3 Folder structure
 submissions/
 └── submission_001/
 │   │
