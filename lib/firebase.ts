@@ -8,14 +8,13 @@ import {
 } from "firebase/auth";
 import {
     getFirestore,
-    collection,
-    addDoc,
     doc,
     setDoc,
     updateDoc,
     deleteDoc,
     getDocs,
     getDoc,
+    serverTimestamp,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // types
@@ -104,31 +103,95 @@ type CreateSubmissionPayload = {
     billing: BillingInfo;
 };
 
-// creates one firestore submission document per dog (though many many have same s3SubmissionId)
+// One firestore doc per dog, but the doc ID is deterministic (not Firestore's random
+// addDoc ID) so that a "draft" write made while files are still being uploaded (see
+// saveDraftFiles below) and the final "pendingReview" write made at checkout land on the
+// SAME document instead of creating a duplicate.
+const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string =>
+    `${s3SubmissionId}_dog${dogIndex}`;
+
+// Called as soon as a dog's first file successfully lands in S3 (from DogEntry's
+// handleUploadAll), well before the dog is marked complete or checkout starts. Without
+// this, a customer who uploads files and abandons the form leaves S3 objects with zero
+// Firestore record - nothing to know they exist or to clean them up later. Writing a
+// "draft" doc here means every S3 upload always has a corresponding Firestore doc from
+// the moment it happens, and the scheduled cleanup job (app/api/cron/cleanup-drafts)
+// only ever has to query Firestore, never reconcile against a live S3 listing.
+//
+// Safe to call repeatedly (every upload batch) - setDoc with merge just layers the new
+// file keys on top of whatever was written last time, keyed by the same deterministic ID.
+export const saveDraftFiles = async (
+    s3SubmissionId: string,
+    dogIndex: number,
+    submissionType: string,
+    files: Files,
+): Promise<void> => {
+    const draftRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
+
+    // Only stamp createdAt on the very first write for this dog - if every upload batch
+    // reset it, the cron job's "how old is this draft" check would only ever see the age
+    // of the most recent upload, never how long the submission has truly existed.
+    // updatedAt (always stamped below) is what cleanup actually keys off, since it needs
+    // to know when the customer last did anything at all, not when the doc first existed.
+    const existing = await getDoc(draftRef);
+
+    // Firestore's setDoc rejects explicit `undefined` field values (unlike a merge that
+    // simply omits a key) - pdfForm/ownerSignature/veterinarianSignature are undefined
+    // whenever a dog hasn't uploaded that particular file yet (e.g. any "online" mode dog
+    // has no pdfForm at all), so they must be left out of the write entirely rather than
+    // passed straight through.
+    const definedFiles: Partial<Files> = {
+        dicomFiles: files.dicomFiles,
+        supportingDocuments: files.supportingDocuments,
+        ...(files.pdfForm ? { pdfForm: files.pdfForm } : {}),
+        ...(files.ownerSignature ? { ownerSignature: files.ownerSignature } : {}),
+        ...(files.veterinarianSignature ? { veterinarianSignature: files.veterinarianSignature } : {}),
+    };
+
+    await setDoc(
+        draftRef,
+        {
+            s3SubmissionId,
+            dogIndex,
+            submissionType,
+            status: "draft",
+            files: definedFiles,
+            updatedAt: serverTimestamp(),
+            ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+        },
+        { merge: true },
+    );
+};
+
+// creates (or upserts, if a draft already exists from saveDraftFiles above) one firestore
+// submission document per dog (though many may share the same s3SubmissionId)
 export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
 
     // get payload
-    const { 
-        s3SubmissionId, 
-        dogIndex, 
+    const {
+        s3SubmissionId,
+        dogIndex,
         submissionType,
-        owner, 
-        veterinarian, 
-        dog, 
-        files, 
+        owner,
+        veterinarian,
+        dog,
+        files,
         billing, // billing.paymentStatus always starts as "unpaid"
     } = payload;
+
+    const docRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
 
     // handle difference between online and pdf submission types
     if (submissionType === "pdf") {
         // create submission with just files
-        const docRef = await addDoc(collection(db, "submissions"), {
+        await setDoc(docRef, {
             s3SubmissionId,
             dogIndex,
             status: "pendingReview",
             submitterType: "anon",
             submissionType,
             createdAt: new Date(),
+            updatedAt: serverTimestamp(),
             billing,
             pdfFormRef: files.pdfForm?.key ?? null,
             // owner and vet fields just become refs to signatures
@@ -138,19 +201,20 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
                 dicomFilesRef: files.dicomFiles.map((f) => f.key),
                 supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
             },
-        });
+        }, { merge: true });
 
         return docRef.id;
 
     } else {
         // create submission with all form fields and files
-        const docRef = await addDoc(collection(db, "submissions"), {
+        await setDoc(docRef, {
             s3SubmissionId,
             dogIndex,
             status: "pendingReview",
             submitterType: "anon",
             submissionType,
             createdAt: new Date(),
+            updatedAt: serverTimestamp(),
             billing,
             owner: {
                 ...owner,
@@ -166,7 +230,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
                 dicomFilesRef: files.dicomFiles.map((f) => f.key),
                 supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
             },
-        });
+        }, { merge: true });
 
         return docRef.id;
     }
