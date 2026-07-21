@@ -1,4 +1,4 @@
-# I need this, don't judge
+# I need this, don't judge :)
 
 ## How Next works i think
 ```
@@ -281,4 +281,17 @@ submissions/
 ## GIT stuff
 When pulling from master in prod: `git pull --no-rebase origin master`
 Then just commit and sync
+
+### Branches
+- admin
+- auth
+- desktop-ui
+- docs
+- file-upload
+- firebase
+- mobile-ui
+- prelaucnh-landing
+- prod
+- submit-form
+- transactions
 
