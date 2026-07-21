@@ -43,7 +43,9 @@ lib/xyz             = process data, talk to db/auth (e.g. firebase)         **re
 - database logic
 
 
-## Planned project structure
+## Project Structure
+
+### Planned project structure
 ```
 hayes_hip_and_elbow_scoring/
 │
@@ -155,7 +157,7 @@ hayes_hip_and_elbow_scoring/
 └── tsconfig.json
 ```
 
-## Maybe actualy project structure
+### Maybe actualy project structure
 <!--  -->
 
 ## DB Structure
@@ -297,3 +299,9 @@ Then just commit and sync
 - submit-form
 - transactions
 
+
+## Testing CMDs
+
+### Cron
+Force testing orphan file and doc cleanup (a draft doc will need to be >7 days old)
+*Git Bash* `curl -H 'Authorization: Bearer CRON_SECRET' http://localhost:3000/api/cron/cleanup-drafts`
