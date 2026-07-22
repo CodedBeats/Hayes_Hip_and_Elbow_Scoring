@@ -105,6 +105,7 @@ Good:
 * Write comments explaining WHY, not WHAT
 * Remove dead/commented-out code before finalizing
 * Keep TODOs actionable
+* Functions in `/lib`, `/hooks`, and complex component handlers use TypeDoc-style `/** */` blocks (`@remarks` for rationale, `@param`/`@returns` only when non-obvious, `@see`/`{@link}` for cross-file coupling) — run `npm run docs` to generate a browsable reference
 
 ---
 
