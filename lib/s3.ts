@@ -12,11 +12,16 @@ export const s3 = new S3Client({
     },
 });
 
+/**
+ * Generates a presigned S3 GET URL for downloading/viewing a file.
+ *
+ * @remarks
+ * Expires after 30 minutes - comfortably longer than the 5-minute upload-PUT window used
+ * by `app/api/upload-url/route.ts`, since this is for a human actively viewing/
+ * downloading on a single case page, not a fire-and-forget upload slot.
+ */
 export const getFileDownloadUrl = async (key: string): Promise<string> => {
     const command = new GetObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: key });
-    // 30 minutes - comfortably longer than the 5-minute upload-PUT window, since this is
-    // for a human actively viewing/downloading on a single case page, not a fire-and-
-    // forget upload slot.
     return getSignedUrl(s3, command, { expiresIn: 60 * 30 });
 };
 
@@ -49,12 +54,18 @@ export const deleteObjects = async (keys: string[]): Promise<void> => {
     }));
 };
 
-// Takes a Firestore-derived stub (key + best-effort filename only, see
-// lib/firebaseAdmin.ts's keyToUploadedFileStub) and backfills it with real S3 data.
-// Deliberately swallows failures (including getFileDownloadUrl throwing) and returns the
-// original stub unchanged - every asset-card component already renders `url: undefined`
-// as a disabled/greyed "unavailable" state, so this is a free, correct degradation with
-// no extra UI work needed for a single bad file.
+/**
+ * Backfills a Firestore-derived file stub with real S3 metadata and a download URL.
+ *
+ * @remarks
+ * Takes a stub built from just a key (key + best-effort filename only - see
+ * `keyToUploadedFileStub` in `lib/firebaseAdmin.ts`) and enriches it with real S3 data.
+ * Deliberately swallows failures (including {@link getFileDownloadUrl} throwing) and
+ * returns the original stub unchanged - every asset-card component already renders
+ * `url: undefined` as a disabled/greyed "unavailable" state, so this is a free, correct
+ * degradation with no extra UI work needed for a single bad file. Callers must treat
+ * `url: undefined` on the result as "unavailable," not as an error to handle separately.
+ */
 export const enrichUploadedFile = async (file: UploadedFile): Promise<UploadedFile> => {
     try {
         const [metadata, url] = await Promise.all([getFileMetadata(file.key), getFileDownloadUrl(file.key)]);

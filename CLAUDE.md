@@ -83,6 +83,7 @@ functions, UPPER_SNAKE_CASE for globals
 - Comments: Add more comments in more complex sections
 - Comments: Explain intent, not implementation; remove
 dead code before finalizing
+- Comments: Functions in /lib, /hooks, and complex component handlers use TypeDoc-style `/** */` blocks (`@remarks` for rationale, `@param`/`@returns` only when non-obvious, `@see`/`{@link}` for cross-file coupling) — run `npm run docs` to generate a browsable reference
 - Form Patterns: Use generic form components, avoid
 inline setFormData for state updates
 
