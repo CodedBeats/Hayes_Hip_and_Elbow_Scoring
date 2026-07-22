@@ -30,6 +30,10 @@ type Props = {
     onVetSigChange: (file: File | null) => void;
     resetKey: number;
     uploadedFiles: Files | null;
+    duplicateDicomNames: string[];
+    duplicateDocsNames: string[];
+    duplicateOwnerSigNames: string[];
+    duplicateVetSigNames: string[];
 };
 
 
@@ -64,6 +68,10 @@ export const DogEntryOnlineForm = ({
     onVetSigChange,
     resetKey,
     uploadedFiles,
+    duplicateDicomNames,
+    duplicateDocsNames,
+    duplicateOwnerSigNames,
+    duplicateVetSigNames,
 }: Props) => {
     return (
         <div className="space-y-4">
@@ -216,6 +224,7 @@ export const DogEntryOnlineForm = ({
                         type="text"
                         value={ownerData.name}
                         onChange={(e) => setOwner("name", e.target.value)}
+                        autoComplete="name"
                     />
                     <InputField
                         name="ownerEmail"
@@ -223,6 +232,7 @@ export const DogEntryOnlineForm = ({
                         type="email"
                         value={ownerData.email}
                         onChange={(e) => setOwner("email", e.target.value)}
+                        autoComplete="email"
                     />
                 </div>
 
@@ -232,12 +242,15 @@ export const DogEntryOnlineForm = ({
                     type="text"
                     value={ownerData.address}
                     onChange={(e) => setOwner("address", e.target.value)}
+                    autoComplete="street-address"
                 />
 
                 <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                     <MobileField
+                        name="ownerPhone"
                         value={ownerData.phone}
                         onChange={(v) => setOwner("phone", v)}
+                        autoComplete="tel"
                     />
                     {isDogsAustraliaRegistered && (
                         <InputField
@@ -261,6 +274,8 @@ export const DogEntryOnlineForm = ({
                     onChange={onOwnerSigChange}
                     accept=".png,.jpg,.jpeg"
                     resetKey={resetKey}
+                    isUploaded={!!uploadedFiles?.ownerSignature}
+                    duplicateFileNames={duplicateOwnerSigNames}
                 />
                 <UploadedFileList 
                     files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] } 
@@ -304,9 +319,11 @@ export const DogEntryOnlineForm = ({
 
                 <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                     <MobileField
+                        name="vetPhone"
                         value={vetData.phone}
                         onChange={(v) => setVet("phone", v)}
                         label="Practice Phone"
+                        autoComplete="off"
                     />
                     <InputField
                         name="dateOfRadiograph"
@@ -418,6 +435,8 @@ export const DogEntryOnlineForm = ({
                     onChange={onVetSigChange}
                     accept=".png,.jpg,.jpeg"
                     resetKey={resetKey}
+                    isUploaded={!!uploadedFiles?.veterinarianSignature}
+                    duplicateFileNames={duplicateVetSigNames}
                 />
                 <UploadedFileList
                     files={ uploadedFiles?.veterinarianSignature ? [uploadedFiles.veterinarianSignature] : [] }
@@ -443,6 +462,8 @@ export const DogEntryOnlineForm = ({
                     onMultiChange={onDicomChange}
                     accept=".dcm"
                     resetKey={resetKey}
+                    uploadedCount={uploadedFiles?.dicomFiles.length ?? 0}
+                    duplicateFileNames={duplicateDicomNames}
                 />
                 <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
 
@@ -457,6 +478,8 @@ export const DogEntryOnlineForm = ({
                     onMultiChange={onDocsChange}
                     accept=".pdf"
                     resetKey={resetKey}
+                    uploadedCount={uploadedFiles?.supportingDocuments.length ?? 0}
+                    duplicateFileNames={duplicateDocsNames}
                 />
                 <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
             </div>
