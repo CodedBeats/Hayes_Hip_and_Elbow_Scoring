@@ -123,6 +123,24 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     const setVet = (field: keyof VeterinarianDetails, value: string | boolean) =>
         setVetData((prev) => ({ ...prev, [field]: value }));
 
+    /**
+     * Requests presigned S3 upload URLs for every selected file, PUTs them directly to
+     * S3, then records the result as a Firestore draft.
+     *
+     * @remarks
+     * Files are flattened into one `orderedFiles` array (in a fixed pdfForm / dicom /
+     * docs / signatures order) before upload, because `app/api/upload-url/route.ts`
+     * returns presigned URLs as a flat array in request order with no other way to
+     * correlate a result back to its original category. After the uploads resolve, the
+     * results array is sliced back into the `Files` shape using a running `cursor` and
+     * the known per-category counts (`pdfOffset`, `dicomCount`, `docsCount`) - if the
+     * order this array is built in ever changes, the slicing offsets below must change
+     * to match, or files will silently land in the wrong `Files` field.
+     *
+     * A failed {@link saveDraftFiles} call is swallowed (logged only) since the S3
+     * upload itself already succeeded by that point - the cleanup cron job existing is
+     * a nice-to-have, not something worth failing the user's upload over.
+     */
     const handleUploadAll = async () => {
         const signatureFiles = [ownerSigFile, vetSigFile].filter(Boolean) as File[];
 
@@ -257,6 +275,26 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
         }
     };
 
+    /**
+     * Validates the current mode's required fields/uploads and, if everything's
+     * present, marks the dog complete.
+     *
+     * @remarks
+     * The two submission modes require entirely different sets of fields, so this
+     * branches on `submissionType` rather than sharing one rule set:
+     * - **pdf mode**: only requires the uploaded PDF form and at least one DICOM file.
+     *   A supporting document is only required when the dog is NOT Dogs Australia
+     *   registered (registered dogs don't need one).
+     *   Everything else (owner/vet/dog structured fields) is skipped entirely, since
+     *   that data lives inside the PDF itself, not in this form - see
+     *   {@link mapSubmissionDoc | mapSubmissionDoc's pdf-mode placeholder handling} in
+     *   `lib/firebaseAdmin.ts` for the other side of this.
+     * - **online mode**: requires the full structured dog/owner/vet fields plus a DICOM
+     *   file and both signatures.
+     *
+     * Every missing field is accumulated into `issues` rather than bailing on the first
+     * one, so `ValidationSummary` can show the user everything wrong at once.
+     */
     const handleMarkComplete = () => {
         const issues: ValidationIssue[] = [];
 
