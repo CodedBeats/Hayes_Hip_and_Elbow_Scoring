@@ -1,0 +1,25 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "expand",
+  "entryPoints": [
+    "lib",
+    "hooks",
+    "types",
+    "components/submission/DogEntry.tsx",
+    "components/form/MobileField.tsx",
+    "components/admin/CasesListSection.tsx",
+    "app/api/create-checkout-session/route.ts",
+    "app/api/cron/cleanup-drafts/route.ts",
+    "app/api/dev-login/route.ts",
+    "app/api/upload-url/route.ts",
+    "app/api/verify-payment/route.ts",
+    "middleware.ts"
+  ],
+  "tsconfig": "./tsconfig.json",
+  "out": "docs-typedoc",
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "validation": {
+    "invalidLink": true
+  }
+}
