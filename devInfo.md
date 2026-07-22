@@ -1,4 +1,4 @@
-# I need this, don't judge
+# I need this, don't judge :)
 
 ## How Next works i think
 ```
@@ -43,7 +43,9 @@ lib/xyz             = process data, talk to db/auth (e.g. firebase)         **re
 - database logic
 
 
-## Planned project structure
+## Project Structure
+
+### Planned project structure
 ```
 hayes_hip_and_elbow_scoring/
 │
@@ -155,10 +157,12 @@ hayes_hip_and_elbow_scoring/
 └── tsconfig.json
 ```
 
-## Maybe actualy project structure
+### Maybe actualy project structure
 <!--  -->
 
-## Firestore Folder Structure
+## DB Structure
+
+### Firestore Folder Structure
 clinics
 ├── clinic_001
 │   ├── clinicName
@@ -247,7 +251,7 @@ archivedSubmissions
 └───└── metadata
 
 
-## S3 Folder structure
+### S3 Folder structure
 submissions/
 └── submission_001/
 │   │
@@ -282,3 +286,28 @@ submissions/
 When pulling from master in prod: `git pull --no-rebase origin master`
 Then just commit and sync
 
+### Branches
+- admin
+- auth
+- desktop-ui
+- docs
+- file-upload
+- firebase
+- mobile-ui
+- prelaucnh-landing
+- prod
+- submit-form
+- transactions
+
+### Pull Request Format
+**Problem** *Description*
+**Fix** *Description*
+**New Infrustructure** *Description*
+**Tested** *Description*
+
+
+## Testing CMDs
+
+### Cron
+Force testing orphan file and doc cleanup (a draft doc will need to be >7 days old)
+*Git Bash* `curl -H 'Authorization: Bearer CRON_SECRET' http://localhost:3000/api/cron/cleanup-drafts`

@@ -11,6 +11,9 @@ export const UploadBox = ({
     onMultiChange,
     accept,
     resetKey,
+    uploadedCount,
+    isUploaded,
+    duplicateFileNames,
 }: {
     label: string;
     hint: string;
@@ -24,8 +27,15 @@ export const UploadBox = ({
     onMultiChange?: (f: File[]) => void;
     accept: string;
     resetKey: number;
+    uploadedCount?: number;
+    isUploaded?: boolean;
+    duplicateFileNames?: string[];
 }) => {
-    const hasFile = isMultiple ? (files?.length ?? 0) > 0 : !!file;
+    const hasPending = isMultiple ? (files?.length ?? 0) > 0 : !!file;
+    const hasUploaded = isMultiple ? (uploadedCount ?? 0) > 0 : !!isUploaded;
+    // "pending" (just selected, not yet uploaded) takes visual priority over "uploaded"
+    const variant: "empty" | "pending" | "uploaded" = hasPending ? "pending" : hasUploaded ? "uploaded" : "empty";
+
     return (
         <div>
             <p className="mb-1.5 text-sm font-medium text-gray-700">
@@ -35,13 +45,31 @@ export const UploadBox = ({
             {description && (
                 <p className="mb-2 text-xs text-gray-500">{description}</p>
             )}
+            {duplicateFileNames && duplicateFileNames.length > 0 && (
+                <p className="mb-2 text-xs text-amber-700">
+                    Already uploaded previously: {duplicateFileNames.join(", ")}
+                </p>
+            )}
             <label className="block cursor-pointer">
                 <div
-                    className={`rounded-xl border-2 border-dashed p-5 text-center transition ${hasFile ? "border-brand-green-mid bg-cream" : "border-gray-300 hover:border-brand-green-mid"}`}
+                    className={`rounded-xl border-2 border-dashed p-5 text-center transition ${
+                        variant === "pending"
+                            ? "border-brand-green-mid bg-cream"
+                            : variant === "uploaded"
+                                ? "border-green-300 bg-green-50"
+                                : "border-gray-300 hover:border-brand-green-mid"
+                    }`}
                 >
                     {icon}
-                    {!hasFile && (
+                    {variant === "empty" && (
                         <p className="mt-1 text-sm text-gray-500">{hint}</p>
+                    )}
+                    {variant === "uploaded" && (
+                        <p className="mt-1 text-sm font-medium text-green-700">
+                            {isMultiple
+                                ? `${uploadedCount} file${uploadedCount === 1 ? "" : "s"} uploaded — click to add more`
+                                : "Uploaded — click to replace"}
+                        </p>
                     )}
                     {isMultiple && files && files.length > 0 && (
                         <ul className="mt-1 space-y-0.5 text-left">

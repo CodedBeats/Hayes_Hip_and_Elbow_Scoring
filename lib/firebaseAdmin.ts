@@ -235,3 +235,38 @@ export const getSubmissionById = async (id: string): Promise<Submission | null> 
     if (!docSnap.exists) return null;
     return mapSubmissionDoc(docSnap);
 };
+
+// ==================================== //
+// === DRAFT CLEANUP (cron-facing) === //
+// ==================================== //
+//
+// Used only by app/api/cron/cleanup-drafts. Draft docs (written by
+// lib/firebase.ts's saveDraftFiles, before a dog is ever marked complete) don't have the
+// full owner/veterinarian/dog shape mapSubmissionDoc expects - they may only ever contain
+// { s3SubmissionId, dogIndex, submissionType, status, files, createdAt, updatedAt } - so
+// they're read and returned as-is here rather than routed through mapSubmissionDoc.
+
+export type StaleDraft = {
+    id: string;
+    files: Files;
+};
+
+// Requires a composite index on `submissions` (status ASC, updatedAt ASC) - Firestore
+// will throw with a direct console link to create it the first time this runs without
+// one. See the cron route's header comment for the one-time setup steps.
+export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<StaleDraft[]> => {
+    const snapshot = await getAdminDb()
+        .collection("submissions")
+        .where("status", "==", "draft")
+        .where("updatedAt", "<", Timestamp.fromDate(updatedBefore))
+        .get();
+
+    return snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        files: (docSnap.data().files ?? {}) as Files,
+    }));
+};
+
+export const deleteSubmissionDoc = async (id: string): Promise<void> => {
+    await getAdminDb().doc(`submissions/${id}`).delete();
+};

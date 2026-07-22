@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DogCompleteSummary } from "./DogCompletedSummary";
 import { DogEntryOnlineForm } from "./DogEntryOnlineForm";
 import { DogEntryPdfForm } from "./DogEntryPdfForm";
+import { ValidationSummary } from "../form/ValidationSummary";
 // types
 import type { DogEntryFormData, ExamType } from "@/types/form";
 import type { DogCase } from "@/types/dog";
@@ -12,8 +13,11 @@ import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
 import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
+import type { ValidationIssue } from "@/types/validation";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
+import { saveDraftFiles } from "@/lib/firebase";
+import { isPhoneNumberEmpty } from "../form/MobileField";
 
 // all serialisable per-dog state - persisted to localStorage by SubmissionFlow
 export type DogDraft = {
@@ -92,7 +96,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
 
     // completion state
     const [isComplete, setIsComplete] = useState(initialDraft?.isComplete ?? false);
-    const [validationError, setValidationError] = useState<string | null>(null);
+    const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
 
     // report serialisable state changes to parent for localStorage persistence
     useEffect(() => {
@@ -213,13 +217,26 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     ? results[cursor + dicomCount + docsCount + (ownerSigFile ? 1 : 0)]
                     : undefined,
             };
-            setUploadedFiles(prev => ({
-                pdfForm: dogFiles.pdfForm ?? prev?.pdfForm,
-                dicomFiles: [...(prev?.dicomFiles ?? []), ...dogFiles.dicomFiles],
-                supportingDocuments: [...(prev?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
-                ownerSignature: dogFiles.ownerSignature ?? prev?.ownerSignature,
-                veterinarianSignature: dogFiles.veterinarianSignature ?? prev?.veterinarianSignature,
-            }));
+            const mergedFiles: Files = {
+                pdfForm: dogFiles.pdfForm ?? uploadedFiles?.pdfForm,
+                dicomFiles: [...(uploadedFiles?.dicomFiles ?? []), ...dogFiles.dicomFiles],
+                supportingDocuments: [...(uploadedFiles?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
+                ownerSignature: dogFiles.ownerSignature ?? uploadedFiles?.ownerSignature,
+                veterinarianSignature: dogFiles.veterinarianSignature ?? uploadedFiles?.veterinarianSignature,
+            };
+            setUploadedFiles(mergedFiles);
+
+            // Record these files in Firestore as a "draft" submission as soon as they're
+            // confirmed in S3 - this is what lets the cleanup cron job
+            // (app/api/cron/cleanup-drafts) find and delete orphaned uploads if the
+            // customer never marks this dog complete / never checks out. A failure here
+            // must never block the user's upload, which already succeeded - just log it.
+            try {
+                await saveDraftFiles(submissionId, dogIndex, submissionType, mergedFiles);
+            } catch (draftErr) {
+                console.error("Failed to save draft submission record:", draftErr);
+            }
+
             setUploadedNames((prev) => ({
                 dicom:    [...prev.dicom,    ...selectedDicom.map((f) => f.name)],
                 docs:     [...prev.docs,     ...selectedDocs.map((f) => f.name)],
@@ -241,51 +258,53 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     };
 
     const handleMarkComplete = () => {
-        setValidationError(null);
+        const issues: ValidationIssue[] = [];
 
-        // validate dog entry form before marked as complete
+        // validate dog entry form before marked as complete - accumulate every
+        // missing field so the user is told exactly what's wrong, not just a
+        // vague category message
         if (submissionType === "pdf") {
-            if (!uploadedFiles || !uploadedFiles.pdfForm) {
-                setValidationError("Please upload the PDF submission form before completing.");
-                return;
+            if (!uploadedFiles?.pdfForm) {
+                issues.push({ section: "PDF Submission", label: "Completed PDF submission form" });
             }
-            if (uploadedFiles.dicomFiles.length === 0) {
-                setValidationError("Please upload at least one DICOM file before completing.");
-                return;
+            if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) {
+                issues.push({ section: "DICOM & Supporting Files", label: "At least one DICOM file" });
             }
             // supporting document only required when Not DA Registered
-            if (!dogData.isDogsAustraliaRegistered && uploadedFiles.supportingDocuments.length === 0) {
-                setValidationError("Please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number.");
-                return;
+            if (!dogData.isDogsAustraliaRegistered && (uploadedFiles?.supportingDocuments.length ?? 0) === 0) {
+                issues.push({ section: "DICOM & Supporting Files", label: "Registration certificate or supporting document (dog not Dogs Australia registered)" });
             }
         } else {
             // dog
-            if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
-                !dogData.dateOfBirth || !dogData.sex) {
-                setValidationError("Please fill in all required dog fields.");
-                return;
-            }
+            if (!dogData.registeredName) issues.push({ section: "Dog Details", label: dogData.isDogsAustraliaRegistered ? "Registered Name" : "Dog Name" });
+            if (!dogData.microchipNumber) issues.push({ section: "Dog Details", label: "Microchip Number" });
+            if (!dogData.breed) issues.push({ section: "Dog Details", label: "Breed" });
+            if (!dogData.dateOfBirth) issues.push({ section: "Dog Details", label: "Date of Birth" });
+            if (!dogData.sex) issues.push({ section: "Dog Details", label: "Sex" });
+
             // owner
-            if (!ownerData.name || !ownerData.email || !ownerData.phone) {
-                setValidationError("Please fill in all required owner fields.");
-                return;
-            }
-            // vet
-            if (!vetData.veterinarianName || !vetData.practiceName || !vetData.phone || !dogData.dateOfRadiograph) {
-                setValidationError("Please fill in all required veterinarian fields.");
-                return;
-            }
-            // dicom
-            if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) {
-                setValidationError("Please upload at least one DICOM file.");
-                return;
-            }
-            // owner and vet signatures
-            if (!uploadedFiles.ownerSignature || !uploadedFiles.veterinarianSignature) {
-                setValidationError("Please upload both owner and veterinarian signatures before completing.");
-                return;
-            }
+            if (!ownerData.name) issues.push({ section: "Owner Details", label: "Full Name" });
+            if (!ownerData.email) issues.push({ section: "Owner Details", label: "Email Address" });
+            if (isPhoneNumberEmpty(ownerData.phone)) issues.push({ section: "Owner Details", label: "Phone Number" });
+
+            // vet - dateOfRadiograph lives on dogData but is grouped here since it's
+            // displayed in the Veterinarian Details card
+            if (!vetData.veterinarianName) issues.push({ section: "Veterinarian Details", label: "Veterinarian Name" });
+            if (!vetData.practiceName) issues.push({ section: "Veterinarian Details", label: "Clinic / Practice Name" });
+            if (isPhoneNumberEmpty(vetData.phone)) issues.push({ section: "Veterinarian Details", label: "Practice Phone" });
+            if (!dogData.dateOfRadiograph) issues.push({ section: "Veterinarian Details", label: "Date of Radiograph" });
+
+            // dicom + signatures
+            if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) issues.push({ section: "DICOM & Supporting Files", label: "At least one DICOM file" });
+            if (!uploadedFiles?.ownerSignature) issues.push({ section: "DICOM & Supporting Files", label: "Owner Signature" });
+            if (!uploadedFiles?.veterinarianSignature) issues.push({ section: "DICOM & Supporting Files", label: "Veterinarian Signature" });
         }
+
+        if (issues.length > 0) {
+            setValidationIssues(issues);
+            return;
+        }
+        setValidationIssues([]);
 
         const dogCase: DogCase = {
             id: dogId,
@@ -326,13 +345,13 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length +
         (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
 
-    const duplicateWarnings: string[] = [
-        ...selectedDicom.filter((file) => uploadedNames.dicom.includes(file.name)).map((file) => `"${file.name}" in DICOM Files`),
-        ...selectedDocs.filter((file) => uploadedNames.docs.includes(file.name)).map((file) => `"${file.name}" in Supporting Documents`),
-        ...(pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [`"${pdfFormFile.name}" in PDF Submission Form`] : []),
-        ...(ownerSigFile && uploadedNames.ownerSig.includes(ownerSigFile.name) ? [`"${ownerSigFile.name}" in Owner Signature`] : []),
-        ...(vetSigFile && uploadedNames.vetSig.includes(vetSigFile.name) ? [`"${vetSigFile.name}" in Veterinarian Signature`] : []),
-    ];
+    // per-category duplicate filenames, surfaced inline at the relevant upload box
+    // rather than flattened into one combined message
+    const duplicateDicomNames = selectedDicom.filter((f) => uploadedNames.dicom.includes(f.name)).map((f) => f.name);
+    const duplicateDocsNames = selectedDocs.filter((f) => uploadedNames.docs.includes(f.name)).map((f) => f.name);
+    const duplicatePdfFormNames = pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [pdfFormFile.name] : [];
+    const duplicateOwnerSigNames = ownerSigFile && uploadedNames.ownerSig.includes(ownerSigFile.name) ? [ownerSigFile.name] : [];
+    const duplicateVetSigNames = vetSigFile && uploadedNames.vetSig.includes(vetSigFile.name) ? [vetSigFile.name] : [];
 
     return (
         <div className="space-y-4">
@@ -365,7 +384,9 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                         checked={submissionType === "pdf"}
                         onChange={(e) => {
                             setSubmissionType(e.target.checked ? "pdf" : "online");
-                            setUploadedFiles(null);
+                            // the two modes validate different fields entirely (online vs
+                            // PDF form), so issues from the previous mode no longer apply
+                            setValidationIssues([]);
                         }}
                         className="h-4 w-4 rounded border-gray-300 accent-[#506147]"
                     />
@@ -405,6 +426,10 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     onVetSigChange={setVetSigFile}
                     resetKey={uploadKey}
                     uploadedFiles={uploadedFiles}
+                    duplicateDicomNames={duplicateDicomNames}
+                    duplicateDocsNames={duplicateDocsNames}
+                    duplicateOwnerSigNames={duplicateOwnerSigNames}
+                    duplicateVetSigNames={duplicateVetSigNames}
                 />
             ) : (
                 <DogEntryPdfForm
@@ -418,40 +443,38 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     onDocsChange={setSelectedDocs}
                     resetKey={uploadKey}
                     uploadedFiles={uploadedFiles}
+                    duplicateDicomNames={duplicateDicomNames}
+                    duplicateDocsNames={duplicateDocsNames}
+                    duplicatePdfFormNames={duplicatePdfFormNames}
                 />
             )}
 
             {/* -- Upload + Mark Complete action card -- */}
-            <div className="flex justify-between items-end rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="h-full flex flex-col align-bottom">
-                    {duplicateWarnings.length > 0 && (
-                        <p className="mt-2 text-sm text-amber-700">
-                            Already uploaded: {duplicateWarnings.join(", ")}
-                        </p>
-                    )}
-                    {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+                <ValidationSummary issues={validationIssues} />
+                <div className="flex justify-between items-end">
+                    <div className="h-full flex flex-col align-bottom">
+                        {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
 
-                    <div className="h-full flex flex-col flex-wrap items-start gap-4">
-                        {uploadedFiles && (
-                            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
-                                {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
-                                [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleUploadAll}
-                            disabled={isUploading || uploadCount === 0}
-                            className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
-                        </button>
+                        <div className="h-full flex flex-col flex-wrap items-start gap-4">
+                            {uploadedFiles && (
+                                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
+                                    {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
+                                    [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleUploadAll}
+                                disabled={isUploading || uploadCount === 0}
+                                className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col items-center gap-3 border-t border-gray-100">
-                    {validationError && <p className="text-sm text-end text-red-600">{validationError}</p>}
                     <button
                         type="button"
                         onClick={handleMarkComplete}
