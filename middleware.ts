@@ -6,6 +6,17 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { DEV_ACCESS_COOKIE_NAME } from './lib/devAccess';
 
+/**
+ * Pre-launch gate: redirects every request to `/pre-launch` unless a valid dev-access
+ * cookie is present.
+ *
+ * @remarks
+ * `/pre-launch` and `/api/*` are always let through - the former so the gate page
+ * itself (and its login form) isn't redirected in a loop, the latter so API routes keep
+ * working during pre-launch (they have no UI to gate). Delete this file entirely once
+ * the site is ready to go public - see the header comment above this file for that
+ * instruction; there's no separate feature flag to flip.
+ */
 export const middleware = (request: NextRequest) => {
     const { pathname } = request.nextUrl;
 
