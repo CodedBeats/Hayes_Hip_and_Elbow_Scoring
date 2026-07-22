@@ -31,6 +31,16 @@ import type { UploadedFile } from "../types/upload";
 // account would fail the build itself, not just a request.
 let adminDb: Firestore | undefined;
 
+/**
+ * Lazily initializes and returns the Admin SDK Firestore instance.
+ *
+ * @remarks
+ * Initialization is lazy (only runs on first real use) rather than at module load time.
+ * Next.js imports every route module during `next build` to collect its config (page
+ * metadata, `dynamic` exports, etc.) even for routes marked `force-dynamic` - if
+ * credential setup ran eagerly at the top of this file, a missing/invalid service
+ * account would fail the build itself, not just a request.
+ */
 const getAdminDb = (): Firestore => {
     if (adminDb) return adminDb;
 
@@ -62,23 +72,34 @@ const getAdminDb = (): Firestore => {
 // on submissionType, and NEITHER is a 1:1 match for the `Submission` type - everything
 // below exists to bridge that gap back into something type-safe to render.
 
-// createSubmission() writes createdAt/updatedAt/invoiceSentAt as plain JS Date objects,
-// but Firestore auto-boxes any Date into a Timestamp on write. So every read gets back
-// a Timestamp (with .toDate()), never a Date, even though the types say Date. Falling
-// back to `new Date(value)` covers a doc ever hand-edited in the console as a string.
+/**
+ * Coerces a raw Firestore field value back into a `Date`.
+ *
+ * @remarks
+ * {@link createSubmission} writes `createdAt`/`updatedAt`/`invoiceSentAt` as plain JS
+ * `Date` objects, but Firestore auto-boxes any `Date` into a `Timestamp` on write. So
+ * every read gets back a `Timestamp` (with `.toDate()`), never a `Date`, even though the
+ * types say `Date`. Falling back to `new Date(value)` covers a doc ever hand-edited in
+ * the console as a string.
+ */
 const toDate = (value: unknown): Date => {
     if (value instanceof Timestamp) return value.toDate();
     return new Date(value as string | number | Date);
 };
 
-// The upload route (app/api/upload-url/route.ts) writes S3 keys shaped like
-// `submissions/{id}/dog{n}/{category}/{uuid}-{originalFileName}` - Firestore only ever
-// stores that key string, never the original fileName/size/contentType/uploadedAt. This
-// is a best-effort parse to recover a human-readable name; it's intentionally NOT
-// S3-backed (no network call), so it's cheap enough to build for every row on the list
-// pages. Real metadata + a working download URL are backfilled later, only for the
-// single-case page (see lib/s3.ts's enrichUploadedFile) - never here, since paying an S3
-// round-trip per file on every list-page load would be pure waste.
+/**
+ * Builds a best-effort `UploadedFile` stub from just an S3 key, with no network call.
+ *
+ * @remarks
+ * The upload route (`app/api/upload-url/route.ts`) writes S3 keys shaped like
+ * `submissions/{id}/dog{n}/{category}/{uuid}-{originalFileName}` - Firestore only ever
+ * stores that key string, never the original fileName/size/contentType/uploadedAt. This
+ * is a best-effort parse to recover a human-readable name; it's intentionally NOT
+ * S3-backed, so it's cheap enough to build for every row on the list pages. Real
+ * metadata and a working download URL are backfilled later, only for the single-case
+ * page (see {@link enrichUploadedFile} in `lib/s3.ts`) - never here, since paying an S3
+ * round-trip per file on every list-page load would be pure waste.
+ */
 const keyToUploadedFileStub = (key: string): UploadedFile => {
     const lastSegment = key.split("/").pop() ?? key;
     const fileName = lastSegment.replace(/^[0-9a-f-]{36}-/i, "");
@@ -92,6 +113,17 @@ const keyToUploadedFileStub = (key: string): UploadedFile => {
     };
 };
 
+/**
+ * Bridges a raw Firestore submission doc back into a typed `Submission`.
+ *
+ * @remarks
+ * {@link createSubmission} (`lib/firebase.ts`) writes two different on-disk shapes
+ * depending on `submissionType`, and neither is a 1:1 match for the `Submission` type -
+ * this function exists entirely to reconcile that gap back into something type-safe to
+ * render.
+ *
+ * @throws Error if the document snapshot has no data (i.e. it doesn't exist).
+ */
 const mapSubmissionDoc = (
     docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>,
 ): Submission => {
@@ -251,9 +283,18 @@ export type StaleDraft = {
     files: Files;
 };
 
-// Requires a composite index on `submissions` (status ASC, updatedAt ASC) - Firestore
-// will throw with a direct console link to create it the first time this runs without
-// one. See the cron route's header comment for the one-time setup steps.
+/**
+ * Finds draft submissions that haven't been touched since before `updatedBefore`.
+ *
+ * @remarks
+ * Requires a composite index on `submissions` (`status` ASC, `updatedAt` ASC) -
+ * Firestore will throw with a direct console link to create it the first time this runs
+ * without one. See the header comment in `app/api/cron/cleanup-drafts/route.ts` (the
+ * only caller) for the one-time setup steps.
+ *
+ * @param updatedBefore - Drafts whose `updatedAt` is older than this are considered
+ * stale and returned.
+ */
 export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<StaleDraft[]> => {
     const snapshot = await getAdminDb()
         .collection("submissions")
