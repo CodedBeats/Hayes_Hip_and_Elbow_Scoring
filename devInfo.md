@@ -299,6 +299,12 @@ Then just commit and sync
 - submit-form
 - transactions
 
+### Pull Request Format
+**Problem** *Description*
+**Fix** *Description*
+**New Infrustructure** *Description*
+**Tested** *Description*
+
 
 ## Testing CMDs
 

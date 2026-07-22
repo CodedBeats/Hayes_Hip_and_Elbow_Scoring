@@ -19,6 +19,9 @@ type Props = {
     onDocsChange: (files: File[]) => void;
     resetKey: number;
     uploadedFiles: Files | null;
+    duplicateDicomNames: string[];
+    duplicateDocsNames: string[];
+    duplicatePdfFormNames: string[];
 };
 
 export const DogEntryPdfForm = ({
@@ -32,6 +35,9 @@ export const DogEntryPdfForm = ({
     onDocsChange,
     resetKey,
     uploadedFiles,
+    duplicateDicomNames,
+    duplicateDocsNames,
+    duplicatePdfFormNames,
 }: Props) => {
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
@@ -90,6 +96,8 @@ export const DogEntryPdfForm = ({
                 onChange={onPdfFormChange}
                 accept=".pdf"
                 resetKey={resetKey}
+                isUploaded={!!uploadedFiles?.pdfForm}
+                duplicateFileNames={duplicatePdfFormNames}
             />
             <UploadedFileList
                 files={ uploadedFiles?.pdfForm ? [uploadedFiles.pdfForm] : [] }
@@ -105,6 +113,8 @@ export const DogEntryPdfForm = ({
                 onMultiChange={onDicomChange}
                 accept=".dcm"
                 resetKey={resetKey}
+                uploadedCount={uploadedFiles?.dicomFiles.length ?? 0}
+                duplicateFileNames={duplicateDicomNames}
             />
             <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
 
@@ -122,6 +132,8 @@ export const DogEntryPdfForm = ({
                 onMultiChange={onDocsChange}
                 accept=".pdf"
                 resetKey={resetKey}
+                uploadedCount={uploadedFiles?.supportingDocuments.length ?? 0}
+                duplicateFileNames={duplicateDocsNames}
             />
             <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
         </div>
