@@ -103,23 +103,47 @@ type CreateSubmissionPayload = {
     billing: BillingInfo;
 };
 
-// One firestore doc per dog, but the doc ID is deterministic (not Firestore's random
-// addDoc ID) so that a "draft" write made while files are still being uploaded (see
-// saveDraftFiles below) and the final "pendingReview" write made at checkout land on the
-// SAME document instead of creating a duplicate.
+/**
+ * Builds the deterministic Firestore doc ID for one dog within a submission.
+ *
+ * @remarks
+ * One Firestore doc per dog, but the ID is deterministic (not Firestore's random
+ * `addDoc` ID) so that a "draft" write made while files are still uploading (see
+ * {@link saveDraftFiles}) and the final "pendingReview" write made at checkout
+ * (see {@link createSubmission}) land on the SAME document instead of creating a
+ * duplicate.
+ */
 const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string =>
     `${s3SubmissionId}_dog${dogIndex}`;
 
-// Called as soon as a dog's first file successfully lands in S3 (from DogEntry's
-// handleUploadAll), well before the dog is marked complete or checkout starts. Without
-// this, a customer who uploads files and abandons the form leaves S3 objects with zero
-// Firestore record - nothing to know they exist or to clean them up later. Writing a
-// "draft" doc here means every S3 upload always has a corresponding Firestore doc from
-// the moment it happens, and the scheduled cleanup job (app/api/cron/cleanup-drafts)
-// only ever has to query Firestore, never reconcile against a live S3 listing.
-//
-// Safe to call repeatedly (every upload batch) - setDoc with merge just layers the new
-// file keys on top of whatever was written last time, keyed by the same deterministic ID.
+/**
+ * Writes (or upserts) a "draft" submission doc as soon as a dog's files start landing
+ * in S3, well before the dog is marked complete or checkout starts.
+ *
+ * @remarks
+ * Called as soon as a dog's first file successfully lands in S3 (from `DogEntry`'s
+ * `handleUploadAll`). Without this, a customer who uploads files and abandons the form
+ * leaves S3 objects with zero Firestore record - nothing to know they exist or to clean
+ * them up later. Writing a "draft" doc here means every S3 upload always has a
+ * corresponding Firestore doc from the moment it happens, and the scheduled cleanup job
+ * (`app/api/cron/cleanup-drafts/route.ts`) only ever has to query Firestore, never
+ * reconcile against a live S3 listing.
+ *
+ * `createdAt` is only stamped on the very first write for this dog - if every upload
+ * batch reset it, the cleanup job's "how old is this draft" check would only ever see
+ * the age of the most recent upload, never how long the submission has truly existed.
+ * `updatedAt` (always stamped) is what cleanup actually keys off, since it needs to know
+ * when the customer last did anything at all, not when the doc first existed.
+ *
+ * Firestore's `setDoc` rejects explicit `undefined` field values (unlike a merge that
+ * simply omits a key) - `pdfForm`/`ownerSignature`/`veterinarianSignature` are undefined
+ * whenever a dog hasn't uploaded that particular file yet, so they're left out of the
+ * write entirely rather than passed straight through.
+ *
+ * Safe to call repeatedly (every upload batch) - `setDoc` with `merge: true` just layers
+ * the new file keys on top of whatever was written last time, keyed by the same
+ * deterministic ID (see `getSubmissionDraftId` above).
+ */
 export const saveDraftFiles = async (
     s3SubmissionId: string,
     dogIndex: number,
@@ -163,8 +187,17 @@ export const saveDraftFiles = async (
     );
 };
 
-// creates (or upserts, if a draft already exists from saveDraftFiles above) one firestore
-// submission document per dog (though many may share the same s3SubmissionId)
+/**
+ * Creates (or upserts, if a draft already exists from {@link saveDraftFiles}) one
+ * Firestore submission document per dog (though many may share the same
+ * `s3SubmissionId`).
+ *
+ * @remarks
+ * Writes one of two structurally different on-disk shapes depending on
+ * `submissionType` ("online" vs "pdf") - see `mapSubmissionDoc` in
+ * `lib/firebaseAdmin.ts`, which is what reconstructs a typed `Submission` back out of
+ * whichever shape was written here.
+ */
 export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
 
     // get payload
@@ -248,10 +281,14 @@ export const updateSubmissionPaymentStatus = async (
     });
 };
 
-// Used by the admin dashboard's ChangeStatusButton. Called directly from that client
-// component (same pattern as updateSubmissionPaymentStatus above, e.g. from
-// app/(main)/success/page.tsx) rather than through an API route, since Firestore rules
-// currently allow this write without auth.
+/**
+ * Sets a submission's workflow `status` directly.
+ *
+ * @remarks
+ * Used by the admin dashboard's `ChangeStatusButton`. Called directly from that client
+ * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
+ * through an API route, since Firestore rules currently allow this write without auth.
+ */
 export const updateSubmissionStatus = async (
     firestoreDocId: string,
     status: SubmissionStatus,
@@ -263,15 +300,20 @@ export const updateSubmissionStatus = async (
     });
 };
 
-// Mirrors getAuthErrorMessage's style above. Kept in this client-safe file (not
-// lib/firebaseAdmin.ts) since it has no actual dependency on firebase-admin - it's pure
-// error-shape inspection, and the admin dashboard's error.tsx boundary that uses it must
-// be a Client Component (Next.js requirement), which can never import firebase-admin
-// without breaking the browser bundle.
-//
-// Note the Admin SDK surfaces Firestore errors as numeric gRPC status codes (e.g.
-// 7 = PERMISSION_DENIED), NOT the string codes ("permission-denied") the client SDK
-// uses - both are matched below since either could theoretically show up.
+/**
+ * Maps a Firestore error into a user-facing message.
+ *
+ * @remarks
+ * Kept in this client-safe file (not `lib/firebaseAdmin.ts`) since it has no actual
+ * dependency on firebase-admin - it's pure error-shape inspection, and the admin
+ * dashboard's `error.tsx` boundary that uses it must be a Client Component (Next.js
+ * requirement), which can never import firebase-admin without breaking the browser
+ * bundle.
+ *
+ * The Admin SDK surfaces Firestore errors as numeric gRPC status codes (e.g.
+ * `7` = `PERMISSION_DENIED`), NOT the string codes (`"permission-denied"`) the client
+ * SDK uses - both are matched below since either could theoretically show up.
+ */
 export const getFirestoreErrorMessage = (error: unknown): string => {
     if (error && typeof error === "object" && "code" in error) {
         switch (String((error as { code: unknown }).code)) {
