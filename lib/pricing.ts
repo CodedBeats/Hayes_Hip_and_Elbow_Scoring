@@ -10,6 +10,9 @@ export const EXAM_LABELS: Record<ExamType, string> = {
     elbowsOnly: "Elbows Only",
 };
 
+/**
+ * @see https://orchid.ankc.org.au/Home/HomeChed
+ */
 const BASE_PRICES: Record<ExamType, number> = {
     hipsAndElbows: 120,
     hipsOnly: 100,
