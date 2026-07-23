@@ -1,4 +1,6 @@
+// types
 import type { OwnerDetails } from "@/types/owner";
+// components
 import { PersonIcon, EnvelopeIcon, PhoneIcon } from "@/components/misc/Icons";
 
 interface OwnerInfoCardProps {

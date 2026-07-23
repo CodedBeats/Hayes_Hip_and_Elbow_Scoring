@@ -1,8 +1,10 @@
 'use client';
-
+// dependencies
 import { createContext, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
+// lib
 import { subscribeToAuthState } from "@/lib/auth";
+
 
 interface AuthContextValue {
     user: User | null;

@@ -3,7 +3,6 @@ import { initializeApp } from "firebase/app";
 import {
     getAuth,
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
     signOut,
 } from "firebase/auth";
 import {
@@ -11,12 +10,9 @@ import {
     doc,
     setDoc,
     updateDoc,
-    deleteDoc,
-    getDocs,
     getDoc,
     serverTimestamp,
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
@@ -38,7 +34,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 // ============ //
 // === AUTH === //
@@ -52,40 +47,6 @@ export const signIn = async (email: string, password: string) => {
 export const signOutUser = () => {
     signOut(auth);
 };
-
-// probably don't need
-// export const createUser = async (email: string, password: string) => {
-//     const user = await createUserWithEmailAndPassword(auth, email, password);
-//     return user;
-// };
-
-// ================= //
-// === FIRESTORE === //
-// ================= //
-
-// === READ === //
-// get single dog entry data
-
-
-// get single submission entry data
-
-
-// get all dog entry data
-
-
-// get all submission entry data
-
-
-
-// === UPLOAD === //
-// update submission status ("draft", "submitted", "pendingReview", "reviewing", "completed", "archived")
-
-
-// === DELETE === //
-// simple delete dog entry, shouldn't be needed due to archiving
-
-// simple delete submission, shouldn't be needed due to archiving
-
 
 
 // ===================== //

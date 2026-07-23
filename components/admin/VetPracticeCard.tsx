@@ -1,4 +1,6 @@
+// types
 import type { VeterinarianDetails } from "@/types/vet";
+// components
 import { BriefcaseIcon, CheckCircleIcon } from "@/components/misc/Icons";
 
 interface VetPracticeCardProps {

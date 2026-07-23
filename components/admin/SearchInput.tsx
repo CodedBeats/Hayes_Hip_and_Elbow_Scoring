@@ -1,7 +1,9 @@
 "use client";
-
+// dependencies
 import { useState } from "react";
+// components
 import { MagnifyingGlassIcon } from "@/components/misc/Icons";
+
 
 interface SearchInputProps {
     placeholder?: string;

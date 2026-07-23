@@ -1,7 +1,10 @@
+// types
 import type { UploadedFile } from "@/types/upload";
+// components
 import { DicomPreviewCard } from "@/components/admin/DicomPreviewCard";
 import { SignatureAssetCard } from "@/components/admin/SignatureAssetCard";
 import { ScanIcon } from "@/components/misc/Icons";
+
 
 interface AssetManagementCardProps {
     dicomFiles: UploadedFile[];

@@ -1,6 +1,9 @@
+// types
 import type { UploadedFile } from "@/types/upload";
+// components
 import { Button } from "@/components/ui/Button";
 import { PenIcon } from "@/components/misc/Icons";
+
 
 interface SignatureAssetCardProps {
     label: string;

@@ -3,18 +3,20 @@ import Link from 'next/link';
 // components
 import { EnvelopeIcon, PhoneIcon, ReceiptIcon } from '../misc/Icons';
 
+
+// constants for links
 const quickLinks = [
     { label: 'Submit Case', href: '/submit' },
     { label: 'Scoring Fees', href: '/about#pricing' }, // link to pricing in about page
     { label: 'Contact Us', href: '/about#contact' },// link to contact in about page
 ];
-
 const legalLinks = [
     { label: 'Privacy Policy', href: '/misc/privacy-policy' },
     { label: 'Terms of Service', href: '/misc/terms-of-service' },
     { label: 'Appeal Process', href: '/misc/appeals' },
     { label: 'FAQ', href: '/about#faq' }, //link to section of about page
 ];
+
 
 export const Footer = () => {
     return (

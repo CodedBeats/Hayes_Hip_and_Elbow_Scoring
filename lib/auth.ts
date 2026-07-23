@@ -1,11 +1,14 @@
-// firebase auth state + error handling helpers
+// depenedinces
 import { onAuthStateChanged, type User } from "firebase/auth";
+// lib
 import { auth } from "./firebase";
 
+// firebase auth state
 export const subscribeToAuthState = (callback: (user: User | null) => void) => {
     return onAuthStateChanged(auth, callback);
 };
 
+// auth error handling helper
 export const getAuthErrorMessage = (error: unknown): string => {
     if (error && typeof error === "object" && "code" in error && typeof error.code === "string") {
         switch (error.code) {
