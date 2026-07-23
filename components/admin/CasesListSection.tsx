@@ -9,6 +9,7 @@ import { getAdminCaseDisplayStatus } from "@/lib/status";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { CasesTable } from "@/components/admin/CasesTable";
 
+
 interface CasesListSectionProps {
     submissions: Submission[];
     tableTitle: string;

@@ -1,7 +1,8 @@
 "use client";
-
+// dependencies
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+// components
 import {
     Squares2x2Icon,
     ClipboardIcon,
@@ -11,6 +12,8 @@ import {
     ArrowRightOnRectangleIcon,
 } from "@/components/misc/Icons";
 
+
+// constants for links
 const navItems = [
     { label: "Overview", href: "/admin", icon: Squares2x2Icon },
     { label: "Pending Reviews", href: "/admin/pending-reviews", icon: ClipboardIcon },
@@ -20,6 +23,7 @@ const navSupportItems = [
     { label: "Settings", href: "/admin/admin-settings", icon: Cog6ToothIcon },
 ];
 
+
 interface SidebarProps {
     userEmail: string;
     onSignOut: () => void;
@@ -27,7 +31,6 @@ interface SidebarProps {
 
 export const Sidebar = ({ userEmail, onSignOut }: SidebarProps) => {
     const pathname = usePathname();
-    const router = useRouter();
 
     return (
         <aside className="fixed inset-y-0 left-0 flex h-screen w-64 flex-shrink-0 flex-col justify-between border-r border-gray-200 bg-cream px-5 py-6">

@@ -1,3 +1,4 @@
+// dependencies
 import Image from "next/image";
 
 interface ImageCTASectionProps {

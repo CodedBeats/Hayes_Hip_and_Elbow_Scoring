@@ -1,4 +1,6 @@
+// components
 import { SearchInput } from "@/components/admin/SearchInput";
+
 
 interface AdminTopBarProps {
     title: string;

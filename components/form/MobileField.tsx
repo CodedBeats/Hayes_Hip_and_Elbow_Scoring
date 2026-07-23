@@ -1,4 +1,6 @@
+// dependencies
 import React, { useState, useEffect } from "react";
+
 
 interface MobileFieldProps {
     value: string;
@@ -23,6 +25,7 @@ export const isPhoneNumberEmpty = (value: string) => {
     const numberPart = spaceIndex === -1 ? "" : value.slice(spaceIndex + 1);
     return !numberPart.trim();
 };
+
 
 export const MobileField: React.FC<MobileFieldProps> = ({ value, onChange, label = "Phone Number", name = "mobile", autoComplete = "off" }) => {
     const [selectedCountryCode, setSelectedCountryCode] = useState("");

@@ -1,3 +1,4 @@
+// dependencies
 import { cert, getApps, getApp, initializeApp } from "firebase-admin/app";
 import {
     getFirestore,
@@ -7,6 +8,7 @@ import {
     type DocumentSnapshot,
     type DocumentData,
 } from "firebase-admin/firestore";
+// types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
 import type { VeterinarianDetails } from "../types/vet";

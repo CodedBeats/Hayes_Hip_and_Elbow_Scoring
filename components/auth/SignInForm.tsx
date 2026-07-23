@@ -1,10 +1,13 @@
 'use client';
-
+// dependencies
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+// lib
 import { signIn } from "@/lib/firebase";
 import { getAuthErrorMessage } from "@/lib/auth";
+// hooks
 import { useAuth } from "@/hooks/useAuth";
+// components
 import {
     EnvelopeIcon,
     LockClosedIcon,
@@ -13,6 +16,8 @@ import {
     ArrowRightOnRectangleIcon,
 } from "@/components/misc/Icons";
 
+
+// ty stack overflow
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const SignInForm = () => {

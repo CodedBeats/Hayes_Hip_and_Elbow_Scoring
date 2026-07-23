@@ -1,5 +1,8 @@
+// types
 import type { SubmissionStatus } from "@/types/submission";
 
+
+// constants for status label text
 export const statusLabels: Record<SubmissionStatus, string> = {
     unpaid: "Unpaid",
     pendingReview: "Pending Review",
@@ -8,7 +11,7 @@ export const statusLabels: Record<SubmissionStatus, string> = {
     completed: "Completed",
     archived: "Archived",
 };
-
+// constants for status style
 const statusClasses: Record<SubmissionStatus, string> = {
     unpaid: "bg-red-100 text-red-700",
     pendingReview: "bg-orange-100 text-orange-700",
@@ -17,6 +20,7 @@ const statusClasses: Record<SubmissionStatus, string> = {
     completed: "bg-green-100 text-green-700",
     archived: "bg-gray-200 text-gray-600",
 };
+
 
 interface StatusPillProps {
     status: SubmissionStatus;
