@@ -1,5 +1,6 @@
 "use client";
 
+
 type Props = {
     disabled?: boolean;
     text: string;

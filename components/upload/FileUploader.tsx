@@ -1,24 +1,26 @@
-// dependencies
 "use client";
+// dependencies
 import { useState } from "react";
 // hooks
 import { useFileUpload } from "@/hooks/useFileUpload";
 // types
 import { FileCategory, UploadedFile } from "@/types/upload";
 
+
+// constants for text display
 const ACCEPT_MAP: Record<FileCategory, string> = {
     "dicom":                ".dcm",
     "supporting-documents": ".pdf",
     "signatures":           ".png,.jpg,.jpeg",
     "pdf-forms":            ".pdf",
 };
-
 const LABEL_MAP: Record<FileCategory, string> = {
     "dicom":                "Upload DICOM File",
     "supporting-documents": "Upload Supporting Document",
     "signatures":           "Upload Signature",
     "pdf-forms":            "Upload PDF Form",
 };
+
 
 type Props = {
     submissionId: string;

@@ -1,15 +1,19 @@
 'use client';
-
+// dependencies
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+// components
 import { Bars3Icon, XMarkIcon } from '@/components/misc/Icons';
 
+
+// constants for nav links
 const navItems = [
     { label: 'Home', href: '/' },
     { label: 'About', href: '/about' },
     { label: 'Submit', href: '/submit' },
 ];
+
 
 export const Navbar = () => {
     const pathname = usePathname();

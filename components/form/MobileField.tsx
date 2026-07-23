@@ -1,4 +1,6 @@
+// dependencies
 import React, { useState, useEffect } from "react";
+
 
 interface MobileFieldProps {
     value: string;
@@ -8,13 +10,22 @@ interface MobileFieldProps {
     autoComplete?: string;
 }
 
-// checks the number portion of a "<code> <number>" value, not raw truthiness -
-// a country code picked with no digits typed (e.g. "+61 ") is not a filled-in phone number
+/**
+ * Checks whether a `"<code> <number>"` composite phone value has an actual number typed
+ * in.
+ *
+ * @remarks
+ * Checks only the number portion, not raw truthiness of `value` - a country code picked
+ * with no digits typed (e.g. `"+61 "`) is truthy as a string but is NOT a filled-in
+ * phone number, so callers validating "is this field filled in" must use this rather
+ * than a plain `!value` check.
+ */
 export const isPhoneNumberEmpty = (value: string) => {
     const spaceIndex = value.indexOf(" ");
     const numberPart = spaceIndex === -1 ? "" : value.slice(spaceIndex + 1);
     return !numberPart.trim();
 };
+
 
 export const MobileField: React.FC<MobileFieldProps> = ({ value, onChange, label = "Phone Number", name = "mobile", autoComplete = "off" }) => {
     const [selectedCountryCode, setSelectedCountryCode] = useState("");

@@ -9,6 +9,7 @@ import { getAdminCaseDisplayStatus } from "@/lib/status";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { CasesTable } from "@/components/admin/CasesTable";
 
+
 interface CasesListSectionProps {
     submissions: Submission[];
     tableTitle: string;
@@ -35,6 +36,16 @@ export const CasesListSection = ({
         [submissions],
     );
 
+    /**
+     * Search/filter/sort composition applied to `submissions` for display.
+     *
+     * @remarks
+     * Filters by {@link getAdminCaseDisplayStatus} (never the raw `submission.status`),
+     * so an unpaid case is excluded from a non-"unpaid" status filter even if its
+     * underlying workflow status matches. PDF-mode submissions only match search by ID,
+     * since they have no structured dog/owner/vet name fields to search against (see
+     * `DogEntry.tsx`'s pdf-mode handling).
+     */
     const filtered = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
 

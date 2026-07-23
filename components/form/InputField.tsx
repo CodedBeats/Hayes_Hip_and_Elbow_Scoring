@@ -1,4 +1,3 @@
-// custom input with label and container
 
 interface InputFieldProps {
     label: string;
