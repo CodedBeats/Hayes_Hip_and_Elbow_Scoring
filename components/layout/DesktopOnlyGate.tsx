@@ -1,7 +1,9 @@
 "use client";
-
+// dependencies
 import Link from "next/link";
+// hooks
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+// components
 import { MonitorIcon } from "@/components/misc/Icons";
 
 interface DesktopOnlyGateProps {

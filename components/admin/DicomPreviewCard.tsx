@@ -1,5 +1,8 @@
+// types
 import type { UploadedFile } from "@/types/upload";
+// lib
 import { formatFileSize } from "@/lib/formatFileSize";
+// components
 import { IconButton } from "@/components/ui/IconButton";
 import { ArrowDownTrayIcon } from "@/components/misc/Icons";
 

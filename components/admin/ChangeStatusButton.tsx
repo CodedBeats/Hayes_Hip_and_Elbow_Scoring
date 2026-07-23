@@ -1,11 +1,14 @@
 "use client";
-
+// dependencies
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+// types
 import type { SubmissionStatus } from "@/types/submission";
+// lib
+import { updateSubmissionStatus } from "@/lib/firebase";
+// components
 import { statusLabels, StatusPill } from "@/components/admin/StatusPill";
 import { ChevronDownIcon } from "@/components/misc/Icons";
-import { updateSubmissionStatus } from "@/lib/firebase";
 
 // "unpaid" is a derived display status, not one admins set directly - exclude it here.
 const allStatuses = (Object.keys(statusLabels) as SubmissionStatus[]).filter((status) => status !== "unpaid");

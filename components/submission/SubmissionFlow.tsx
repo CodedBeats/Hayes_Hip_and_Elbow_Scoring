@@ -1,5 +1,5 @@
-// dependencies
 "use client";
+// dependencies
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 // components

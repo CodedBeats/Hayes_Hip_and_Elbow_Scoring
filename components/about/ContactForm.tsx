@@ -1,10 +1,14 @@
 "use client";
-
+// dependencies
 import { useState } from "react";
+// components
 import { InputField } from "@/components/form/InputField";
 import { Button } from "@/components/ui/Button";
 
+
+// ty stack overflow
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 
 interface ContactFormProps {
     className?: string;
