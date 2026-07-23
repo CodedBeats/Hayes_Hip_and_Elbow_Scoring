@@ -1,9 +1,9 @@
-// dependencies
 "use client";
 // components
 import { FileUploader } from "./FileUploader";
 // types
 import { UploadedFile } from "@/types/upload";
+
 
 type Props = {
     submissionId: string;

@@ -1,4 +1,6 @@
+// dependencies
 import Image from "next/image";
+// components
 import { Button } from "@/components/ui/Button";
 
 interface RequirementCardProps {

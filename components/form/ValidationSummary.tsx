@@ -1,4 +1,6 @@
+// components
 import { ExclamationTriangleIcon } from "../misc/Icons";
+// types
 import type { ValidationIssue } from "@/types/validation";
 
 export const ValidationSummary = ({ issues }: { issues: ValidationIssue[] }) => {

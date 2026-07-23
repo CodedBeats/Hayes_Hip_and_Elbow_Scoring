@@ -1,4 +1,18 @@
+// dependencies
 import Link from "next/link";
+
+
+// constants for tailwind classes
+const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
+    solid: "bg-brand-green-mid text-white hover:bg-[#6a7b61]",
+    outline: "bg-transparent border-2 border-white text-white hover:bg-white/10",
+    dark: "bg-brand-brown text-white hover:bg-[#2f221b]",
+};
+const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-5 py-2.5 text-sm",
+};
+
 
 interface ButtonProps {
     children: React.ReactNode;
@@ -11,17 +25,6 @@ interface ButtonProps {
     disabled?: boolean;
     className?: string;
 }
-
-const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
-    solid: "bg-brand-green-mid text-white hover:bg-[#6a7b61]",
-    outline: "bg-transparent border-2 border-white text-white hover:bg-white/10",
-    dark: "bg-brand-brown text-white hover:bg-[#2f221b]",
-};
-
-const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-};
 
 export const Button = ({
     children,

@@ -1,5 +1,5 @@
-// dependencies
 "use client";
+// types
 import type { DogEntryFormData } from "@/types/form";
 import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
