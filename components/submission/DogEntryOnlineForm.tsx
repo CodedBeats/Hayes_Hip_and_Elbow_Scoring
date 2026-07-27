@@ -11,6 +11,7 @@ import type { DogEntryFormData } from "@/types/form";
 import type { OwnerDetails } from "@/types/owner";
 import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
+import type { UploadedFile } from "@/types/upload";
 
 type Props = {
     isDogsAustraliaRegistered: boolean;
@@ -34,6 +35,7 @@ type Props = {
     duplicateDocsNames: string[];
     duplicateOwnerSigNames: string[];
     duplicateVetSigNames: string[];
+    onDeleteFile: (category: keyof Files, file: UploadedFile) => void;
 };
 
 
@@ -72,6 +74,7 @@ export const DogEntryOnlineForm = ({
     duplicateDocsNames,
     duplicateOwnerSigNames,
     duplicateVetSigNames,
+    onDeleteFile,
 }: Props) => {
     return (
         <div className="space-y-4">
@@ -277,8 +280,9 @@ export const DogEntryOnlineForm = ({
                     isUploaded={!!uploadedFiles?.ownerSignature}
                     duplicateFileNames={duplicateOwnerSigNames}
                 />
-                <UploadedFileList 
-                    files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] } 
+                <UploadedFileList
+                    files={ uploadedFiles?.ownerSignature ? [uploadedFiles.ownerSignature] : [] }
+                    onDelete={(file) => onDeleteFile("ownerSignature", file)}
                 />
             </div>
 
@@ -440,6 +444,7 @@ export const DogEntryOnlineForm = ({
                 />
                 <UploadedFileList
                     files={ uploadedFiles?.veterinarianSignature ? [uploadedFiles.veterinarianSignature] : [] }
+                    onDelete={(file) => onDeleteFile("veterinarianSignature", file)}
                 />
             </div>
 
@@ -465,7 +470,10 @@ export const DogEntryOnlineForm = ({
                     uploadedCount={uploadedFiles?.dicomFiles.length ?? 0}
                     duplicateFileNames={duplicateDicomNames}
                 />
-                <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
+                <UploadedFileList
+                    files={uploadedFiles?.dicomFiles ?? []}
+                    onDelete={(file) => onDeleteFile("dicomFiles", file)}
+                />
 
                 <div className="mt-15" />
                 {/* Supporting documents */}
@@ -481,7 +489,10 @@ export const DogEntryOnlineForm = ({
                     uploadedCount={uploadedFiles?.supportingDocuments.length ?? 0}
                     duplicateFileNames={duplicateDocsNames}
                 />
-                <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
+                <UploadedFileList
+                    files={uploadedFiles?.supportingDocuments ?? []}
+                    onDelete={(file) => onDeleteFile("supportingDocuments", file)}
+                />
             </div>
         </div>
     );

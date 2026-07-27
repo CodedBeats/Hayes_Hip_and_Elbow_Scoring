@@ -21,7 +21,7 @@ export const IconButton = ({
     className = "",
 }: IconButtonProps) => {
     const classes = [
-        "inline-flex items-center justify-center rounded-md p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-brand-brown disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent",
+        "inline-flex items-center justify-center rounded-md p-2 text-gray-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-brand-brown disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent",
         className,
     ].join(" ");
 

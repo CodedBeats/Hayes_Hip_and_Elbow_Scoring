@@ -47,9 +47,15 @@ export const getFileMetadata = async (
     }
 };
 
-// Used by the drafts-cleanup cron job (app/api/cron/cleanup-drafts) to remove orphaned
-// uploads. DeleteObjectsCommand caps out at 1000 keys per call - not chunked here since a
-// single dog's file set will never come close to that.
+/**
+ * Deletes `1 - many` files from s3 parsing file reference strings as keys 
+ * 
+ * @remarks
+ * Manily used for deleting files during submission. But also used by the drafts-cleanup 
+ * cron job (app/api/cron/cleanup-drafts) to remove orphaned uploads. DeleteObjectsCommand 
+ * caps out at 1000 keys per call - not chunked here since a single dog's file set will 
+ * never come close to that.
+ */
 export const deleteObjects = async (keys: string[]): Promise<void> => {
     if (keys.length === 0) return;
     await s3.send(new DeleteObjectsCommand({

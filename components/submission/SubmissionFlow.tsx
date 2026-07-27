@@ -1,154 +1,26 @@
 "use client";
 // dependencies
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 // components
 import { DogEntry } from "./DogEntry";
-import type { DogDraft } from "./DogEntry";
-// lib
-import { createSubmission } from "@/lib/firebase";
-import { calculatePrice } from "@/lib/pricing";
-// types
-import type { DogCase } from "@/types/dog";
-import type { Files } from "@/types/submission";
-import type { OwnerDetails } from "@/types/owner";
-import type { VeterinarianDetails } from "@/types/vet";
-import type { BillingInfo } from "@/types/billing";
-
-// ---- draft persistence ----
-
-const DRAFT_KEY = "submission_draft";
-
-type CompletedDogEntry = {
-    submissionType: string;
-    dog: DogCase;
-    files: Files;
-    owner: OwnerDetails;
-    veterinarian: VeterinarianDetails;
-};
-
-type SubmissionDraft = {
-    submissionId: string;
-    dogCount: number;
-    savedAt: number;
-    completedDogs: Record<number, CompletedDogEntry>;
-    dogDrafts: Record<number, DogDraft>;
-};
-
-const loadDraft = (): SubmissionDraft | null => {
-    try {
-        const raw = localStorage.getItem(DRAFT_KEY);
-        if (!raw) return null;
-        return JSON.parse(raw) as SubmissionDraft;
-    } catch {
-        return null;
-    }
-}
-
-// ---- component ----
+// hooks
+import { useSubmissionDraft } from "@/hooks/useSubmissionDraft";
 
 export const SubmissionFlow = () => {
-    const [savedDraft] = useState<SubmissionDraft | null>(() => loadDraft());
-
-    const [submissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
-    const [dogCount, setDogCount] = useState(() => savedDraft?.dogCount ?? 1);
-    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>(
-        () => savedDraft?.completedDogs ?? {},
-    );
-    const [dogDrafts, setDogDrafts] = useState<Record<number, DogDraft>>(
-        () => savedDraft?.dogDrafts ?? {},
-    );
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
-
-    // persist to localStorage whenever relevant state changes
-    useEffect(() => {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({
-            submissionId, dogCount, savedAt: Date.now(), completedDogs, dogDrafts,
-        } satisfies SubmissionDraft));
-    }, [submissionId, dogCount, completedDogs, dogDrafts]);
-
-    const handleDogComplete = (
-        dogIndex: number,
-        submissionType: string,
-        dog: DogCase,
-        files: Files,
-        owner: OwnerDetails,
-        veterinarian: VeterinarianDetails,
-    ) => {
-        setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { submissionType, dog, files, owner, veterinarian } }));
-    };
-
-    const handleDraftChange = useCallback((dogIndex: number, draft: DogDraft) => {
-        setDogDrafts((prev) => ({ ...prev, [dogIndex]: draft }));
-    }, []);
-
-    const handleCountChange = (newCount: number) => {
-        if (newCount < 1) return;
-        setDogCount(newCount);
-        if (newCount < dogCount) {
-            setCompletedDogs((prev) => {
-                const updated = { ...prev };
-                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
-                return updated;
-            });
-            setDogDrafts((prev) => {
-                const updated = { ...prev };
-                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
-                return updated;
-            });
-        }
-    };
-
-    const completedCount = Object.keys(completedDogs).length;
-    const allComplete = completedCount === dogCount;
-
-    const totalAud = Object.values(completedDogs).reduce(
-        (sum, { dog }) => sum + calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
-        0,
-    );
-
-    const handleSubmit = async () => {
-        setIsSubmitting(true);
-        setSubmitError(null);
-        try {
-            const docIds = await Promise.all(
-                Object.entries(completedDogs).map(([idx, { submissionType, dog, files, owner, veterinarian }]) => {
-                    const billing: BillingInfo = {
-                        billingType: "payNow",
-                        paymentStatus: "unpaid",
-                        amount: calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
-                    };
-                    return createSubmission({
-                        s3SubmissionId: submissionId,
-                        dogIndex: Number(idx),
-                        submissionType,
-                        owner,
-                        veterinarian,
-                        dog,
-                        files,
-                        billing,
-                    });
-                }),
-            );
-
-            localStorage.setItem("stripe_pending", JSON.stringify({ firestoreDocIds: docIds }));
-            localStorage.removeItem(DRAFT_KEY);
-
-            const res = await fetch("/api/create-checkout-session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: totalAud * 100 }),
-            });
-            const data = await res.json();
-            if (!data.url) throw new Error("No checkout URL returned");
-            window.location.href = data.url;
-        } catch (err) {
-            setSubmitError(err instanceof Error ? err.message : "Submission failed");
-            setIsSubmitting(false);
-        }
-    };
+    const {
+        submissionId,
+        dogCount,
+        dogDrafts,
+        isSubmitting,
+        submitError,
+        completedCount,
+        allComplete,
+        totalAud,
+        handleDogComplete,
+        handleDraftChange,
+        handleCountChange,
+        handleSubmit,
+    } = useSubmissionDraft();
 
     return (
         <div className="w-full">
@@ -281,7 +153,7 @@ export const SubmissionFlow = () => {
                                 : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
                         {!isSubmitting && (
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                             </svg>
                         )}
                     </button>
