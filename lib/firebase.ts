@@ -12,6 +12,7 @@ import {
     updateDoc,
     getDoc,
     serverTimestamp,
+    deleteField,
 } from "firebase/firestore";
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
@@ -98,8 +99,10 @@ const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string 
  *
  * Firestore's `setDoc` rejects explicit `undefined` field values (unlike a merge that
  * simply omits a key) - `pdfForm`/`ownerSignature`/`veterinarianSignature` are undefined
- * whenever a dog hasn't uploaded that particular file yet, so they're left out of the
- * write entirely rather than passed straight through.
+ * whenever a dog hasn't uploaded that particular file yet (or had it removed via the
+ * mid-submission delete flow), so `deleteField()` is written instead - a plain omission
+ * would leave a stale reference in Firestore after a file is deleted, since a merge write
+ * only overwrites the keys it includes.
  *
  * Safe to call repeatedly (every upload batch) - `setDoc` with `merge: true` just layers
  * the new file keys on top of whatever was written last time, keyed by the same
@@ -123,14 +126,15 @@ export const saveDraftFiles = async (
     // Firestore's setDoc rejects explicit `undefined` field values (unlike a merge that
     // simply omits a key) - pdfForm/ownerSignature/veterinarianSignature are undefined
     // whenever a dog hasn't uploaded that particular file yet (e.g. any "online" mode dog
-    // has no pdfForm at all), so they must be left out of the write entirely rather than
-    // passed straight through.
-    const definedFiles: Partial<Files> = {
+    // has no pdfForm at all) or had it removed, so deleteField() is written instead of
+    // omitting the key entirely - omitting would leave a stale reference from a prior
+    // write untouched by this merge.
+    const definedFiles: Record<string, unknown> = {
         dicomFiles: files.dicomFiles,
         supportingDocuments: files.supportingDocuments,
-        ...(files.pdfForm ? { pdfForm: files.pdfForm } : {}),
-        ...(files.ownerSignature ? { ownerSignature: files.ownerSignature } : {}),
-        ...(files.veterinarianSignature ? { veterinarianSignature: files.veterinarianSignature } : {}),
+        pdfForm: files.pdfForm ?? deleteField(),
+        ownerSignature: files.ownerSignature ?? deleteField(),
+        veterinarianSignature: files.veterinarianSignature ?? deleteField(),
     };
 
     await setDoc(
