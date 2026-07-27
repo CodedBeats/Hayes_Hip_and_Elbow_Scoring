@@ -89,6 +89,13 @@ When built: archiving is just Firestore status/field changes on the existing sub
 - Add more comments in more complex sections
 - Functions in `/lib`, `/hooks`, and complex component handlers use TypeDoc-style `/** */` blocks (`@remarks` for rationale, `@param`/`@returns` only when non-obvious, `@see`/`{@link}` for cross-file coupling) - run `npm run docs` to generate a browsable reference
 
+## GIT 
+
+### Commit format & Notes
+commitType(topic): small description
+commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
+Batch larger changes (>3 files at most changed) into multiple commits
+
 ## Agent Behavior
 
 When refactoring: preserve existing functionality, prefer minimal safe changes, reduce repetition carefully, avoid over-engineering.
