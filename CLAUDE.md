@@ -94,7 +94,8 @@ When built: archiving is just Firestore status/field changes on the existing sub
 ### Commit format & Notes
 commitType(topic): small description
 commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
-Batch larger changes (>3 files at most changed) into multiple commits
+When a commit is requested, this does NOT mean to run the commit cmd. Instead, output in plain text with basically a plan. The plan should include each commit with it's message and what files to commit for each commit (referencing the file in the text will help too).
+Batch larger changes (>3 files at most changed) into multiple commits.
 
 ### Pull Request Format
 Fixed header vocabulary, flexible per PR - include only the headers relevant to the change, skip the rest:
