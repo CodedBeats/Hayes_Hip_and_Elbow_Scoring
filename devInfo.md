@@ -299,7 +299,12 @@ Then just commit and sync
 - submit-form
 - transactions
 
-### Pull Request Format
+### Commit format & Notes
+commitType(topic): small description
+commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
+Batch larger changes (>3 files at most changed) into multiple commits
+
+## Pull Request Format
 **Problem** *Description*
 **Fix** *Description*
 **New Infrustructure** *Description*
