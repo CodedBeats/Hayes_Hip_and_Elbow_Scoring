@@ -67,8 +67,8 @@ export const UploadBox = ({
                     {variant === "uploaded" && (
                         <p className="mt-1 text-sm font-medium text-green-700">
                             {isMultiple
-                                ? `${uploadedCount} file${uploadedCount === 1 ? "" : "s"} uploaded — click to add more`
-                                : "Uploaded — click to replace"}
+                                ? `${uploadedCount} file${uploadedCount === 1 ? "" : "s"} uploaded - click to add more`
+                                : "Uploaded - click to replace"}
                         </p>
                     )}
                     {isMultiple && files && files.length > 0 && (
