@@ -7,6 +7,7 @@ import { CloudIcon, DocumentIcon } from "../misc/Icons"
 // types
 import type { DogEntryFormData } from "@/types/form";
 import type { Files } from "@/types/submission";
+import type { UploadedFile } from "@/types/upload";
 
 type Props = {
     isDogsAustraliaRegistered: boolean;
@@ -22,6 +23,7 @@ type Props = {
     duplicateDicomNames: string[];
     duplicateDocsNames: string[];
     duplicatePdfFormNames: string[];
+    onDeleteFile: (category: keyof Files, file: UploadedFile) => void;
 };
 
 export const DogEntryPdfForm = ({
@@ -38,6 +40,7 @@ export const DogEntryPdfForm = ({
     duplicateDicomNames,
     duplicateDocsNames,
     duplicatePdfFormNames,
+    onDeleteFile,
 }: Props) => {
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
@@ -101,6 +104,7 @@ export const DogEntryPdfForm = ({
             />
             <UploadedFileList
                 files={ uploadedFiles?.pdfForm ? [uploadedFiles.pdfForm] : [] }
+                onDelete={(file) => onDeleteFile("pdfForm", file)}
             />
 
             <UploadBox
@@ -116,7 +120,10 @@ export const DogEntryPdfForm = ({
                 uploadedCount={uploadedFiles?.dicomFiles.length ?? 0}
                 duplicateFileNames={duplicateDicomNames}
             />
-            <UploadedFileList files={uploadedFiles?.dicomFiles ?? []} />
+            <UploadedFileList
+                files={uploadedFiles?.dicomFiles ?? []}
+                onDelete={(file) => onDeleteFile("dicomFiles", file)}
+            />
 
             <UploadBox
                 label="Supporting Documents"
@@ -135,7 +142,10 @@ export const DogEntryPdfForm = ({
                 uploadedCount={uploadedFiles?.supportingDocuments.length ?? 0}
                 duplicateFileNames={duplicateDocsNames}
             />
-            <UploadedFileList files={uploadedFiles?.supportingDocuments ?? []} />
+            <UploadedFileList
+                files={uploadedFiles?.supportingDocuments ?? []}
+                onDelete={(file) => onDeleteFile("supportingDocuments", file)}
+            />
         </div>
     );
 };
