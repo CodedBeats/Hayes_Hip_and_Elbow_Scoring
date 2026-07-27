@@ -304,11 +304,15 @@ commitType(topic): small description
 commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
 Batch larger changes (>3 files at most changed) into multiple commits
 
-## Pull Request Format
+### Pull Request Format
+Fixed header vocabulary, flexible per PR - include only the headers relevant to the change, skip the rest:
+**Summary** *Description*
 **Problem** *Description*
 **Fix** *Description*
-**New Infrustructure** *Description*
+**New Infrastructure** *Description*
 **Tested** *Description*
+
+e.g. a style/refactor PR might only need **Summary** + **Tested**; a bug fix might use **Problem** + **Fix** + **Tested**.
 
 
 ## Testing CMDs
