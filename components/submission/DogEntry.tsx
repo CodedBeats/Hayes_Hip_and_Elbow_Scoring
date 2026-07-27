@@ -57,6 +57,16 @@ const EMPTY_UPLOADED_NAMES = {
     ownerSig: [] as string[], vetSig: [] as string[],
 };
 
+// maps a Files category to its corresponding key in `uploadedNames`, so a deleted
+// file's name can be un-flagged as a duplicate
+const UPLOADED_NAMES_FIELD: Record<keyof Files, keyof typeof EMPTY_UPLOADED_NAMES> = {
+    dicomFiles: "dicom",
+    supportingDocuments: "docs",
+    pdfForm: "pdfForm",
+    ownerSignature: "ownerSig",
+    veterinarianSignature: "vetSig",
+};
+
 type Props = {
     submissionId: string;
     dogIndex: number;
@@ -276,6 +286,55 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     };
 
     /**
+     * Removes one uploaded file: deletes the S3 object, clears the reference from
+     * `uploadedFiles` (which flows into localStorage via the `onDraftChange` effect
+     * above), and updates the Firestore draft doc to match.
+     *
+     * @remarks
+     * Confirmation already happened in {@link UploadedFileList} before this is called.
+     * Mirrors {@link handleUploadAll}'s error handling: a failed {@link saveDraftFiles}
+     * is logged only, since the S3 deletion itself already succeeded by that point.
+     */
+    const handleDeleteFile = async (category: keyof Files, file: UploadedFile) => {
+        setUploadError(null);
+        try {
+            const res = await fetch("/api/delete-file", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ submissionId, key: file.key }),
+            });
+
+            if (!res.ok) {
+                const body = await res.json();
+                throw new Error(body.error ?? "Failed to delete file");
+            }
+
+            setUploadedFiles((prev) => {
+                if (!prev) return prev;
+                const updated: Files = category === "dicomFiles" || category === "supportingDocuments"
+                    ? { ...prev, [category]: prev[category].filter((f) => f.key !== file.key) }
+                    : { ...prev, [category]: undefined };
+
+                saveDraftFiles(submissionId, dogIndex, submissionType, updated).catch((draftErr) => {
+                    console.error("Failed to update draft after file deletion:", draftErr);
+                });
+
+                return updated;
+            });
+
+            // allow re-selecting a file with the same name without hitting the
+            // "duplicate" warning, since the previous upload no longer exists
+            const nameField = UPLOADED_NAMES_FIELD[category];
+            setUploadedNames((prev) => ({
+                ...prev,
+                [nameField]: prev[nameField].filter((n) => n !== file.fileName),
+            }));
+        } catch (err) {
+            setUploadError(err instanceof Error ? err.message : "Failed to delete file");
+        }
+    };
+
+    /**
      * Validates the current mode's required fields/uploads and, if everything's
      * present, marks the dog complete.
      *
@@ -380,8 +439,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
         );
     }
 
-    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length +
-        (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
+    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length + (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
 
     // per-category duplicate filenames, surfaced inline at the relevant upload box
     // rather than flattened into one combined message
@@ -468,6 +526,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     duplicateDocsNames={duplicateDocsNames}
                     duplicateOwnerSigNames={duplicateOwnerSigNames}
                     duplicateVetSigNames={duplicateVetSigNames}
+                    onDeleteFile={handleDeleteFile}
                 />
             ) : (
                 <DogEntryPdfForm
@@ -484,6 +543,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                     duplicateDicomNames={duplicateDicomNames}
                     duplicateDocsNames={duplicateDocsNames}
                     duplicatePdfFormNames={duplicatePdfFormNames}
+                    onDeleteFile={handleDeleteFile}
                 />
             )}
 
