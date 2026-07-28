@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const ArchivePage = async () => {
     const allSubmissions = await getAllSubmissions();
     const cases = allSubmissions
-        .filter((s) => s.status === "archived")
+        .filter((s) => s.archived)
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return (

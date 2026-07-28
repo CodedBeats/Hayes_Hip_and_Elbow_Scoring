@@ -12,7 +12,7 @@ const AdminDashboardPage = async () => {
     const allSubmissions = await getAllSubmissions();
 
     const cases = allSubmissions
-        .filter((s) => s.status !== "draft")
+        .filter((s) => s.status !== "draft" && !s.archived)
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     const totalActive = allSubmissions.filter(
@@ -22,7 +22,7 @@ const AdminDashboardPage = async () => {
         (s) => s.status === "pendingReview",
     ).length;
     const completedAndArchived = allSubmissions.filter(
-        (s) => s.status === "archived",
+        (s) => s.archived,
     ).length;
 
     return (
