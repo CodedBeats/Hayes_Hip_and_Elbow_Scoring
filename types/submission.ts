@@ -18,7 +18,7 @@ export type Submission = {
     updatedAt?: Date;
 
 
-
+    // main 3 field sections
     owner: OwnerDetails;
 
     veterinarian: VeterinarianDetails;
@@ -26,8 +26,15 @@ export type Submission = {
     dog: DogCase;
 
 
-
+    // all files
     files: Files;
+
+
+    // archiving
+    archived: boolean;
+    archivedAt?: Date;
+    archivedBy: string; // e.g. "admin"
+
 
     billing: BillingInfo;
 };
@@ -64,8 +71,7 @@ export type SubmissionStatus =
     | "pendingReview"
     | "reviewing"
     | "draft"
-    | "completed"
-    | "archived";
+    | "completed";
 
 
 export type CaseSubmissionSortOrder = "newest" | "oldest";
