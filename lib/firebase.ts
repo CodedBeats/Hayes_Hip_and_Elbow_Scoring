@@ -190,6 +190,9 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
             submissionType,
             createdAt: new Date(),
             updatedAt: serverTimestamp(),
+            archived: false,
+            archivedAt: undefined,
+            archivedBy: "",
             billing,
             pdfFormRef: files.pdfForm?.key ?? null,
             // owner and vet fields just become refs to signatures
@@ -213,6 +216,9 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
             submissionType,
             createdAt: new Date(),
             updatedAt: serverTimestamp(),
+            archived: false,
+            archivedAt: undefined,
+            archivedBy: "",
             billing,
             owner: {
                 ...owner,
@@ -262,6 +268,42 @@ export const updateSubmissionStatus = async (
     await updateDoc(submissionRef, {
         status,
         updatedAt: new Date(),
+    });
+};
+
+/**
+ * Archives a submission & updates the aproriate fields.
+ *
+ * @remarks
+ * Used by the admin dashboard's `ArchiveSubmissionBtn`. Called directly from that client
+ * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
+ * through an API route, since Firestore rules currently allow this write without auth.
+ */
+export const archiveSubmission = async (firestoreDocId: string): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        updatedAt: new Date(),
+        archived: true,
+        archivedAt: new Date(),
+        archivedBy: "admin",
+    });
+};
+
+/**
+ * un-archives/restores a submission & updates the aproriate fields.
+ *
+ * @remarks
+ * Used by the admin dashboard's `RestoreSubmissionBtn`. Called directly from that client
+ * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
+ * through an API route, since Firestore rules currently allow this write without auth.
+ */
+export const restoreSubmission = async (firestoreDocId: string): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        updatedAt: new Date(),
+        archived: false,
+        archivedAt: deleteField(),
+        archivedBy: "",
     });
 };
 

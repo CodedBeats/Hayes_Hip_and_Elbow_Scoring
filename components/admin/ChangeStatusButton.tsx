@@ -50,7 +50,7 @@ export const ChangeStatusButton = ({ submissionId, currentStatus }: ChangeStatus
                     type="button"
                     onClick={() => setOpen((prev) => !prev)}
                     disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-brand-brown transition-colors duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-brand-brown cursor-pointer transition-colors duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {saving ? "Saving..." : "Change Status"}
                     <ChevronDownIcon className="h-4 w-4 text-brand-brown" />

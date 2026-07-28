@@ -14,6 +14,8 @@ import type { OwnerDetails } from "../types/owner";
 import type { VeterinarianDetails } from "../types/vet";
 import type { DogCase } from "../types/dog";
 import type { UploadedFile } from "../types/upload";
+// eslint-disable-next-line -- referenced only via TSDoc {@link} for docs generation
+import { createSubmission } from '@/lib/firebase';
 
 // Server-only Firestore access via a service account, bypassing client-side
 // security rules entirely. This must NEVER be imported from a client component -
@@ -65,6 +67,7 @@ const getAdminDb = (): Firestore => {
     adminDb = getFirestore(app);
     return adminDb;
 };
+
 
 // ============================================= //
 // === Firestore document -> Submission type === //
@@ -137,6 +140,10 @@ const mapSubmissionDoc = (
     const createdAt = toDate(data.createdAt);
     const updatedAt = data.updatedAt ? toDate(data.updatedAt) : undefined;
 
+    let archived: boolean;
+    let archivedAt: Date | undefined;
+    let archivedBy: string;
+
     const billing = {
         ...data.billing,
         // billing.invoiceSentAt has the exact same Timestamp-vs-Date mismatch as
@@ -150,6 +157,10 @@ const mapSubmissionDoc = (
     let files: Files;
 
     if (data.submissionType === "pdf") {
+        archived = data.archived;
+        archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
+        archivedBy = data.archivedBy;
+
         // The PDF submission flow never captures structured owner/dog/vet data - the
         // fields literally named "owner"/"veterinarian" on these docs are actually just
         // a signature file's S3 key (a string), or null, not real detail objects. This
@@ -193,6 +204,10 @@ const mapSubmissionDoc = (
             pdfForm: data.pdfFormRef ? keyToUploadedFileStub(data.pdfFormRef) : undefined,
         };
     } else {
+        archived = data.archived;
+        archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
+        archivedBy = data.archivedBy;
+
         // "Online" submissions store real owner/veterinarian/dog objects, but each has
         // one extra ref field bolted on by createSubmission() that isn't part of the
         // real OwnerDetails/VeterinarianDetails/DogCase types. Build the clean typed
@@ -251,6 +266,9 @@ const mapSubmissionDoc = (
         submissionType: data.submissionType,
         createdAt,
         updatedAt,
+        archived,
+        archivedAt,
+        archivedBy,
         owner,
         veterinarian,
         dog,
@@ -269,6 +287,7 @@ export const getSubmissionById = async (id: string): Promise<Submission | null> 
     if (!docSnap.exists) return null;
     return mapSubmissionDoc(docSnap);
 };
+
 
 // ==================================== //
 // === DRAFT CLEANUP (cron-facing) === //
@@ -310,6 +329,13 @@ export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<Sta
     }));
 };
 
+/**
+ * Deletes a document from firestore
+ * 
+ * @remarks
+ * This is used as the last step in the draft-cleaup process by `app/api/cron/cleanup-drafts`
+ * to delete all docs from firestore after their asociated files are deleted first.
+ */
 export const deleteSubmissionDoc = async (id: string): Promise<void> => {
     await getAdminDb().doc(`submissions/${id}`).delete();
 };
