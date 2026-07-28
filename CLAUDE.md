@@ -96,6 +96,8 @@ commitType(topic): small description
 commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
 When a commit is requested, this does NOT mean to run the commit cmd. Instead, output in plain text with basically a plan. The plan should include each commit with it's message and what files to commit for each commit (referencing the file in the text will help too).
 Batch larger changes (>3 files at most changed) into multiple commits.
+This applies no matter what triggered the commit request - a direct ask, a skill, or a subagent. Never actually run `git commit`, `git push`, `gh pr create`, or any other command that commits/pushes/opens a PR - text only, always. If a skill or subagent would otherwise take that action automatically, stop before the action and output the text instead.
+Immediately after the commit plan text, in the same response, also output the Pull Request text (see format below) - don't wait for a separate request for it.
 
 ### Pull Request Format
 Fixed header vocabulary, flexible per PR - include only the headers relevant to the change, skip the rest:
