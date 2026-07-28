@@ -11,6 +11,7 @@ import type { UploadedFile } from "@/types/upload";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { ChangeStatusButton } from "@/components/admin/ChangeStatusButton";
+import { ArchiveButton } from "@/components/admin/ArchiveButton";
 import { DogDetailsCard } from "@/components/admin/DogDetailsCard";
 import { OwnerInfoCard } from "@/components/admin/OwnerInfoCard";
 import { VetPracticeCard } from "@/components/admin/VetPracticeCard";
@@ -80,7 +81,10 @@ const CasePage = async ({ params }: CasePageProps) => {
                         </span>
                     </div>
                 </div>
-                <ChangeStatusButton submissionId={id} currentStatus={submission.status} />
+                <div className="flex flex-row items-center gap-3">
+                    <ArchiveButton submissionId={id} isArchived={submission.archived} />
+                    <ChangeStatusButton submissionId={id} currentStatus={submission.status} />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
