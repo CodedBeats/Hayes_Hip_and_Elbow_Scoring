@@ -42,9 +42,7 @@ export const CasesListSection = ({
      * @remarks
      * Filters by {@link getAdminCaseDisplayStatus} (never the raw `submission.status`),
      * so an unpaid case is excluded from a non-"unpaid" status filter even if its
-     * underlying workflow status matches. PDF-mode submissions only match search by ID,
-     * since they have no structured dog/owner/vet name fields to search against (see
-     * `DogEntry.tsx`'s pdf-mode handling).
+     * underlying workflow status matches.
      */
     const filtered = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
@@ -57,13 +55,11 @@ export const CasesListSection = ({
             if (!query) return true;
 
             const idMatch = submission.id?.toLowerCase().includes(query) ?? false;
-            if (submission.submissionType === "pdf") return idMatch;
 
             return (
                 idMatch ||
                 submission.dog.registeredName.toLowerCase().includes(query) ||
-                submission.owner.name.toLowerCase().includes(query) ||
-                submission.veterinarian.veterinarianName.toLowerCase().includes(query)
+                submission.owner.name.toLowerCase().includes(query)
             );
         });
 
