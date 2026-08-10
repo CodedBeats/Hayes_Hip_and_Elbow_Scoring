@@ -8,15 +8,11 @@ import { ScanIcon } from "@/components/misc/Icons";
 
 interface AssetManagementCardProps {
     dicomFiles: UploadedFile[];
-    ownerSignature?: UploadedFile;
-    veterinarianSignature?: UploadedFile;
     pdfForm?: UploadedFile;
 }
 
 export const AssetManagementCard = ({
     dicomFiles,
-    ownerSignature,
-    veterinarianSignature,
     pdfForm,
 }: AssetManagementCardProps) => {
     return (
@@ -29,24 +25,13 @@ export const AssetManagementCard = ({
             </div>
 
             <div className="mt-5 flex flex-col gap-6">
-                {/* signatures & pdf submission form? */}
-                <div className="flex w-full">
-                    {ownerSignature && (
-                        <div className="flex-1">
-                            <SignatureAssetCard label="Owner Signature" file={ownerSignature} />
-                        </div>
-                    )}
-                    {veterinarianSignature && (
-                        <div className="flex-1">
-                            <SignatureAssetCard label="Vet Signature" file={veterinarianSignature} />
-                        </div>
-                    )}
-                    {pdfForm && (
+                {pdfForm && (
+                    <div className="flex w-full">
                         <div className="flex-1">
                             <SignatureAssetCard label="Submission PDF Form" file={pdfForm} />
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-4">
                     {dicomFiles.length === 0 ? (
