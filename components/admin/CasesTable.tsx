@@ -28,7 +28,7 @@ const formatDate = (date: Date) =>
 export const CasesTable = ({
     submissions,
     title,
-    pageSize = 4,
+    pageSize = 8,
     statusFilter,
     onStatusFilterChange,
     availableStatuses,
@@ -88,54 +88,52 @@ export const CasesTable = ({
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                    <thead>
-                        <tr className="border-y border-gray-200 bg-warm-sand/40 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            <th className="px-6 py-3 font-semibold">Dog Name</th>
-                            <th className="px-6 py-3 font-semibold">Breed</th>
-                            <th className="px-6 py-3 font-semibold">Owner</th>
-                            <th className="px-6 py-3 font-semibold">Submitter Type</th>
-                            <th className="px-6 py-3 font-semibold">Payer</th>
-                            <th className="px-6 py-3 font-semibold">Billing Type</th>
-                            <th className="px-6 py-3 font-semibold">Submission Date</th>
-                            <th className="px-6 py-3 font-semibold">Status</th>
-                            <th className="px-6 py-3 font-semibold">Actions</th>
+            <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left text-sm">
+                <thead className="sticky top-0 z-10">
+                    <tr className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Dog Name</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Breed</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Owner</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Submitter Type</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Payer</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Billing Type</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Submission Date</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Status</th>
+                        <th className="sticky top-0 z-10 border-y border-gray-200 bg-warm-sand px-6 py-3 font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {visible.map((submission) => (
+                        <tr key={submission.id} className="border-b border-gray-100 last:border-b-0 hover:bg-black/3 transition">
+                            <td className="px-6 py-4 text-gray-700">{submission.dog.registeredName}</td>
+                            <td className="px-6 py-4 text-gray-700">{submission.dog.breed}</td>
+                            <td className="px-6 py-4 text-gray-700">{submission.owner.name}</td>
+                            <td className="px-6 py-4 text-gray-700">{submission.submitterType}</td>
+                            <td className="px-6 py-4 text-gray-700">{submission.payer}</td>
+                            <td className="px-6 py-4 text-gray-700">{submission.billing.billingType}</td>
+                            <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
+                            <td className="px-6 py-4">
+                                <StatusPill status={getAdminCaseDisplayStatus(submission)} />
+                            </td>
+                            <td className="px-6 py-4">
+                                <Link
+                                    href={`/admin/cases/${submission.id}`}
+                                    className="text-sm font-medium text-brand-green underline hover:text-[#3d4e36] transition"
+                                >
+                                    View Case
+                                </Link>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {visible.map((submission) => (
-                            <tr key={submission.id} className="border-b border-gray-100 last:border-b-0">
-                                <td className="px-6 py-4 text-gray-700">{submission.dog.registeredName}</td>
-                                <td className="px-6 py-4 text-gray-700">{submission.dog.breed}</td>
-                                <td className="px-6 py-4 text-gray-700">{submission.owner.name}</td>
-                                <td className="px-6 py-4 text-gray-700">{submission.submitterType}</td>
-                                <td className="px-6 py-4 text-gray-700">{submission.payer}</td>
-                                <td className="px-6 py-4 text-gray-700">{submission.billing.billingType}</td>
-                                <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
-                                <td className="px-6 py-4">
-                                    <StatusPill status={getAdminCaseDisplayStatus(submission)} />
-                                </td>
-                                <td className="px-6 py-4">
-                                    <Link
-                                        href={`/admin/cases/${submission.id}`}
-                                        className="text-sm font-medium text-brand-green underline hover:text-[#3d4e36] transition"
-                                    >
-                                        View Case
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                        {visible.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-400">
-                                    No cases to show.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                    ))}
+                    {visible.length === 0 && (
+                        <tr>
+                            <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-400">
+                                No cases to show.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
 
             {hasMore && (
                 <div className="flex justify-center px-6 py-4">
