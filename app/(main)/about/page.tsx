@@ -113,7 +113,7 @@ const faqItems = [
     {
         id: "before-submitting",
         title: "What information do I need before submitting?",
-        content: "You'll need dog details, owner details, veterinary clinic information, and DICOM files for the relevant exam type (hips, elbows, or both).",
+        content: "You'll need dog details, owner details, the signed official CHED submission form, DICOM file(s) for the relevant exam type (hips, elbows, or both).",
     },
     {
         id: "payment",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 // components
 import { DogEntry } from "./DogEntry";
+import { ArrowDownTrayIcon } from "@/components/misc/Icons";
 // hooks
 import { useSubmissionDraft } from "@/hooks/useSubmissionDraft";
 
@@ -47,7 +48,7 @@ export const SubmissionFlow = () => {
                     {submissionId}
                 </p>
                 <p className="mt-2 text-sm text-gray-600">
-                    Need the official CHED forms or scheme details? See our{" "}
+                    Need the official CHED scheme details? See our{" "}
                     <Link
                         href="/about#ched-resources"
                         className="font-semibold text-brand-green underline"
@@ -56,6 +57,28 @@ export const SubmissionFlow = () => {
                     </Link>{" "}
                     section.
                 </p>
+                {/* download PDFs directly */}
+                <p className="mt-4 text-sm text-gray-600">
+                    Download the official CHED submission form below, matching your dog&apos;s Dogs Australia registration status.
+                </p>
+                <div className="mt-2 flex justify-center gap-3">
+                    <a
+                        href="/pdfs/DA%20CHEDS%20Submission%20Form.pdf"
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:border-brand-green-mid"
+                    >
+                        <ArrowDownTrayIcon />
+                        DA Registered Form
+                    </a>
+                    <a
+                        href="/pdfs/Non%20DA%20CHEDS%20Submission%20Form.pdf"
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:border-brand-green-mid"
+                    >
+                        <ArrowDownTrayIcon />
+                        Non-DA Registered Form
+                    </a>
+                </div>
             </div>
 
             {/* -- Instruction box -- */}
