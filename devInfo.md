@@ -188,23 +188,18 @@ submissions
 ├── submission_001
 │   ├── status
 │   ├── submitterType ("owner" | "clinic")
-│   ├── clinicId (optional)
-│   ├── submissionType ("online" | "pdf")
+│   ├── clinicInfo (optional - clinicName, contactName, email, phone; only when submitterType is "clinic")
+│   ├── payer ("owner" | "clinic")
+│   ├── pdfFormRef
 │   ├── createdAt
 │   ├── updatedAt
 │   │
 │   ├── billing
 │   │   ├── paymentStatus
-│   │   ├── billingType
+│   │   ├── billingType ("payNow" | "invoice" | "batchMonthly")
 │   │   ├── stripePaymentIntentId
 │   │   ├── invoiceId
 │   │   └── invoiceSentAt
-│   │
-│   ├── files
-│   │   ├── dicomFilesRef
-│   │   ├── supportingDocumentsRef
-│   │   ├── vetSignatureRef
-│   │   └── ownerSignatureRef
 │   │
 │   ├── owner
 │   │   ├── name
@@ -213,14 +208,6 @@ submissions
 │   │   ├── address
 │   │   └── memberNumber
 │   │
-│   ├── veterinarian
-│   │   ├── veterinarianName
-│   │   ├── practiceName
-│   │   ├── address
-│   │   ├── phone
-│   │   ├── positiveIdentificationSighted
-│   │   └── certificateSighted
-│   │
 │   └── dog
 │       ├── registeredName
 │       ├── registeredNumber
@@ -228,8 +215,9 @@ submissions
 │       ├── breed
 │       ├── sex
 │       ├── dateOfBirth
-│       ├── dateOfRadiograph
-└───────└── isDogsAustraliaRegistered
+│       ├── isDogsAustraliaRegistered
+│       ├── dicomFilesRef
+└───────└── supportingDocumentsRef
 
 
 
@@ -266,14 +254,13 @@ submissions/
 │   │   │   ├── vaccination.pdf
 │   │   │   └── registration.pdf
 │   │   │
-│   │   └── signatures/
-│   │       ├── owner-signature.png
-│   │       └── vet-signature.png
+│   │   └── pdf-forms/
+│   │       └── submission-form.pdf
 │   │
 │   ├── dog_002/
 │   │   ├── dicom/
-│   │   ├── documents/
-└───└───└── signatures/
+│   │   ├── supporting-documents/
+└───└───└── pdf-forms/
 
 
 
@@ -288,6 +275,7 @@ Then just commit and sync
 
 ### Branches
 - admin
+- archive
 - auth
 - desktop-ui
 - docs

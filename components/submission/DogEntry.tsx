@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 // components
 import { DogCompleteSummary } from "./DogCompletedSummary";
 import { DogEntryOnlineForm } from "./DogEntryOnlineForm";
-import { DogEntryPdfForm } from "./DogEntryPdfForm";
 import { ValidationSummary } from "../form/ValidationSummary";
 // hooks
 import { useDogFileUpload, EMPTY_UPLOADED_NAMES } from "@/hooks/useDogFileUpload";
@@ -13,7 +12,6 @@ import type { UploadedNames } from "@/hooks/useDogFileUpload";
 import type { DogEntryFormData, ExamType } from "@/types/form";
 import type { DogCase } from "@/types/dog";
 import type { OwnerDetails } from "@/types/owner";
-import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
 import type { ValidationIssue } from "@/types/validation";
 // lib
@@ -25,8 +23,7 @@ export type DogDraft = {
     dogId: string;
     dogData: DogEntryFormData;
     ownerData: OwnerDetails;
-    vetData: VeterinarianDetails;
-    submissionType: "online" | "pdf";
+    payer: "owner" | "clinic";
     uploadedFiles: Files | null;
     uploadedNames: UploadedNames;
     isComplete: boolean;
@@ -41,40 +38,33 @@ const EMPTY_DOG: DogEntryFormData = {
     breed: "",
     sex: "male",
     dateOfBirth: "",
-    dateOfRadiograph: "",
 };
 
 const EMPTY_OWNER: OwnerDetails = {
     name: "", email: "", phone: "", address: "", memberNumber: "",
 };
 
-const EMPTY_VET: VeterinarianDetails = {
-    veterinarianName: "", practiceName: "", address: "", phone: "",
-    positiveIdentificationSighted: false, certificateOfRegistrationSighted: false,
-};
-
 type Props = {
     submissionId: string;
     dogIndex: number;
+    submitterType: "owner" | "clinic";
     initialDraft?: DogDraft;
     onComplete: (
-        submissionType: string,
         dog: DogCase,
         files: Files,
         owner: OwnerDetails,
-        veterinarian: VeterinarianDetails,
+        payer: "owner" | "clinic",
     ) => void;
     onDraftChange?: (draft: DogDraft) => void;
 };
 
-export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onDraftChange }: Props) => {
+export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, onComplete, onDraftChange }: Props) => {
     const [dogId] = useState(() => initialDraft?.dogId ?? crypto.randomUUID());
     const [dogData, setDogData] = useState<DogEntryFormData>(initialDraft?.dogData ?? EMPTY_DOG);
     const [ownerData, setOwnerData] = useState<OwnerDetails>(initialDraft?.ownerData ?? EMPTY_OWNER);
-    const [vetData, setVetData] = useState<VeterinarianDetails>(initialDraft?.vetData ?? EMPTY_VET);
 
-    // mode toggles
-    const [submissionType, setSubmissionType] = useState<"online" | "pdf">(initialDraft?.submissionType ?? "online");
+    // who is being billed for this dog - only relevant/editable when a clinic is submitting
+    const [payer, setPayer] = useState<"owner" | "clinic">(initialDraft?.payer ?? "owner");
 
     // completion state
     const [isComplete, setIsComplete] = useState(initialDraft?.isComplete ?? false);
@@ -84,8 +74,6 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     const {
         selectedDicom, setSelectedDicom,
         selectedDocs, setSelectedDocs,
-        ownerSigFile, setOwnerSigFile,
-        vetSigFile, setVetSigFile,
         pdfFormFile, setPdfFormFile,
         isUploading,
         uploadError,
@@ -97,10 +85,14 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     } = useDogFileUpload({
         submissionId,
         dogIndex,
-        submissionType,
         initialUploadedFiles: initialDraft?.uploadedFiles ?? null,
         initialUploadedNames: initialDraft?.uploadedNames ?? EMPTY_UPLOADED_NAMES,
     });
+
+    // owner-submitted dogs always bill the owner, regardless of whatever the payer radio
+    // was last set to before submitterType flipped back - derived rather than synced via
+    // an effect, since the radio itself is only ever shown for clinic submissions anyway
+    const effectivePayer = submitterType === "clinic" ? payer : "owner";
 
     // report serialisable state changes to parent for localStorage persistence
     useEffect(() => {
@@ -108,15 +100,14 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
             dogId,
             dogData,
             ownerData,
-            vetData,
-            submissionType,
+            payer: effectivePayer,
             uploadedFiles,
             uploadedNames,
             isComplete,
         });
     // onDraftChange intentionally omitted - parent callback identity is not meaningful here
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dogId, dogData, ownerData, vetData, submissionType, uploadedFiles, uploadedNames, isComplete]);
+    }, [dogId, dogData, ownerData, effectivePayer, uploadedFiles, uploadedNames, isComplete]);
 
     const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
@@ -124,15 +115,12 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     const setOwner = (field: keyof OwnerDetails, value: string) =>
         setOwnerData((prev) => ({ ...prev, [field]: value }));
 
-    const setVet = (field: keyof VeterinarianDetails, value: string | boolean) =>
-        setVetData((prev) => ({ ...prev, [field]: value }));
-
     /**
-     * Validates the current mode's required fields/uploads (see `lib/validation.ts`)
+     * Validates the dog entry's required fields/uploads (see `lib/validation.ts`)
      * and, if everything's present, marks the dog complete.
      */
     const handleMarkComplete = () => {
-        const issues = validateDogEntry(submissionType, dogData, ownerData, vetData, uploadedFiles);
+        const issues = validateDogEntry(dogData, ownerData, uploadedFiles);
 
         if (issues.length > 0) {
             setValidationIssues(issues);
@@ -150,25 +138,20 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
             breed: dogData.breed,
             sex: dogData.sex,
             dateOfBirth: dogData.dateOfBirth,
-            dateOfRadiograph: dogData.dateOfRadiograph,
         };
 
         setIsComplete(true);
-        onComplete(submissionType, dogCase, uploadedFiles!, ownerData, vetData);
+        onComplete(dogCase, uploadedFiles!, ownerData, effectivePayer);
     };
 
     // completed summary view
     if (isComplete && uploadedFiles) {
-        const signatureCount = [uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length;
         return (
             <DogCompleteSummary
                 dogIndex={dogIndex}
-                submissionType={submissionType}
                 dogData={dogData}
                 ownerData={ownerData}
-                vetData={vetData}
                 uploadedFiles={uploadedFiles}
-                signatureCount={signatureCount}
                 onEdit={() => {
                     setIsComplete(false);
                 }}
@@ -176,15 +159,13 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
         );
     }
 
-    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length + (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
+    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
 
     // per-category duplicate filenames, surfaced inline at the relevant upload box
     // rather than flattened into one combined message
     const duplicateDicomNames = selectedDicom.filter((f) => uploadedNames.dicom.includes(f.name)).map((f) => f.name);
     const duplicateDocsNames = selectedDocs.filter((f) => uploadedNames.docs.includes(f.name)).map((f) => f.name);
     const duplicatePdfFormNames = pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [pdfFormFile.name] : [];
-    const duplicateOwnerSigNames = ownerSigFile && uploadedNames.ownerSig.includes(ownerSigFile.name) ? [ownerSigFile.name] : [];
-    const duplicateVetSigNames = vetSigFile && uploadedNames.vetSig.includes(vetSigFile.name) ? [vetSigFile.name] : [];
 
     return (
         <div className="space-y-4">
@@ -209,22 +190,37 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 </div>
             </div>
 
-            {/* -- Mode + price card -- */}
+            {/* -- Payer + price card -- */}
             <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={submissionType === "pdf"}
-                        onChange={(e) => {
-                            setSubmissionType(e.target.checked ? "pdf" : "online");
-                            // the two modes validate different fields entirely (online vs
-                            // PDF form), so issues from the previous mode no longer apply
-                            setValidationIssues([]);
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 accent-[#506147]"
-                    />
-                    Submit via PDF form
-                </label>
+                {submitterType === "clinic" ? (
+                    <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium text-gray-700">Bill this dog to:</span>
+                        <div className="flex gap-5">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name={`payer-${dogId}`}
+                                    checked={payer === "clinic"}
+                                    onChange={() => setPayer("clinic")}
+                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                />
+                                <span className="text-sm text-gray-700">Clinic</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name={`payer-${dogId}`}
+                                    checked={payer === "owner"}
+                                    onChange={() => setPayer("owner")}
+                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                />
+                                <span className="text-sm text-gray-700">Owner</span>
+                            </label>
+                        </div>
+                    </div>
+                ) : (
+                    <div />
+                )}
                 {(() => {
                     const { base, levy, total } = calculatePrice(dogData.examType, dogData.isDogsAustraliaRegistered);
                     return (
@@ -239,50 +235,26 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 })()}
             </div>
 
-            {/* -- mode specific form sections -- */}
-            {submissionType === "online" ? (
-                <DogEntryOnlineForm
-                    isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
-                    dogData={dogData}
-                    ownerData={ownerData}
-                    vetData={vetData}
-                    setDog={setDog}
-                    setOwner={setOwner}
-                    setVet={setVet}
-                    selectedDicom={selectedDicom}
-                    selectedDocs={selectedDocs}
-                    ownerSigFile={ownerSigFile}
-                    vetSigFile={vetSigFile}
-                    onDicomChange={setSelectedDicom}
-                    onDocsChange={setSelectedDocs}
-                    onOwnerSigChange={setOwnerSigFile}
-                    onVetSigChange={setVetSigFile}
-                    resetKey={uploadKey}
-                    uploadedFiles={uploadedFiles}
-                    duplicateDicomNames={duplicateDicomNames}
-                    duplicateDocsNames={duplicateDocsNames}
-                    duplicateOwnerSigNames={duplicateOwnerSigNames}
-                    duplicateVetSigNames={duplicateVetSigNames}
-                    onDeleteFile={handleDeleteFile}
-                />
-            ) : (
-                <DogEntryPdfForm
-                    isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
-                    setDog={setDog}
-                    pdfFormFile={pdfFormFile}
-                    selectedDicom={selectedDicom}
-                    selectedDocs={selectedDocs}
-                    onPdfFormChange={setPdfFormFile}
-                    onDicomChange={setSelectedDicom}
-                    onDocsChange={setSelectedDocs}
-                    resetKey={uploadKey}
-                    uploadedFiles={uploadedFiles}
-                    duplicateDicomNames={duplicateDicomNames}
-                    duplicateDocsNames={duplicateDocsNames}
-                    duplicatePdfFormNames={duplicatePdfFormNames}
-                    onDeleteFile={handleDeleteFile}
-                />
-            )}
+            {/* -- form sections -- */}
+            <DogEntryOnlineForm
+                isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
+                dogData={dogData}
+                ownerData={ownerData}
+                setDog={setDog}
+                setOwner={setOwner}
+                pdfFormFile={pdfFormFile}
+                selectedDicom={selectedDicom}
+                selectedDocs={selectedDocs}
+                onPdfFormChange={setPdfFormFile}
+                onDicomChange={setSelectedDicom}
+                onDocsChange={setSelectedDocs}
+                resetKey={uploadKey}
+                uploadedFiles={uploadedFiles}
+                duplicatePdfFormNames={duplicatePdfFormNames}
+                duplicateDicomNames={duplicateDicomNames}
+                duplicateDocsNames={duplicateDocsNames}
+                onDeleteFile={handleDeleteFile}
+            />
 
             {/* -- Upload + Mark Complete action card -- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
@@ -296,7 +268,7 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
                                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
                                     {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
-                                    [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
+                                    (uploadedFiles.pdfForm ? 1 : 0)} files uploaded
                                 </span>
                             )}
                             <button

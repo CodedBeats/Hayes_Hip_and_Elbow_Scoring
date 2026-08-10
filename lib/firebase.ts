@@ -17,7 +17,7 @@ import {
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
-import type { VeterinarianDetails } from "../types/vet";
+import type { ClinicInfo } from "../types/clinic";
 import type { DogCase } from "../types/dog";
 import type { BillingInfo, PaymentStatus } from "../types/billing";
 
@@ -57,9 +57,10 @@ export const signOutUser = () => {
 type CreateSubmissionPayload = {
     s3SubmissionId: string;
     dogIndex: number;
-    submissionType: string;
+    submitterType: "owner" | "clinic";
+    clinicInfo?: ClinicInfo;
+    payer: "owner" | "clinic";
     owner: OwnerDetails;
-    veterinarian: VeterinarianDetails;
     dog: DogCase;
     files: Files;
     billing: BillingInfo;
@@ -98,11 +99,10 @@ const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string 
  * when the customer last did anything at all, not when the doc first existed.
  *
  * Firestore's `setDoc` rejects explicit `undefined` field values (unlike a merge that
- * simply omits a key) - `pdfForm`/`ownerSignature`/`veterinarianSignature` are undefined
- * whenever a dog hasn't uploaded that particular file yet (or had it removed via the
- * mid-submission delete flow), so `deleteField()` is written instead - a plain omission
- * would leave a stale reference in Firestore after a file is deleted, since a merge write
- * only overwrites the keys it includes.
+ * simply omits a key) - `pdfForm` is undefined whenever a dog hasn't uploaded it yet
+ * (or had it removed via the mid-submission delete flow), so `deleteField()` is written
+ * instead - a plain omission would leave a stale reference in Firestore after a file is
+ * deleted, since a merge write only overwrites the keys it includes.
  *
  * Safe to call repeatedly (every upload batch) - `setDoc` with `merge: true` just layers
  * the new file keys on top of whatever was written last time, keyed by the same
@@ -111,7 +111,6 @@ const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string 
 export const saveDraftFiles = async (
     s3SubmissionId: string,
     dogIndex: number,
-    submissionType: string,
     files: Files,
 ): Promise<void> => {
     const draftRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
@@ -124,17 +123,13 @@ export const saveDraftFiles = async (
     const existing = await getDoc(draftRef);
 
     // Firestore's setDoc rejects explicit `undefined` field values (unlike a merge that
-    // simply omits a key) - pdfForm/ownerSignature/veterinarianSignature are undefined
-    // whenever a dog hasn't uploaded that particular file yet (e.g. any "online" mode dog
-    // has no pdfForm at all) or had it removed, so deleteField() is written instead of
-    // omitting the key entirely - omitting would leave a stale reference from a prior
-    // write untouched by this merge.
+    // simply omits a key) - pdfForm is undefined whenever a dog hasn't uploaded it yet or
+    // had it removed, so deleteField() is written instead of omitting the key entirely -
+    // omitting would leave a stale reference from a prior write untouched by this merge.
     const definedFiles: Record<string, unknown> = {
         dicomFiles: files.dicomFiles,
         supportingDocuments: files.supportingDocuments,
         pdfForm: files.pdfForm ?? deleteField(),
-        ownerSignature: files.ownerSignature ?? deleteField(),
-        veterinarianSignature: files.veterinarianSignature ?? deleteField(),
     };
 
     await setDoc(
@@ -142,7 +137,6 @@ export const saveDraftFiles = async (
         {
             s3SubmissionId,
             dogIndex,
-            submissionType,
             status: "draft",
             files: definedFiles,
             updatedAt: serverTimestamp(),
@@ -158,10 +152,9 @@ export const saveDraftFiles = async (
  * `s3SubmissionId`).
  *
  * @remarks
- * Writes one of two structurally different on-disk shapes depending on
- * `submissionType` ("online" vs "pdf") - see `mapSubmissionDoc` in
- * `lib/firebaseAdmin.ts`, which is what reconstructs a typed `Submission` back out of
- * whichever shape was written here.
+ * `submitterType`/`clinicInfo`/`billing.billingType` are whole-submission choices but
+ * get duplicated onto every dog's doc, same as `owner`/`payer` - there's no separate
+ * parent submission doc, each dog is a fully independent Firestore document.
  */
 export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
 
@@ -169,75 +162,41 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
     const {
         s3SubmissionId,
         dogIndex,
-        submissionType,
+        submitterType,
+        clinicInfo,
+        payer,
         owner,
-        veterinarian,
         dog,
         files,
-        billing, // billing.paymentStatus always starts as "unpaid"
+        billing, // billing.paymentStatus is "unpaid" for payNow, "pending" for invoice/batchMonthly
     } = payload;
 
     const docRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
 
-    // handle difference between online and pdf submission types
-    if (submissionType === "pdf") {
-        // create submission with just files
-        await setDoc(docRef, {
-            s3SubmissionId,
-            dogIndex,
-            status: "pendingReview",
-            submitterType: "anon",
-            submissionType,
-            createdAt: new Date(),
-            updatedAt: serverTimestamp(),
-            archived: false,
-            archivedAt: undefined,
-            archivedBy: "",
-            billing,
-            pdfFormRef: files.pdfForm?.key ?? null,
-            // owner and vet fields just become refs to signatures
-            owner: files.ownerSignature?.key ?? null,
-            veterinarian: files.veterinarianSignature?.key ?? null,
-            dog: {
-                dicomFilesRef: files.dicomFiles.map((f) => f.key),
-                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
-            },
-        }, { merge: true });
+    await setDoc(docRef, {
+        s3SubmissionId,
+        dogIndex,
+        status: "pendingReview",
+        submitterType,
+        clinicInfo: clinicInfo ?? deleteField(),
+        payer,
+        createdAt: new Date(),
+        updatedAt: serverTimestamp(),
+        archived: false,
+        archivedAt: deleteField(),
+        archivedBy: "",
+        billing,
+        owner,
+        dog: {
+            ...dog,
+            registeredNumber: dog.registeredNumber ?? null,
+            dicomFilesRef: files.dicomFiles.map((f) => f.key),
+            supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
+        },
+        pdfFormRef: files.pdfForm?.key ?? null,
+    }, { merge: true });
 
-        return docRef.id;
-
-    } else {
-        // create submission with all form fields and files
-        await setDoc(docRef, {
-            s3SubmissionId,
-            dogIndex,
-            status: "pendingReview",
-            submitterType: "anon",
-            submissionType,
-            createdAt: new Date(),
-            updatedAt: serverTimestamp(),
-            archived: false,
-            archivedAt: undefined,
-            archivedBy: "",
-            billing,
-            owner: {
-                ...owner,
-                ownerSignatureRef: files.ownerSignature?.key ?? null,
-            },
-            veterinarian: {
-                ...veterinarian,
-                vetSignatureRef: files.veterinarianSignature?.key ?? null,
-            },
-            dog: {
-                ...dog,
-                registeredNumber: dog.registeredNumber ?? null,
-                dicomFilesRef: files.dicomFiles.map((f) => f.key),
-                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
-            },
-        }, { merge: true });
-
-        return docRef.id;
-    }
+    return docRef.id;
 };
 
 

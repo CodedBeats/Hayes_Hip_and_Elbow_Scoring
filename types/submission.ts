@@ -1,5 +1,5 @@
-import { type VeterinarianDetails } from './vet';
 import { type OwnerDetails } from './owner';
+import { type ClinicInfo } from './clinic';
 import { type BillingInfo } from "./billing";
 import { type DogCase } from "./dog";
 import { UploadedFile } from './upload';
@@ -10,18 +10,17 @@ export type Submission = {
 
     status: SubmissionStatus;
 
-    submitterType: "anon" | "clinic";
+    submitterType: "owner" | "clinic";
     submitterId?: string; // future clinic account
-    submissionType: "online" | "pdf";
-    
+    clinicInfo?: ClinicInfo; // present only when submitterType === "clinic"
+    payer: "owner" | "clinic"; // per-dog; who is being billed for this dog
+
     createdAt: Date;
     updatedAt?: Date;
 
 
-    // main 3 field sections
+    // main 2 field sections
     owner: OwnerDetails;
-
-    veterinarian: VeterinarianDetails;
 
     dog: DogCase;
 
@@ -40,19 +39,12 @@ export type Submission = {
 };
 
 /**
- * Uploaded S3 files for one dog.
- *
- * @remarks
- * `pdfForm` is only ever present for `submissionType: "pdf"` submissions;
- * `ownerSignature`/`veterinarianSignature` are collected differently per mode (separate
- * signature uploads in online mode, embedded in the PDF form itself in pdf mode - see
- * `DogEntry.tsx`'s `handleMarkComplete`).
+ * Uploaded S3 files for one dog. `pdfForm` (the signed submission form) is required for
+ * every dog.
  */
 export type Files = {
     dicomFiles: UploadedFile[];
     supportingDocuments: UploadedFile[];
-    ownerSignature?: UploadedFile;
-    veterinarianSignature?: UploadedFile;
     pdfForm?: UploadedFile;
 };
 

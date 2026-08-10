@@ -1,22 +1,19 @@
 // types
 import type { UploadedFile } from "@/types/upload";
 // components
+import { Button } from "@/components/ui/Button";
 import { DicomPreviewCard } from "@/components/admin/DicomPreviewCard";
-import { SignatureAssetCard } from "@/components/admin/SignatureAssetCard";
+import { FileAssetsCard } from "@/components/admin/FileAssetsCard";
 import { ScanIcon } from "@/components/misc/Icons";
 
 
 interface AssetManagementCardProps {
     dicomFiles: UploadedFile[];
-    ownerSignature?: UploadedFile;
-    veterinarianSignature?: UploadedFile;
     pdfForm?: UploadedFile;
 }
 
 export const AssetManagementCard = ({
     dicomFiles,
-    ownerSignature,
-    veterinarianSignature,
     pdfForm,
 }: AssetManagementCardProps) => {
     return (
@@ -29,32 +26,36 @@ export const AssetManagementCard = ({
             </div>
 
             <div className="mt-5 flex flex-col gap-6">
-                {/* signatures & pdf submission form? */}
-                <div className="flex w-full">
-                    {ownerSignature && (
-                        <div className="flex-1">
-                            <SignatureAssetCard label="Owner Signature" file={ownerSignature} />
+                {pdfForm && (
+                    <FileAssetsCard label="Official CHED submission form">
+                        <div className="flex h-20 items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                            {pdfForm.url ? (
+                                <p className="w-full truncate px-2 text-center text-gray-500">{pdfForm.fileName}</p>
+                            ) : (
+                                <span className="text-xs text-gray-400">No preview</span>
+                            )}
                         </div>
-                    )}
-                    {veterinarianSignature && (
-                        <div className="flex-1">
-                            <SignatureAssetCard label="Vet Signature" file={veterinarianSignature} />
-                        </div>
-                    )}
-                    {pdfForm && (
-                        <div className="flex-1">
-                            <SignatureAssetCard label="Submission PDF Form" file={pdfForm} />
-                        </div>
-                    )}
-                </div>
 
-                <div className="flex flex-col gap-4">
+                        <Button
+                            href={pdfForm.url}
+                            variant="outline"
+                            size="sm"
+                            disabled={!pdfForm.url}
+                            target="_blank"
+                            className="w-full !border-gray-300 !text-brand-brown hover:!bg-gray-50"
+                        >
+                            Preview PDF File
+                        </Button>
+                    </FileAssetsCard>
+                )}
+
+                <FileAssetsCard label="DICOM files">
                     {dicomFiles.length === 0 ? (
                         <p className="text-sm text-gray-400">No DICOM files uploaded.</p>
                     ) : (
                         dicomFiles.map((file) => <DicomPreviewCard key={file.key} file={file} />)
                     )}
-                </div>
+                </FileAssetsCard>
             </div>
         </div>
     );

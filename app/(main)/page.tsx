@@ -35,7 +35,7 @@ const steps = [
     {
         icon: <ClipboardIcon className="w-6 h-6 text-brand-green-mid" />,
         title: "Submit Online",
-        description: "Upload your DICOM files together with patient and owner information through the submission form.",
+        description: "Upload your DICOM files together with Dog, Owner, Signed PDF and Supporting document information through the submission form.",
     },
     {
         icon: <MagnifyingGlassIcon className="w-6 h-6 text-brand-green-mid" />,
@@ -72,7 +72,8 @@ const beforeYouSubmit = [
     "Payment method ready",
     "Dog details available",
     "Owner details available",
-    "Veterinary clinic information available",
+    "Signed official CHED submission form available",
+    "Any required supporting documents available",
 ];
 
 const chipClassName = "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-brand-brown";
