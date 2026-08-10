@@ -27,7 +27,7 @@ export const SubmitterBillingCard = ({ submitterType, clinicInfo, payer, billing
                 <h3 className="text-lg font-bold text-brand-brown">Submitter & Billing</h3>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-5">
                 <div>
                     <p className="text-gray-500">Submitted By</p>
                     <p className="mt-0.5 font-semibold text-brand-brown capitalize">{submitterType}</p>
@@ -44,10 +44,14 @@ export const SubmitterBillingCard = ({ submitterType, clinicInfo, payer, billing
                     <p className="text-gray-500">Payment Status</p>
                     <p className="mt-0.5 font-semibold text-brand-brown capitalize">{billing.paymentStatus}</p>
                 </div>
+                <div>
+                    <p className="text-gray-500">Payment Amount</p>
+                    <p className="mt-0.5 font-semibold text-brand-brown capitalize">${billing.amount}</p>
+                </div>
             </div>
 
             {submitterType === "clinic" && clinicInfo && (
-                <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-gray-100 pt-4 text-sm sm:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-gray-100 pt-4 text-sm sm:grid-cols-5">
                     <div>
                         <p className="text-gray-500">Clinic Name</p>
                         <p className="mt-0.5 font-semibold text-brand-brown">{clinicInfo.clinicName}</p>
