@@ -6,10 +6,18 @@ import { updateSubmissionPaymentStatus } from "@/lib/firebase";
 
 const SuccessContent = () => {
     const params = useSearchParams();
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const isInvoiceMode = params.get("mode") === "invoice";
+
+    // Invoice/batch-monthly submissions never go through Stripe - the Firestore docs
+    // were already written with paymentStatus "pending" at submission time, so there's
+    // nothing to verify or reconcile, and the success state can be set as the initial
+    // value rather than via an effect.
+    const [status, setStatus] = useState<"loading" | "success" | "error">(() => isInvoiceMode ? "success" : "loading");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
+        if (isInvoiceMode) return;
+
         const finalise = async () => {
             const sessionId = params.get("session_id");
             if (!sessionId) {
@@ -39,7 +47,7 @@ const SuccessContent = () => {
         };
 
         finalise();
-    }, [params]);
+    }, [params, isInvoiceMode]);
 
     if (status === "loading") {
         return (
@@ -54,6 +62,15 @@ const SuccessContent = () => {
             <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-8 text-center">
                 <p className="text-2xl font-bold text-red-700">Payment Not Confirmed</p>
                 <p className="mt-2 text-sm text-gray-600">{errorMessage}</p>
+            </div>
+        );
+    }
+
+    if (isInvoiceMode) {
+        return (
+            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-8 text-center">
+                <p className="text-2xl font-bold text-green-700">Submission Received</p>
+                <p className="mt-2 text-sm text-gray-600">You&apos;ll be invoiced separately - no payment is needed right now.</p>
             </div>
         );
     }

@@ -1,4 +1,4 @@
-export type FileCategory = "dicom" | "supporting-documents" | "signatures" | "pdf-forms";
+export type FileCategory = "dicom" | "supporting-documents" | "pdf-forms";
 
 export type UploadUrlFileRequest = {
     fileName: string;

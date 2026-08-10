@@ -9,17 +9,15 @@ import type { Files } from "@/types/submission";
 // storage costs accruing on files nobody will ever finish submitting.
 const STALE_AFTER_DAYS = 7;
 
-// Pulls every S3 key referenced by a draft's files object, across all the
-// upload categories DogEntry.tsx can produce (some may be absent depending on
-// online vs pdf mode and how far the customer got).
+// Pulls every S3 key referenced by a draft's files object, across all the upload
+// categories DogEntry.tsx can produce (some may be absent depending on how far the
+// customer got).
 const collectFileKeys = (files: Files): string[] => {
     const keys: string[] = [
         ...files.dicomFiles.map((f) => f.key),
         ...files.supportingDocuments.map((f) => f.key),
     ];
     if (files.pdfForm) keys.push(files.pdfForm.key);
-    if (files.ownerSignature) keys.push(files.ownerSignature.key);
-    if (files.veterinarianSignature) keys.push(files.veterinarianSignature.key);
     return keys;
 };
 

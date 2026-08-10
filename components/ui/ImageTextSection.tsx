@@ -23,7 +23,7 @@ export const ImageTextSection = ({
                 imagePosition === "right" ? "lg:order-2" : "lg:order-1",
             ].join(" ")}
         >
-            <Image src={image.src} alt={image.alt} fill className="object-cover" />
+            <Image src={image.src} alt={image.alt} fill className="object-contain" />
             {overlayBadge && (
                 <div className="absolute bottom-4 left-4">{overlayBadge}</div>
             )}

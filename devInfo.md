@@ -188,23 +188,18 @@ submissions
 ├── submission_001
 │   ├── status
 │   ├── submitterType ("owner" | "clinic")
-│   ├── clinicId (optional)
-│   ├── submissionType ("online" | "pdf")
+│   ├── clinicInfo (optional - clinicName, contactName, email, phone; only when submitterType is "clinic")
+│   ├── payer ("owner" | "clinic")
+│   ├── pdfFormRef
 │   ├── createdAt
 │   ├── updatedAt
 │   │
 │   ├── billing
 │   │   ├── paymentStatus
-│   │   ├── billingType
+│   │   ├── billingType ("payNow" | "invoice" | "batchMonthly")
 │   │   ├── stripePaymentIntentId
 │   │   ├── invoiceId
 │   │   └── invoiceSentAt
-│   │
-│   ├── files
-│   │   ├── dicomFilesRef
-│   │   ├── supportingDocumentsRef
-│   │   ├── vetSignatureRef
-│   │   └── ownerSignatureRef
 │   │
 │   ├── owner
 │   │   ├── name
@@ -213,14 +208,6 @@ submissions
 │   │   ├── address
 │   │   └── memberNumber
 │   │
-│   ├── veterinarian
-│   │   ├── veterinarianName
-│   │   ├── practiceName
-│   │   ├── address
-│   │   ├── phone
-│   │   ├── positiveIdentificationSighted
-│   │   └── certificateSighted
-│   │
 │   └── dog
 │       ├── registeredName
 │       ├── registeredNumber
@@ -228,8 +215,9 @@ submissions
 │       ├── breed
 │       ├── sex
 │       ├── dateOfBirth
-│       ├── dateOfRadiograph
-└───────└── isDogsAustraliaRegistered
+│       ├── isDogsAustraliaRegistered
+│       ├── dicomFilesRef
+└───────└── supportingDocumentsRef
 
 
 
@@ -266,14 +254,13 @@ submissions/
 │   │   │   ├── vaccination.pdf
 │   │   │   └── registration.pdf
 │   │   │
-│   │   └── signatures/
-│   │       ├── owner-signature.png
-│   │       └── vet-signature.png
+│   │   └── pdf-forms/
+│   │       └── submission-form.pdf
 │   │
 │   ├── dog_002/
 │   │   ├── dicom/
-│   │   ├── documents/
-└───└───└── signatures/
+│   │   ├── supporting-documents/
+└───└───└── pdf-forms/
 
 
 
@@ -288,6 +275,7 @@ Then just commit and sync
 
 ### Branches
 - admin
+- archive
 - auth
 - desktop-ui
 - docs
@@ -302,7 +290,6 @@ Then just commit and sync
 ### Commit format & Notes
 commitType(topic): small description
 commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
-Batch larger changes (>3 files at most changed) into multiple commits
 
 ### Pull Request Format
 Fixed header vocabulary, flexible per PR - include only the headers relevant to the change, skip the rest:
@@ -311,16 +298,13 @@ Fixed header vocabulary, flexible per PR - include only the headers relevant to 
 **Problem** *Description*
 **Fix** *Description*
 **New Infrastructure** *Description*
-**Tested** *Description*
-
-e.g. a style/refactor PR might only need **Summary** + **Tested**; a bug fix might use **Problem** + **Fix** + **Tested**.
-
-**Tested** - assume manual testing was already done to success before the PR is opened; don't restate standard checks (type-check, lint, "it works as expected") since those are a given. Instead list the specific scenarios manually exercised, as bullets, e.g.:
+**Tested** *Description* 
+(A style/refactor PR might only need **Summary** + **Tested**) 
+(A bug fix might use **Problem** + **Fix** + **Tested**)
+#### Tested Format Example
 - uploaded a single file and deleted it
 - uploaded multiple files and deleted them all one by one
 - uploaded a file, deleted it, reloaded the page to confirm localStorage stayed in sync
-
-Only call out non-standard verification (e.g. manually triggering a cron job, checking a Firestore doc directly) when it's relevant to the change.
 
 
 ## Testing CMDs

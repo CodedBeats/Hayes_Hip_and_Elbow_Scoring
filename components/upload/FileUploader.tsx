@@ -11,13 +11,11 @@ import { FileCategory, UploadedFile } from "@/types/upload";
 const ACCEPT_MAP: Record<FileCategory, string> = {
     "dicom":                ".dcm",
     "supporting-documents": ".pdf",
-    "signatures":           ".png,.jpg,.jpeg",
     "pdf-forms":            ".pdf",
 };
 const LABEL_MAP: Record<FileCategory, string> = {
     "dicom":                "Upload DICOM File",
     "supporting-documents": "Upload Supporting Document",
-    "signatures":           "Upload Signature",
     "pdf-forms":            "Upload PDF Form",
 };
 

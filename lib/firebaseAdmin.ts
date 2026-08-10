@@ -11,7 +11,7 @@ import {
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
-import type { VeterinarianDetails } from "../types/vet";
+import type { ClinicInfo } from "../types/clinic";
 import type { DogCase } from "../types/dog";
 import type { UploadedFile } from "../types/upload";
 // eslint-disable-next-line -- referenced only via TSDoc {@link} for docs generation
@@ -73,9 +73,9 @@ const getAdminDb = (): Firestore => {
 // === Firestore document -> Submission type === //
 // ============================================= //
 //
-// createSubmission() (lib/firebase.ts) writes two different on-disk shapes depending
-// on submissionType, and NEITHER is a 1:1 match for the `Submission` type - everything
-// below exists to bridge that gap back into something type-safe to render.
+// createSubmission() (lib/firebase.ts) writes owner/dog as real structured objects
+// plus one extra ref field bolted onto `dog` - everything below exists to bridge that
+// gap back into something type-safe to render.
 
 /**
  * Coerces a raw Firestore field value back into a `Date`.
@@ -122,10 +122,11 @@ const keyToUploadedFileStub = (key: string): UploadedFile => {
  * Bridges a raw Firestore submission doc back into a typed `Submission`.
  *
  * @remarks
- * {@link createSubmission} (`lib/firebase.ts`) writes two different on-disk shapes
- * depending on `submissionType`, and neither is a 1:1 match for the `Submission` type -
- * this function exists entirely to reconcile that gap back into something type-safe to
- * render.
+ * {@link createSubmission} (`lib/firebase.ts`) stores real `owner`/`dog` objects with
+ * one extra ref field bolted onto `dog` that isn't part of the real `DogCase` type, plus
+ * a top-level `pdfFormRef`. Build the clean typed object explicitly field-by-field
+ * (rather than spreading the raw doc data) so a future field added to these types can't
+ * silently leak an unexpected extra property through untyped Firestore data.
  *
  * @throws Error if the document snapshot has no data (i.e. it doesn't exist).
  */
@@ -140,9 +141,9 @@ const mapSubmissionDoc = (
     const createdAt = toDate(data.createdAt);
     const updatedAt = data.updatedAt ? toDate(data.updatedAt) : undefined;
 
-    let archived: boolean;
-    let archivedAt: Date | undefined;
-    let archivedBy: string;
+    const archived: boolean = data.archived;
+    const archivedAt: Date | undefined = data.archivedAt ? toDate(data.archivedAt) : undefined;
+    const archivedBy: string = data.archivedBy;
 
     const billing = {
         ...data.billing,
@@ -151,126 +152,58 @@ const mapSubmissionDoc = (
         invoiceSentAt: data.billing?.invoiceSentAt ? toDate(data.billing.invoiceSentAt) : undefined,
     };
 
-    let owner: OwnerDetails;
-    let veterinarian: VeterinarianDetails;
-    let dog: DogCase;
-    let files: Files;
+    const rawOwner = data.owner ?? {};
+    const owner: OwnerDetails = {
+        name: rawOwner.name ?? "",
+        email: rawOwner.email ?? "",
+        phone: rawOwner.phone ?? "",
+        address: rawOwner.address ?? "",
+        memberNumber: rawOwner.memberNumber ?? "",
+    };
 
-    if (data.submissionType === "pdf") {
-        archived = data.archived;
-        archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
-        archivedBy = data.archivedBy;
+    const clinicInfo: ClinicInfo | undefined = data.clinicInfo
+        ? {
+            clinicName: data.clinicInfo.clinicName ?? "",
+            contactName: data.clinicInfo.contactName ?? "",
+            email: data.clinicInfo.email ?? "",
+            phone: data.clinicInfo.phone ?? "",
+        }
+        : undefined;
 
-        // The PDF submission flow never captures structured owner/dog/vet data - the
-        // fields literally named "owner"/"veterinarian" on these docs are actually just
-        // a signature file's S3 key (a string), or null, not real detail objects. This
-        // is expected behaviour of that flow (confirmed), not a bug: everything the
-        // owner/vet filled in only exists inside the attached PDF form file itself.
-        //
-        // The placeholder objects below exist ONLY to satisfy the Submission type's
-        // required owner/veterinarian/dog fields - their field VALUES are never shown to
-        // anyone. The UI (CasesTable, the case-details page) always checks
-        // submissionType === "pdf" first and renders a "see attached PDF form" notice
-        // instead of reading these fields, so garbage-in here is intentional and safe.
-        owner = { name: "", email: "", phone: "", address: "", memberNumber: "" };
-        veterinarian = {
-            veterinarianName: "",
-            practiceName: "",
-            address: "",
-            phone: "",
-            positiveIdentificationSighted: false,
-            certificateOfRegistrationSighted: false,
-        };
-        dog = {
-            id: docSnap.id,
-            examType: "hipsAndElbows", // arbitrary valid placeholder, never displayed
-            isDogsAustraliaRegistered: false,
-            registeredName: "",
-            microchipNumber: "",
-            breed: "",
-            sex: "male",
-            dateOfBirth: "",
-            dateOfRadiograph: "",
-        };
+    const rawDog = data.dog ?? {};
+    const dog: DogCase = {
+        id: docSnap.id,
+        examType: rawDog.examType,
+        isDogsAustraliaRegistered: Boolean(rawDog.isDogsAustraliaRegistered),
+        registeredName: rawDog.registeredName ?? "",
+        // written as `dog.registeredNumber ?? null` by createSubmission, so `null`
+        // needs coercing back to `undefined` to match DogCase.registeredNumber?: string
+        registeredNumber: rawDog.registeredNumber ?? undefined,
+        microchipNumber: rawDog.microchipNumber ?? "",
+        breed: rawDog.breed ?? "",
+        sex: rawDog.sex,
+        dateOfBirth: rawDog.dateOfBirth ?? "",
+    };
 
-        const ownerSignatureKey: string | null = typeof data.owner === "string" ? data.owner : null;
-        const vetSignatureKey: string | null = typeof data.veterinarian === "string" ? data.veterinarian : null;
-
-        files = {
-            dicomFiles: (data.dog?.dicomFilesRef ?? []).map(keyToUploadedFileStub),
-            supportingDocuments: (data.dog?.supportingDocumentsRef ?? []).map(keyToUploadedFileStub),
-            ownerSignature: ownerSignatureKey ? keyToUploadedFileStub(ownerSignatureKey) : undefined,
-            veterinarianSignature: vetSignatureKey ? keyToUploadedFileStub(vetSignatureKey) : undefined,
-            pdfForm: data.pdfFormRef ? keyToUploadedFileStub(data.pdfFormRef) : undefined,
-        };
-    } else {
-        archived = data.archived;
-        archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
-        archivedBy = data.archivedBy;
-
-        // "Online" submissions store real owner/veterinarian/dog objects, but each has
-        // one extra ref field bolted on by createSubmission() that isn't part of the
-        // real OwnerDetails/VeterinarianDetails/DogCase types. Build the clean typed
-        // object explicitly field-by-field (rather than spreading the raw doc data and
-        // deleting the ref field) so a future field added to these types can't silently
-        // leak an unexpected extra property through untyped Firestore data.
-        const rawOwner = data.owner ?? {};
-        owner = {
-            name: rawOwner.name ?? "",
-            email: rawOwner.email ?? "",
-            phone: rawOwner.phone ?? "",
-            address: rawOwner.address ?? "",
-            memberNumber: rawOwner.memberNumber ?? "",
-        };
-
-        const rawVet = data.veterinarian ?? {};
-        veterinarian = {
-            veterinarianName: rawVet.veterinarianName ?? "",
-            practiceName: rawVet.practiceName ?? "",
-            address: rawVet.address ?? "",
-            phone: rawVet.phone ?? "",
-            positiveIdentificationSighted: Boolean(rawVet.positiveIdentificationSighted),
-            certificateOfRegistrationSighted: Boolean(rawVet.certificateOfRegistrationSighted),
-        };
-
-        const rawDog = data.dog ?? {};
-        dog = {
-            id: docSnap.id,
-            examType: rawDog.examType,
-            isDogsAustraliaRegistered: Boolean(rawDog.isDogsAustraliaRegistered),
-            registeredName: rawDog.registeredName ?? "",
-            // written as `dog.registeredNumber ?? null` by createSubmission, so `null`
-            // needs coercing back to `undefined` to match DogCase.registeredNumber?: string
-            registeredNumber: rawDog.registeredNumber ?? undefined,
-            microchipNumber: rawDog.microchipNumber ?? "",
-            breed: rawDog.breed ?? "",
-            sex: rawDog.sex,
-            dateOfBirth: rawDog.dateOfBirth ?? "",
-            dateOfRadiograph: rawDog.dateOfRadiograph ?? "",
-        };
-
-        files = {
-            dicomFiles: (rawDog.dicomFilesRef ?? []).map(keyToUploadedFileStub),
-            supportingDocuments: (rawDog.supportingDocumentsRef ?? []).map(keyToUploadedFileStub),
-            ownerSignature: rawOwner.ownerSignatureRef ? keyToUploadedFileStub(rawOwner.ownerSignatureRef) : undefined,
-            veterinarianSignature: rawVet.vetSignatureRef ? keyToUploadedFileStub(rawVet.vetSignatureRef) : undefined,
-            pdfForm: undefined, // never present for online submissions
-        };
-    }
+    const files: Files = {
+        dicomFiles: (rawDog.dicomFilesRef ?? []).map(keyToUploadedFileStub),
+        supportingDocuments: (rawDog.supportingDocumentsRef ?? []).map(keyToUploadedFileStub),
+        pdfForm: data.pdfFormRef ? keyToUploadedFileStub(data.pdfFormRef) : undefined,
+    };
 
     return {
         id: docSnap.id,
         status: data.status as SubmissionStatus,
         submitterType: data.submitterType,
         submitterId: data.submitterId,
-        submissionType: data.submissionType,
+        clinicInfo,
+        payer: data.payer,
         createdAt,
         updatedAt,
         archived,
         archivedAt,
         archivedBy,
         owner,
-        veterinarian,
         dog,
         files,
         billing,
@@ -295,9 +228,9 @@ export const getSubmissionById = async (id: string): Promise<Submission | null> 
 //
 // Used only by app/api/cron/cleanup-drafts. Draft docs (written by
 // lib/firebase.ts's saveDraftFiles, before a dog is ever marked complete) don't have the
-// full owner/veterinarian/dog shape mapSubmissionDoc expects - they may only ever contain
-// { s3SubmissionId, dogIndex, submissionType, status, files, createdAt, updatedAt } - so
-// they're read and returned as-is here rather than routed through mapSubmissionDoc.
+// full owner/dog shape mapSubmissionDoc expects - they may only ever contain
+// { s3SubmissionId, dogIndex, status, files, createdAt, updatedAt } - so they're read
+// and returned as-is here rather than routed through mapSubmissionDoc.
 
 export type StaleDraft = {
     id: string;

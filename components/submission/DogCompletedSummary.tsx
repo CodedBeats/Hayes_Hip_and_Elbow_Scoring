@@ -2,29 +2,22 @@
 // types
 import type { DogEntryFormData } from "@/types/form";
 import type { OwnerDetails } from "@/types/owner";
-import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
 
 
 type DogCompleteSummaryProps = {
     dogIndex: number;
-    submissionType: "online" | "pdf";
     dogData: DogEntryFormData;
     ownerData: OwnerDetails;
-    vetData: VeterinarianDetails;
     uploadedFiles: Files;
-    signatureCount: number;
     onEdit: () => void;
 };
 
 export const DogCompleteSummary = ({
     dogIndex,
-    submissionType,
     dogData,
     ownerData,
-    vetData,
     uploadedFiles,
-    signatureCount,
     onEdit,
 }: DogCompleteSummaryProps) => {
 
@@ -46,18 +39,11 @@ export const DogCompleteSummary = ({
                 </button>
             </div>
 
-            {submissionType === "pdf" ? (
-                <div className="mt-3 text-sm text-gray-700">
-                    <span className="font-medium">PDF submission</span>
-                </div>
-            ) : (
-                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-                    <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
-                    <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
-                    <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
-                    <span><span className="font-medium">Vet:</span> {vetData.veterinarianName}</span>
-                </div>
-            )}
+            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
+                <span><span className="font-medium">Dog:</span> {dogData.registeredName}</span>
+                <span><span className="font-medium">Breed:</span> {dogData.breed}</span>
+                <span><span className="font-medium">Owner:</span> {ownerData.name}</span>
+            </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
                 {uploadedFiles.pdfForm && (
@@ -71,11 +57,6 @@ export const DogCompleteSummary = ({
                 <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
                     {uploadedFiles.supportingDocuments.length} supporting docs
                 </span>
-                {submissionType === "online" && (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-700">
-                        {signatureCount} signature{signatureCount !== 1 ? "s" : ""}
-                    </span>
-                )}
             </div>
         </div>
     );

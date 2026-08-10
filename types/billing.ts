@@ -1,5 +1,5 @@
 export type BillingInfo = {
-    billingType: "payNow" | "invoice";
+    billingType: "payNow" | "invoice" | "batchMonthly";
 
     amount: number;
 
