@@ -92,10 +92,12 @@ export const CasesTable = ({
                 <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-y border-gray-200 bg-warm-sand/40 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            <th className="px-6 py-3 font-semibold">Case ID</th>
                             <th className="px-6 py-3 font-semibold">Dog Name</th>
                             <th className="px-6 py-3 font-semibold">Breed</th>
                             <th className="px-6 py-3 font-semibold">Owner</th>
+                            <th className="px-6 py-3 font-semibold">Submitter Type</th>
+                            <th className="px-6 py-3 font-semibold">Payer</th>
+                            <th className="px-6 py-3 font-semibold">Billing Type</th>
                             <th className="px-6 py-3 font-semibold">Submission Date</th>
                             <th className="px-6 py-3 font-semibold">Status</th>
                             <th className="px-6 py-3 font-semibold">Actions</th>
@@ -104,10 +106,12 @@ export const CasesTable = ({
                     <tbody>
                         {visible.map((submission) => (
                             <tr key={submission.id} className="border-b border-gray-100 last:border-b-0">
-                                <td className="px-6 py-4 font-bold text-brand-brown">#{submission.id}</td>
                                 <td className="px-6 py-4 text-gray-700">{submission.dog.registeredName}</td>
                                 <td className="px-6 py-4 text-gray-700">{submission.dog.breed}</td>
                                 <td className="px-6 py-4 text-gray-700">{submission.owner.name}</td>
+                                <td className="px-6 py-4 text-gray-700">{submission.submitterType}</td>
+                                <td className="px-6 py-4 text-gray-700">{submission.payer}</td>
+                                <td className="px-6 py-4 text-gray-700">{submission.billing.billingType}</td>
                                 <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
                                 <td className="px-6 py-4">
                                     <StatusPill status={getAdminCaseDisplayStatus(submission)} />
