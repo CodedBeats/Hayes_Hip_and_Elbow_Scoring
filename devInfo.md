@@ -275,6 +275,7 @@ Then just commit and sync
 
 ### Branches
 - admin
+- archive
 - auth
 - desktop-ui
 - docs
