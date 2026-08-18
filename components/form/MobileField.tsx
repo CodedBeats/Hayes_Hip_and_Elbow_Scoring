@@ -1,5 +1,7 @@
 // dependencies
 import React, { useState, useEffect } from "react";
+// mobile number codes by country
+import { countryCodes } from "@/lib/miscData";
 
 
 interface MobileFieldProps {
@@ -59,7 +61,7 @@ export const MobileField: React.FC<MobileFieldProps> = ({ value, onChange, label
     return (
         <div className="mb-4 w-full">
             <label htmlFor={`${name}-number`} className="block mb-1.5 text-sm font-medium text-gray-700">
-                {label} <span className="text-red-700">{" *"}</span>
+                {label}
             </label>
             <div className="flex gap-2">
                 <select
@@ -72,9 +74,13 @@ export const MobileField: React.FC<MobileFieldProps> = ({ value, onChange, label
                 >
                     <option value="" disabled hidden>Code</option>
                     <option value="+61">+61 (AU)</option>
-                    <option value="+44">+44 (UK)</option>
-                    <option value="+1">+1 (US)</option>
-                    <option value="+91">+91 (IN)</option>
+                    {countryCodes.map((code) => (
+                        <option 
+                            key={`${code.num}-${code.country}`}
+                            value={code.num}
+                        >{code.num} {code.country}
+                        </option>
+                    ))}
                 </select>
                 <input
                     id={`${name}-number`}
