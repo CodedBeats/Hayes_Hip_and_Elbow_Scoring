@@ -32,7 +32,7 @@ export const validateDogEntry = (
     // owner
     if (!ownerData.name) issues.push({ section: "Owner Details", label: "Full Name" });
     if (!ownerData.email) issues.push({ section: "Owner Details", label: "Email Address" });
-    if (isPhoneNumberEmpty(ownerData.phone)) issues.push({ section: "Owner Details", label: "Phone Number" });
+    // if (isPhoneNumberEmpty(ownerData.phone)) issues.push({ section: "Owner Details", label: "Phone Number" });
 
     // uploads
     if (!uploadedFiles?.pdfForm) issues.push({ section: "Uploads", label: "Completed & signed PDF submission form" });

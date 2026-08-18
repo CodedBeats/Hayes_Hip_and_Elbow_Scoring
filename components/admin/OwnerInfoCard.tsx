@@ -24,7 +24,13 @@ export const OwnerInfoCard = ({ owner }: OwnerInfoCardProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                     <PhoneIcon />
-                    <span>{owner.phone}</span>
+                    <span>
+                        { !owner.phone || owner.phone === "" ?
+                            "no number provided"
+                            :
+                            owner.phone
+                        }
+                    </span>
                 </div>
             </div>
 
