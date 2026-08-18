@@ -78,10 +78,24 @@ export const useSubmissionDraft = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
+    // true once any dog draft in a clinic submission is billed to its owner - sourced
+    // from dogDrafts (synced on every payer change, complete or not) rather than
+    // completedDogs, so this reacts as soon as the payer radio is touched instead of
+    // waiting for "Mark Dog Complete". A clinic can't pay for an owner-billed dog
+    // through its own Stripe checkout, so once this is true there's no "when would you
+    // like to pay" choice left to offer
+    const hasOwnerBilledDog = submitterType === "clinic" &&
+        Object.values(dogDrafts).some((draft) => draft.payer === "owner");
+
     // owner submissions are always payNow, regardless of whatever the billingType radio
     // was last set to before submitterType flipped back - derived rather than synced via
-    // an effect, since the radio itself is only ever shown for clinic submissions anyway
-    const effectiveBillingType = submitterType === "clinic" ? billingType : "payNow";
+    // an effect, since the radio itself is only ever shown for clinic submissions anyway.
+    // A clinic submission with an owner-billed dog is always invoiced, for the same reason.
+    const effectiveBillingType = submitterType !== "clinic"
+        ? "payNow"
+        : hasOwnerBilledDog
+          ? "invoice"
+          : billingType;
 
     // persist to localStorage whenever relevant state changes
     useEffect(() => {
@@ -129,21 +143,6 @@ export const useSubmissionDraft = () => {
         0,
     );
 
-    // a clinic paying now can't cleanly charge an owner-billed dog through a single
-    // Stripe checkout - see useSubmissionDraft's TSDoc / the submission plan for why
-    const conflictingDogIndices = submitterType === "clinic" && effectiveBillingType === "payNow"
-        ? Object.entries(completedDogs).filter(([, entry]) => entry.payer === "owner").map(([idx]) => Number(idx))
-        : [];
-    const hasBillingConflict = conflictingDogIndices.length > 0;
-
-    // Surfaced proactively in the UI (not just on a failed submit attempt) - the
-    // checkout button is disabled while this conflict exists, so a click never happens
-    // to trigger handleSubmit's own copy of this message.
-    const billingConflictMessage = hasBillingConflict
-        ? `Dog${conflictingDogIndices.length > 1 ? "s" : ""} ${conflictingDogIndices.join(", ")} ${conflictingDogIndices.length > 1 ? "are" : "is"} billed to the owner, which can't be paid now as part of a clinic submission. ` +
-          "Switch payment timing to invoice/batch monthly, or remove that dog and submit it separately."
-        : null;
-
     /**
      * Creates one Firestore submission doc per completed dog, then either redirects to
      * Stripe Checkout (`payNow`) or straight to the success page (`invoice`/
@@ -155,11 +154,6 @@ export const useSubmissionDraft = () => {
      * recover if the user comes back.
      */
     const handleSubmit = async () => {
-        if (hasBillingConflict) {
-            setSubmitError(billingConflictMessage);
-            return;
-        }
-
         setIsSubmitting(true);
         setSubmitError(null);
         try {
@@ -223,9 +217,7 @@ export const useSubmissionDraft = () => {
         completedCount,
         allComplete,
         totalAud,
-        hasBillingConflict,
-        conflictingDogIndices,
-        billingConflictMessage,
+        hasOwnerBilledDog,
         handleDogComplete,
         handleDraftChange,
         handleCountChange,

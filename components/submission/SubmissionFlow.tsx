@@ -24,8 +24,7 @@ export const SubmissionFlow = () => {
         completedCount,
         allComplete,
         totalAud,
-        hasBillingConflict,
-        billingConflictMessage,
+        hasOwnerBilledDog,
         handleDogComplete,
         handleDraftChange,
         handleCountChange,
@@ -300,59 +299,63 @@ export const SubmissionFlow = () => {
             <div className="mt-10 border-t border-gray-200 pt-8">
                 {submitterType === "clinic" && (
                     <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                        <p className="mb-2 text-sm font-medium text-gray-700">
-                            When would you like to pay?
-                        </p>
-                        <div className="flex flex-wrap gap-6">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="billingType"
-                                    checked={billingType === "payNow"}
-                                    onChange={() => setBillingType("payNow")}
-                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
-                                />
-                                <span className="text-sm text-gray-700">
-                                    Pay now
-                                </span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="billingType"
-                                    checked={billingType === "invoice"}
-                                    onChange={() => setBillingType("invoice")}
-                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
-                                />
-                                <span className="text-sm text-gray-700">
-                                    Invoice
-                                </span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="billingType"
-                                    checked={billingType === "batchMonthly"}
-                                    onChange={() =>
-                                        setBillingType("batchMonthly")
-                                    }
-                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
-                                />
-                                <span className="text-sm text-gray-700">
-                                    Batch monthly
-                                </span>
-                            </label>
-                        </div>
+                        {hasOwnerBilledDog ? (
+                            <p className="text-sm text-gray-700">
+                                This submission will be invoiced rather than
+                                paid now, because at least one dog is billed
+                                to its owner.
+                            </p>
+                        ) : (
+                            <>
+                                <p className="mb-2 text-sm font-medium text-gray-700">
+                                    When would you like to pay?
+                                </p>
+                                <div className="flex flex-wrap gap-6">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="billingType"
+                                            checked={billingType === "payNow"}
+                                            onChange={() => setBillingType("payNow")}
+                                            className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            Pay now
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="billingType"
+                                            checked={billingType === "invoice"}
+                                            onChange={() => setBillingType("invoice")}
+                                            className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            Invoice
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="billingType"
+                                            checked={billingType === "batchMonthly"}
+                                            onChange={() =>
+                                                setBillingType("batchMonthly")
+                                            }
+                                            className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            Batch monthly
+                                        </span>
+                                    </label>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 
-                {hasBillingConflict && (
-                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {billingConflictMessage}
-                    </div>
-                )}
-
-                {submitError && !hasBillingConflict && (
+                {submitError && (
                     <p className="mb-3 text-sm text-red-600">{submitError}</p>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -376,7 +379,7 @@ export const SubmissionFlow = () => {
                         type="button"
                         onClick={handleSubmit}
                         disabled={
-                            !allComplete || isSubmitting || hasBillingConflict
+                            !allComplete || isSubmitting
                         }
                         className="inline-flex items-center gap-2 rounded-lg bg-brand-green px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#3d4e36] disabled:cursor-not-allowed disabled:opacity-40"
                     >
