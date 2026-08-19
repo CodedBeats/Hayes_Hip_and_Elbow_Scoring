@@ -205,7 +205,7 @@ const AboutPage = () => {
                     radiology services in small animal practice in Melbourne&apos;s eastern suburbs.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    Following extensive training in the Dogs Australia hip and elbow scoring system by Dr Roger
+                    Following extensive training in the Dogs Australia hip and elbow scoring system by <br /> Dr Roger
                     Lavelle, Ana was invited to join the CHED panel in 2019 and has since provided official
                     scoring services for Dogs Australia.
                 </p>

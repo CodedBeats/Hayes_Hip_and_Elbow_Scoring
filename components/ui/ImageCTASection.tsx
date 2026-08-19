@@ -4,6 +4,7 @@ import Image from "next/image";
 interface ImageCTASectionProps {
     image: { src: string; alt: string };
     title: string;
+    titleName?: string;
     subtitle?: string;
     align?: "left" | "center";
     minHeightClassName?: string;
@@ -14,6 +15,7 @@ interface ImageCTASectionProps {
 export const ImageCTASection = ({
     image,
     title,
+    titleName,
     subtitle,
     align = "left",
     minHeightClassName = "min-h-[660px]",
@@ -30,7 +32,7 @@ export const ImageCTASection = ({
             ].join(" ")}
         >
             <h1 className="text-3xl font-bold text-white leading-tight sm:text-4xl lg:text-5xl">
-                {title}
+                {title} <span><br />{titleName}</span>
             </h1>
             {subtitle && (
                 <p className="max-w-xl text-base text-white/85 leading-relaxed">{subtitle}</p>
