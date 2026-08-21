@@ -269,12 +269,12 @@ export const DogEntryOnlineForm = ({
                 {/* Signed PDF submission form */}
                 <UploadBox
                     label="Canine Hip & Elbow Dysplasia Scheme Submission Form"
-                    hint="Click to upload the completed & signed PDF submission form"
+                    hint="Click to upload the completed & signed PDF submission form, or a photo of it"
                     icon={<DocumentIcon />}
                     isRequired
                     file={pdfFormFile}
                     onChange={onPdfFormChange}
-                    accept=".pdf"
+                    accept=".pdf,.jpg,.jpeg,.png"
                     resetKey={resetKey}
                     isUploaded={!!uploadedFiles?.pdfForm}
                     duplicateFileNames={duplicatePdfFormNames}
@@ -308,7 +308,7 @@ export const DogEntryOnlineForm = ({
                 {/* Supporting documents */}
                 <UploadBox
                     label="Supporting Documents"
-                    hint="Click to upload supporting PDF documents (optional)"
+                    hint="Click to upload supporting documents (optional)"
                     icon={<DocumentIcon />}
                     description={
                         !isDogsAustraliaRegistered
@@ -318,7 +318,7 @@ export const DogEntryOnlineForm = ({
                     files={selectedDocs}
                     isMultiple
                     onMultiChange={onDocsChange}
-                    accept=".pdf"
+                    accept=".pdf,.jpg,.jpeg,.png"
                     resetKey={resetKey}
                     uploadedCount={uploadedFiles?.supportingDocuments.length ?? 0}
                     duplicateFileNames={duplicateDocsNames}

@@ -14,9 +14,9 @@ const VALID_CATEGORIES = new Set<FileCategory>(["dicom", "supporting-documents",
  * `File.type` for some formats (notably `.dcm`), so extension alone has to be enough.
  */
 const CATEGORY_RULES: Record<FileCategory, { extensions: string[]; mimeTypes: string[] }> = {
-    "dicom":                { extensions: [".dcm"],                  mimeTypes: ["application/dicom"] },
-    "supporting-documents": { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
-    "pdf-forms":            { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
+    "dicom":                { extensions: [".dcm"],                              mimeTypes: ["application/dicom"] },
+    "supporting-documents": { extensions: [".pdf",".jpg",".jpeg", ".png"],       mimeTypes: ["application/pdf"] },
+    "pdf-forms":            { extensions: [".pdf",".jpg",".jpeg", ".png"],       mimeTypes: ["application/pdf"] },
 };
 
 function isValidForCategory(fileName: string, contentType: string, category: FileCategory): boolean {
