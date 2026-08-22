@@ -279,6 +279,7 @@ Then just commit and sync
 - auth
 - desktop-ui
 - docs
+- emails
 - file-upload
 - firebase
 - mobile-ui
