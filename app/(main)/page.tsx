@@ -90,7 +90,8 @@ const Home = () => {
         <main className="flex flex-col bg-cream font-sans">
             <ImageCTASection
                 image={{ src: "/images/Golden Retriever.png", alt: "Golden Retriever" }}
-                title="Professional assessment of canine hip and elbow radiographs by Dr Ana Hayes"
+                title="Professional assessment of canine hip and elbow radiographs by"
+                titleName="Dr Ana Hayes"
                 subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements."
                 minHeightClassName="min-h-[560px] sm:min-h-[640px]"
             >
@@ -141,7 +142,7 @@ const Home = () => {
                     services in small animal practice for more than three decades.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    In 2019, Dr Hayes joined the CHED Panel for Dogs Australia after being invited by Dr Roger
+                    In 2019, Dr Hayes joined the CHED Panel for Dogs Australia after being invited by <br /> Dr Roger
                     Lavelle, one of the developers of the canine hip and elbow scoring system used throughout
                     Australia.
                 </p>
