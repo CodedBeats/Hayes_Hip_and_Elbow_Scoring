@@ -24,7 +24,7 @@ export const ImageCTASection = ({
 }: ImageCTASectionProps) => (
     <section className={["relative w-full overflow-hidden", minHeightClassName, className].join(" ")}>
         <Image src={image.src} alt={image.alt} fill priority className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-brown/80 via-brand-brown/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-brown/90 via-brand-brown/50 to-transparent" />
         <div
             className={[
                 "relative z-10 flex h-full max-w-8xl flex-col justify-center gap-5 px-6 py-16 sm:px-10",

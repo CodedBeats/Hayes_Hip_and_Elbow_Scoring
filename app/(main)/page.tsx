@@ -89,11 +89,11 @@ const Home = () => {
     return (
         <main className="flex flex-col bg-cream font-sans">
             <ImageCTASection
-                image={{ src: "/images/Golden Retriever.png", alt: "Golden Retriever" }}
+                image={{ src: "/images/labrador-grass.jpg", alt: "Golden Retriever" }}
                 title="Professional assessment of canine hip and elbow radiographs by"
                 titleName="Dr Ana Hayes"
                 subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements."
-                minHeightClassName="min-h-[560px] sm:min-h-[640px]"
+                minHeightClassName="min-h-[560px] sm:min-h-[740px]"
             >
                 <Button href="/submit" variant="solid">Start Submission</Button>
                 <Button href="/about" variant="outline">Learn More</Button>
