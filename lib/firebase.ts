@@ -4,6 +4,7 @@ import {
     getAuth,
     signInWithEmailAndPassword,
     signOut,
+    sendPasswordResetEmail,
 } from "firebase/auth";
 import {
     getFirestore,
@@ -47,6 +48,20 @@ export const signIn = async (email: string, password: string) => {
 
 export const signOutUser = () => {
     signOut(auth);
+};
+
+/**
+ * Sends a Firebase Auth password reset email.
+ *
+ * @remarks
+ * Always resolves successfully, or throws only for real failures
+ * (`auth/invalid-email`, `auth/too-many-requests`, `auth/network-request-failed`).
+ * Callers must show the same generic "if an account exists..." message on both the
+ * resolved path and an `auth/user-not-found` rejection - see {@link getResetErrorMessage}
+ * in `lib/auth.ts` - so account existence is never leaked.
+ */
+export const resetPassword = async (email: string): Promise<void> => {
+    await sendPasswordResetEmail(auth, email);
 };
 
 
