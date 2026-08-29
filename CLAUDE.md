@@ -77,7 +77,7 @@ When built, archiving should just be a Firestore status/field change on the exis
 
 ## Git
 ### Commit Format & Notes
-commitType(topic): small description
+commitType(topic): small description (in past-tense. e.g. "added xxx" instead of "add")
 commit types: [`feat`, `fix`, `refactor`, `style`, `docs`]
 When a commit is requested, this does NOT mean to run the commit cmd. Instead, output in plain text with basically a plan. The plan should include each commit with its message and what files to commit for each commit (referencing the file in the text will help too).
 Batch larger changes (>3 files at most changed) into multiple commits.
