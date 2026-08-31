@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { calculatePrice, EXAM_LABELS } from "@/lib/pricing";
 import { verifyAdminToken } from "@/lib/firebaseAdmin";
@@ -100,7 +101,27 @@ export async function POST(req: NextRequest) {
             url: session.url,
         });
     } catch (err) {
-        console.error(err);
+        // Stripe's own errors carry a message that's already safe to show a user (e.g.
+        // "Your card was declined") and the status Stripe itself responded with - surface
+        // those directly instead of flattening every failure into one generic message.
+        // Anything else (env misconfiguration, a bad dependency, a bug here) is
+        // unexpected, so the client still only gets a generic message, but the log line
+        // below carries enough to find the exact attempt in Vercel's logs.
+        if (err instanceof Stripe.errors.StripeError) {
+            console.error("[create-checkout-session] Stripe error:", {
+                type: err.type,
+                code: err.code,
+                message: err.message,
+                submissionIds,
+                adminTest,
+            });
+            return NextResponse.json(
+                { error: err.message },
+                { status: err.statusCode ?? 500 },
+            );
+        }
+
+        console.error("[create-checkout-session] Unexpected error:", { submissionIds, adminTest }, err);
 
         return NextResponse.json(
             { error: "Failed to create checkout session" },
