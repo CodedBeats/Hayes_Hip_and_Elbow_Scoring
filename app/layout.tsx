@@ -20,6 +20,16 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
     title: "Hayes Hip and Elbow Scoring",
     description: "Not generated but written by hand with love",
+    icons: {
+        icon: [
+            { url: "/logo/png/logo-16.png", sizes: "16x16", type: "image/png" },
+            { url: "/logo/png/logo-32.png", sizes: "32x32", type: "image/png" },
+            { url: "/logo/svg/logo-regular.svg", type: "image/svg+xml" },
+        ],
+        apple: [
+            { url: "/logo/png/logo-180.png", sizes: "180x180", type: "image/png" },
+        ],
+    },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

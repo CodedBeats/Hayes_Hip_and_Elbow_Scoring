@@ -26,9 +26,13 @@ export const Footer = () => {
 
                 {/* Column 1 - About blurb */}
                 <div className="flex flex-col gap-3">
-                    <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
-                        Hayes Hip & Elbow
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/logo/svg/logo-brown.svg" alt="" className="h-7 w-7 flex-shrink-0" />
+                        <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
+                            Hayes Hip & Elbow
+                        </h3>
+                    </div>
                     <p className="text-sm text-white/60 leading-relaxed">
                         A dedicated scoring platform for veterinary hip and elbow assessments,
                         supporting breeders and clinicians with reliable, standardised results.
