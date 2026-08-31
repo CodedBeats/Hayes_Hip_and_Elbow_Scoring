@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 // components
 import type { DogDraft } from "@/components/submission/DogEntry";
 // lib
-import { createSubmission } from "@/lib/firebase";
+import { auth, createSubmission } from "@/lib/firebase";
 import { calculatePrice } from "@/lib/pricing";
 // types
 import type { DogCase } from "@/types/dog";
@@ -152,16 +152,29 @@ export const useSubmissionDraft = () => {
      * Clears the draft from localStorage right before redirecting - by this point every
      * dog's data is durably in Firestore, so there's nothing left for the draft to
      * recover if the user comes back.
+     *
+     * @param adminTest - When true, skips straight to a Stripe Checkout session scaled
+     * down to Stripe's enforced minimum charge instead of the real computed price, and
+     * marks the resulting submissions `paymentStatus: "test"` instead of `"paid"` once
+     * confirmed. Requires the caller to be signed in (`auth.currentUser`) - the actual
+     * authorization check happens server-side in `/api/create-checkout-session` via the
+     * ID token sent below, since a client-side gate alone can't stop a direct API call.
      */
-    const handleSubmit = async () => {
+    const handleSubmit = async (adminTest = false) => {
         setIsSubmitting(true);
         setSubmitError(null);
         try {
+            // adminTest always goes through Stripe (see docstring), so the created docs
+            // should reflect that regardless of whatever billing type was selected in the
+            // draft - otherwise a doc could end up billingType: "invoice" despite having
+            // actually been paid via Stripe.
+            const billingType = adminTest ? "payNow" : effectiveBillingType;
+
             const docIds = await Promise.all(
                 Object.entries(completedDogs).map(([idx, { dog, files, owner, payer }]) => {
                     const billing: BillingInfo = {
-                        billingType: effectiveBillingType,
-                        paymentStatus: effectiveBillingType === "payNow" ? "unpaid" : "pending",
+                        billingType,
+                        paymentStatus: billingType === "payNow" ? "unpaid" : "pending",
                         amount: calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
                     };
                     return createSubmission({
@@ -178,19 +191,31 @@ export const useSubmissionDraft = () => {
                 }),
             );
 
-            if (effectiveBillingType !== "payNow") {
+            if (effectiveBillingType !== "payNow" && !adminTest) {
                 localStorage.removeItem(DRAFT_KEY);
                 router.push("/success?mode=invoice");
                 return;
             }
 
-            localStorage.setItem("stripe_pending", JSON.stringify({ firestoreDocIds: docIds }));
+            localStorage.setItem(
+                "stripe_pending",
+                JSON.stringify({ firestoreDocIds: docIds, isAdminTest: adminTest }),
+            );
             localStorage.removeItem(DRAFT_KEY);
+
+            const items = Object.values(completedDogs).map(({ dog }) => ({
+                dogName: dog.registeredName,
+                examType: dog.examType,
+                isDogsAustraliaRegistered: dog.isDogsAustraliaRegistered,
+            }));
+
+            const adminIdToken = adminTest ? await auth.currentUser?.getIdToken() : undefined;
+            if (adminTest && !adminIdToken) throw new Error("Not signed in as an admin");
 
             const res = await fetch("/api/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: totalAud * 100 }),
+                body: JSON.stringify({ items, submissionIds: docIds, adminTest, adminIdToken }),
             });
             const data = await res.json();
             if (!data.url) throw new Error("No checkout URL returned");

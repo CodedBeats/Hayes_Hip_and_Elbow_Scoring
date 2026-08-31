@@ -313,3 +313,99 @@ Fixed header vocabulary, flexible per PR - include only the headers relevant to 
 ### Cron
 Force testing orphan file and doc cleanup (a draft doc will need to be >7 days old)
 *Git Bash* `curl -H 'Authorization: Bearer CRON_SECRET' http://localhost:3000/api/cron/cleanup-drafts`
+
+
+## Temp stripe and transaction info for later
+### 1. Stripe account activation
+- [ ] Complete Stripe's business verification (legal business name/ABN, address, bank
+      account for payouts) in the Dashboard - Checkout can't go live until this is done.
+- [ ] Confirm the settlement currency is AUD (Dashboard → Settings → Business settings).
+- [ ] Decide whether GST needs to be itemized/collected via Stripe Tax, or whether prices
+      are treated as GST-inclusive already. This is an accounting question, not a
+      technical one - check with whoever handles the practice's BAS/tax before enabling
+      anything.
+
+### 2. Switch from test to live keys
+- [ ] In the Stripe Dashboard, toggle to **Live mode** and grab the live
+      `sk_live_...` / `pk_live_...` keys.
+- [ ] Update `STRIPE_SECRET_KEY` (and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, currently
+      unused in code but worth keeping in sync) in Vercel's environment variables for the
+      Production environment - never commit live keys to the repo or `.env.local`.
+- [ ] Leave test keys in place for Preview/Development environments so PR previews and
+      local dev keep hitting Stripe test mode.
+- [ ] Note: the tracked `.env` file at the repo root contains obviously-fake `RR_`-prefixed
+      credentials (e.g. `RR_STRIPE_SECRET_KEY=...`). The app only ever reads
+      `STRIPE_SECRET_KEY`, not the `RR_`-prefixed names, so this file is inert - looks like
+      a leftover decoy/canary rather than anything real. Worth confirming and removing
+      separately, but not something this pass touches.
+
+### 3. Webhook (strongly recommended, not yet built)
+Payment confirmation today is 100% client-driven: `/success` calls `/api/verify-payment`
+and then writes `paymentStatus: "paid"` to Firestore itself. If the customer closes the
+tab (or their connection drops) between paying and that write landing, **the submission
+stays `"unpaid"` forever** even though Stripe successfully charged the card - there's no
+webhook to catch it.
+- [ ] Consider adding a `checkout.session.completed` webhook endpoint
+      (`app/api/webhooks/stripe/route.ts`) that verifies the Stripe signature
+      (`STRIPE_WEBHOOK_SECRET`) and writes `paymentStatus: "paid"` server-side from the
+      event's `metadata.submissionIds` (now attached to every session - see below).
+- [ ] If added, register the webhook URL + get its signing secret from Dashboard →
+      Developers → Webhooks, and add `STRIPE_WEBHOOK_SECRET` to Vercel env vars.
+- [ ] This is genuinely optional for go-live (the client-side path works for the common
+      case), but it's the difference between "usually works" and "always works" - worth
+      scheduling soon after launch if not before.
+
+### 4. Branding & display (Dashboard-only, not code)
+- [ ] Dashboard → Settings → Branding: upload the practice's logo/icon, set an accent
+      color, confirm the business name shown on Checkout is correct.
+- [ ] Dashboard → Settings → Checkout and Payment Links → set/confirm the statement
+      descriptor (what appears on the customer's card/bank statement) - keep it
+      recognizable so customers don't dispute the charge.
+- [ ] Consider a Stripe custom domain for Checkout (Dashboard → Settings → Custom
+      domains) so the URL reads as the practice's own domain instead of
+      `checkout.stripe.com`.
+- [ ] Apple Pay / Google Pay show up automatically on Checkout once the account and
+      domain are verified - nothing to do in code (`payment_method_types: ["card"]` is
+      compatible with both).
+
+Already implemented in code as part of this pass: pinned Stripe API version
+(`lib/stripe.ts`), per-dog itemized line items instead of one lump sum, `submit_type`,
+`phone_number_collection`, and a short `custom_text` reassurance line on the Checkout
+Session (`app/api/create-checkout-session/route.ts`).
+
+### 5. Processing fee
+The customer-facing total (`lib/pricing.ts::calculatePrice`) now includes a Stripe
+processing fee, "grossed up" so the practice still nets the full base+levy after Stripe's
+cut - not shown as a separate line item anywhere (button copy, Checkout itself) per
+product decision. Currently modeled on Stripe's standard AU domestic card rate
+(1.7% + $0.30). This is an approximation - international and Amex cards cost Stripe more,
+so those slightly under-recover. Retune `STRIPE_FEE` in `lib/pricing.ts` if the practice's
+actual negotiated rate differs.
+- [ ] Add a line to the Privacy Policy / Terms of Service noting that the submission fee
+      includes payment processing costs (per the original ask - "we can add notes about
+      in PP or ToS where appropriate").
+
+### 6. Final live test
+- [ ] Do one real, small, live-mode submission end-to-end with a real card, confirm it
+      appears in the admin dashboard correctly, then refund it from the Stripe Dashboard
+      before announcing go-live.
+- [ ] Confirm the admin-test checkout button (see `components/submission/
+      SubmissionFlow.tsx`) still works in live mode - it's a genuine $0 Stripe Checkout
+      session (see section 8), so no real charges/refunds are involved even in live mode.
+
+### 8. Admin-test $0 mechanism
+The admin-test flow creates a fresh, single-use 100%-off Stripe Coupon
+(`stripe.coupons.create({ percent_off: 100, duration: "once", max_redemptions: 1 })`) per
+session and applies it via `discounts` on the Checkout Session
+(`app/api/create-checkout-session/route.ts`) - the real per-dog itemized prices are shown,
+fully discounted to $0, rather than fudging amounts to hit a minimum charge. Stripe skips
+asking for payment details entirely once a session's total is fully covered by a discount.
+- Coupon IDs are never sent to the client - only the final session URL is - so there's
+  nothing to leak, and `max_redemptions: 1` means even a leaked ID couldn't be reused.
+- A $0-total session reports `payment_status: "no_payment_required"`, not `"paid"` -
+  `app/api/verify-payment/route.ts` treats both as success.
+
+### 9. Housekeeping (out of scope for this pass, noted for later)
+- [ ] `components/buttons/StripeCheckoutBtn.tsx` is dead code - nothing imports it,
+      `useSubmissionDraft.ts` duplicates its logic inline instead. Worth deleting in a
+      separate cleanup PR.
