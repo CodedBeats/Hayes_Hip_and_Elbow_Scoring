@@ -19,7 +19,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
     title: "Hayes Hip and Elbow Scoring",
-    description: "Not generated but written by hand with love",
+    description: "Canine hip & elbow radiograph scoring for veterinary specialists",
     icons: {
         icon: [
             { url: "/logo/png/logo-16.png", sizes: "16x16", type: "image/png" },
