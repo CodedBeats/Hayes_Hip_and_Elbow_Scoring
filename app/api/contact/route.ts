@@ -8,7 +8,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Resend's shared test sender - swap for a verified-domain address once the practice's
 // domain is verified in the Resend dashboard.
 const FROM_EMAIL = "Hayes Hip and Elbow Scoring <noreply@mail.hayes-hip-and-elbow-scoring.com>";
-const NOTIFICATION_RECIPIENT = "greenteachef@gmail.com";
+const NOTIFICATION_RECIPIENT = process.env.CONTACT_NOTIFICATION_RECIPIENT!;
 
 /**
  * Sends the contact form to the practice inbox and a confirmation back to the submitter.
