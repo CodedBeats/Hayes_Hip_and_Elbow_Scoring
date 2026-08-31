@@ -4,12 +4,14 @@ import type { ContactRequest } from "@/types/contact";
  * Absolute, publicly-reachable URL for the practice's logo/banner image.
  *
  * @remarks
- * Left empty until real branding assets exist - email clients fetch images over the
- * internet, so this can't point at a relative `/public` path, only a deployed URL
- * (e.g. `https://hayes-hip-and-elbow-scoring.com/images/logo.png`). While empty,
- * {@link emailLayout} falls back to a text wordmark banner instead of an `<img>`.
+ * Email clients fetch images over the internet, so this can't point at a relative
+ * `/public` path, only a deployed URL. While empty, {@link emailLayout} falls back to
+ * a text wordmark banner instead of an `<img>`.
  */
-const LOGO_URL = "";
+const LOGO_URL = "https://www.hayes-hip-and-elbow-scoring.com/logo/png/logo-512.png";
+
+/** Public site URL, used to link the email banner and footer back to the website. */
+const WEBSITE_URL = "https://www.hayes-hip-and-elbow-scoring.com/";
 
 const BRAND_GREEN = "#506147";
 const BRAND_BROWN = "#3E2B23";
@@ -50,9 +52,10 @@ function escapeHtml(value: string): string {
  * only reliably renders inline-styled tables).
  */
 function emailLayout(bodyHtml: string): string {
-    const banner = LOGO_URL
+    const bannerContent = LOGO_URL
         ? `<img src="${LOGO_URL}" alt="Hayes Hip and Elbow Scoring" width="180" style="display:block; margin:0 auto;" />`
         : `<span style="font-family:${FONT_STACK}; font-size:20px; font-weight:700; letter-spacing:0.02em; color:${CREAM};">Hayes Hip and Elbow Scoring</span>`;
+    const banner = `<a href="${WEBSITE_URL}" style="text-decoration:none; color:${CREAM}">${bannerContent}</a>`;
 
     return `
 <!DOCTYPE html>
@@ -74,7 +77,8 @@ function emailLayout(bodyHtml: string): string {
             </tr>
             <tr>
               <td style="background-color:${WARM_SAND}; padding:16px 32px; text-align:center; color:${BRAND_BROWN}; font-family:${FONT_STACK}; font-size:12px;">
-                Hayes Hip and Elbow Scoring
+                Hayes Hip and Elbow Scoring<br />
+                <a href="${WEBSITE_URL}" style="color:${BRAND_BROWN};">Visit our website</a>
               </td>
             </tr>
           </table>
@@ -108,7 +112,7 @@ export function contactNotificationEmail({ name, email, message }: ContactReques
     <p style="margin:20px 0 0 0; font-size:13px; color:${BRAND_BROWN}; opacity:0.75;">Reply to this email to respond directly to ${safeName}.</p>
   `);
 
-    const text = `New contact form message from ${name}\n\nName: ${name}\nEmail: ${email}\n\n${message}`;
+    const text = `New contact form message from ${name}\n\nName: ${name}\nEmail: ${email}\n\n${message}\n\n${WEBSITE_URL}`;
 
     return { subject, html, text };
 }
@@ -124,7 +128,7 @@ export function contactConfirmationEmail({ name }: Pick<ContactRequest, "name">)
     <p style="margin:0;">In the meantime, feel free to reply to this email if you'd like to add anything.</p>
   `);
 
-    const text = `Hi ${name},\n\nThanks for reaching out - Dr Hayes will be in touch shortly.`;
+    const text = `Hi ${name},\n\nThanks for reaching out - Dr Hayes will be in touch shortly.\n\n${WEBSITE_URL}`;
 
     return { subject, html, text };
 }
