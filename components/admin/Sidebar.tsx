@@ -8,8 +8,10 @@ import {
     ClipboardIcon,
     ArchiveBoxIcon,
     Cog6ToothIcon,
+    BriefcaseIcon,
     PersonIcon,
     ArrowRightOnRectangleIcon,
+    ExclamationTriangleIcon,
 } from "@/components/misc/Icons";
 
 
@@ -18,8 +20,15 @@ const navItems = [
     { label: "Overview", href: "/admin", icon: Squares2x2Icon },
     { label: "Pending Reviews", href: "/admin/pending-reviews", icon: ClipboardIcon },
     { label: "Archive", href: "/admin/archive", icon: ArchiveBoxIcon },
+    // iconClassName overrides the icon's default currentColor styling so it stays red
+    // regardless of active/hover state, flagging this link as distinct from real case data
+    { label: "Test Data (Deprecated)", href: "/admin/test-data", icon: ExclamationTriangleIcon, iconClassName: "h-5 w-5 flex-shrink-0 text-red-600" },
 ];
 const navSupportItems = [
+    // signing in redirects here, and this layout has no other link back to the public
+    // site - this is how an admin gets back to /submit to use the "Admin Test Submit"
+    // button without having to sign out first
+    { label: "Test a Submission", href: "/submit", icon: BriefcaseIcon },
     { label: "Settings", href: "/admin/admin-settings", icon: Cog6ToothIcon },
 ];
 
@@ -48,7 +57,7 @@ export const Sidebar = ({ userEmail, onSignOut }: SidebarProps) => {
                 </div>
 
                 <nav className="mt-6 flex flex-col gap-1">
-                    {navItems.map(({ label, href, icon: Icon }) => {
+                    {navItems.map(({ label, href, icon: Icon, iconClassName }) => {
                         const isActive = pathname === href;
                         return (
                             <Link
@@ -61,7 +70,7 @@ export const Sidebar = ({ userEmail, onSignOut }: SidebarProps) => {
                                         : "text-gray-600 hover:bg-brand-green-mid/10 hover:text-brand-brown",
                                 ].join(" ")}
                             >
-                                <Icon className="h-5 w-5 flex-shrink-0" />
+                                <Icon className={iconClassName ?? "h-5 w-5 flex-shrink-0"} />
                                 {label}
                             </Link>
                         );

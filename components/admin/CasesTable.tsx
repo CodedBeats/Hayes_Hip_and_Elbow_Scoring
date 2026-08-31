@@ -20,6 +20,8 @@ interface CasesTableProps {
     availableStatuses: SubmissionStatus[];
     sortOrder: CaseSubmissionSortOrder;
     onSortOrderChange: (order: CaseSubmissionSortOrder) => void;
+    /** Base route each row's "View Case" link is built from. Lets the same table power both `/admin/cases/[id]` (real cases) and `/admin/test-data/[id]` (deprecated test data). */
+    detailBasePath?: string;
 }
 
 const formatDate = (date: Date) =>
@@ -34,6 +36,7 @@ export const CasesTable = ({
     availableStatuses,
     sortOrder,
     onSortOrderChange,
+    detailBasePath = "/admin/cases",
 }: CasesTableProps) => {
     const [visibleCount, setVisibleCount] = useState(pageSize);
 
@@ -110,14 +113,16 @@ export const CasesTable = ({
                             <td className="px-6 py-4 text-gray-700">{submission.owner.name}</td>
                             <td className="px-6 py-4 text-gray-700">{submission.submitterType}</td>
                             <td className="px-6 py-4 text-gray-700">{submission.payer}</td>
-                            <td className="px-6 py-4 text-gray-700">{submission.billing.billingType}</td>
+                            <td className="px-6 py-4 text-gray-700">
+                                { submission.billing.paymentStatus === "test" ? "test-only" : submission.billing.billingType }
+                            </td>
                             <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
                             <td className="px-6 py-4">
                                 <StatusPill status={getAdminCaseDisplayStatus(submission)} />
                             </td>
                             <td className="px-6 py-4">
                                 <Link
-                                    href={`/admin/cases/${submission.id}`}
+                                    href={`${detailBasePath}/${submission.id}`}
                                     className="text-sm font-medium text-brand-green underline hover:text-[#3d4e36] transition"
                                 >
                                     View Case

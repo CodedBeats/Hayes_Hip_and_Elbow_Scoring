@@ -37,8 +37,14 @@ const SuccessContent = () => {
 
             const pending = localStorage.getItem("stripe_pending");
             if (pending) {
-                const { firestoreDocIds } = JSON.parse(pending) as { firestoreDocIds: string[] };
-                await Promise.all(firestoreDocIds.map((id) => updateSubmissionPaymentStatus(id, "paid")));
+                const { firestoreDocIds, isAdminTest } = JSON.parse(pending) as {
+                    firestoreDocIds: string[];
+                    isAdminTest?: boolean;
+                };
+                // Admin-test submissions are charged Stripe's enforced minimum, not the
+                // real price - kept as "test" so they never get counted as real revenue.
+                const finalStatus = isAdminTest ? "test" : "paid";
+                await Promise.all(firestoreDocIds.map((id) => updateSubmissionPaymentStatus(id, finalStatus)));
                 localStorage.removeItem("stripe_pending");
                 localStorage.removeItem("submission_draft");
             }

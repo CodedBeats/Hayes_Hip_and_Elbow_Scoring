@@ -8,6 +8,7 @@ import {
     type DocumentSnapshot,
     type DocumentData,
 } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
@@ -36,7 +37,7 @@ import { createSubmission } from '@/lib/firebase';
 let adminDb: Firestore | undefined;
 
 /**
- * Lazily initializes and returns the Admin SDK Firestore instance.
+ * Lazily initializes (or reuses) the Admin SDK app.
  *
  * @remarks
  * Initialization is lazy (only runs on first real use) rather than at module load time.
@@ -45,16 +46,14 @@ let adminDb: Firestore | undefined;
  * credential setup ran eagerly at the top of this file, a missing/invalid service
  * account would fail the build itself, not just a request.
  */
-const getAdminDb = (): Firestore => {
-    if (adminDb) return adminDb;
-
+const getAdminApp = () => {
     // Private keys pasted into .env come through with literal "\n" escape sequences
     // instead of real newlines - PEM parsing fails unless they're converted back.
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
     // Next.js dev hot-reload re-evaluates modules repeatedly; initializeApp() throws if
     // called more than once, so reuse the existing app when present.
-    const app = getApps().length
+    return getApps().length
         ? getApp()
         : initializeApp({
               credential: cert({
@@ -63,10 +62,25 @@ const getAdminDb = (): Firestore => {
                   privateKey,
               }),
           });
+};
 
-    adminDb = getFirestore(app);
+const getAdminDb = (): Firestore => {
+    if (adminDb) return adminDb;
+    adminDb = getFirestore(getAdminApp());
     return adminDb;
 };
+
+/**
+ * Verifies a Firebase ID token server-side and returns the decoded token if valid.
+ *
+ * @remarks
+ * This is the real authentication boundary for admin-only server actions (e.g. the
+ * admin-test checkout flow in `app/api/create-checkout-session/route.ts`) - a
+ * client-side `useAuth()` check only hides UI, it doesn't stop someone from calling the
+ * API route directly. Throws if the token is missing, expired, or otherwise invalid.
+ */
+export const verifyAdminToken = async (idToken: string) =>
+    getAuth(getAdminApp()).verifyIdToken(idToken);
 
 
 // ============================================= //
@@ -217,6 +231,29 @@ export const getAllSubmissions = async (): Promise<Submission[]> => {
 
 export const getSubmissionById = async (id: string): Promise<Submission | null> => {
     const docSnap = await getAdminDb().doc(`submissions/${id}`).get();
+    if (!docSnap.exists) return null;
+    return mapSubmissionDoc(docSnap);
+};
+
+
+// ======================================================= //
+// === DEPRECATED TEST DATA (migrated out of `submissions`) === //
+// ======================================================= //
+//
+// `testSubmissions` holds every submission doc that existed before real cases went
+// live - all of it test data from development, moved out via
+// `scripts/migrateTestSubmissions.ts` so it no longer shows up alongside real cases on
+// the main dashboard/pending-reviews/archive pages. See `/admin/test-data`.
+
+/** @see {@link getAllSubmissions} - same shape, reads `testSubmissions` instead. */
+export const getTestSubmissions = async (): Promise<Submission[]> => {
+    const snapshot = await getAdminDb().collection("testSubmissions").get();
+    return snapshot.docs.map(mapSubmissionDoc);
+};
+
+/** @see {@link getSubmissionById} - same shape, reads `testSubmissions` instead. */
+export const getTestSubmissionById = async (id: string): Promise<Submission | null> => {
+    const docSnap = await getAdminDb().doc(`testSubmissions/${id}`).get();
     if (!docSnap.exists) return null;
     return mapSubmissionDoc(docSnap);
 };
