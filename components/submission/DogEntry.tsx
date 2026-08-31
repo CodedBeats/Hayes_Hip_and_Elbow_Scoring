@@ -224,13 +224,16 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
                 {(() => {
                     const { base, levy, total } = calculatePrice(dogData.examType, dogData.isDogsAustraliaRegistered);
                     return (
-                        <p className="text-sm text-gray-600">
-                            <span className="font-medium text-gray-900">${base}</span>
-                            <span className="mx-1.5 text-gray-400">+</span>
-                            <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
-                            <span className="mx-1.5 text-gray-400">=</span>
-                            <span className="font-semibold text-gray-900">${total}</span>
-                        </p>
+                        <div>
+                            <p className="text-sm text-gray-600">
+                                <span className="font-medium text-gray-900">${base}</span>
+                                <span className="mx-1.5 text-gray-400">+</span>
+                                <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
+                                <span className="mx-1.5 text-gray-400">=</span>
+                                <span className="font-semibold text-gray-900">${total}</span>
+                                <span className="mx-1.5 font-medium text-gray-600">(total includes a payment processing fee)</span>
+                            </p>
+                        </div>
                     );
                 })()}
             </div>
