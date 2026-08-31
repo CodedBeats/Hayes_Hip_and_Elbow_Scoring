@@ -10,7 +10,10 @@ export async function GET(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+    // "no_payment_required" is Stripe's status for a session fully covered by a discount
+    // (e.g. the admin-test 100%-off coupon in /api/create-checkout-session) - no card was
+    // charged, but the session completed successfully, same as "paid".
     return NextResponse.json({
-        paid: session.payment_status === "paid",
+        paid: session.payment_status === "paid" || session.payment_status === "no_payment_required",
     });
 }
