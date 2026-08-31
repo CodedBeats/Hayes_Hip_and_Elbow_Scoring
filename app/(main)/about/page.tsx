@@ -93,7 +93,7 @@ const faqItems = [
     {
         id: "turnaround",
         title: "How long does assessment take?",
-        content: "Most submissions are reviewed as quickly as possible following receipt of complete radiographs and payment.",
+        content: "Processing typically takes 3-10 business days from receipt of complete radiographs and payment. This is a typical range, not a guarantee.",
     },
     {
         id: "dicom",
@@ -113,12 +113,17 @@ const faqItems = [
     {
         id: "before-submitting",
         title: "What information do I need before submitting?",
-        content: "You'll need dog details, owner details, the signed official CHED submission form, DICOM file(s) for the relevant exam type (hips, elbows, or both).",
+        content: "For each dog: dog details, owner details, a completed and signed official CHED submission form, and DICOM file(s) for the relevant exam type (hips, elbows, or both). The online form and the signed submission form are both required together, not one or the other. If the dog isn't registered with Dogs Australia, you'll also need a supporting document confirming its details (e.g. a registration certificate).",
     },
     {
         id: "payment",
         title: "How do I pay for a submission?",
-        content: "Payment is processed securely at the time of submission. Current pricing for each exam type is listed above in Scoring Fees.",
+        content: "For individual owners, payment is processed securely through Stripe at the time of submission. Clinics can also choose to be invoiced or billed monthly instead of paying upfront. Current pricing for each exam type, including the Dogs Australia levy and payment processing fee, is listed above in Scoring Fees.",
+    },
+    {
+        id: "unfinished-submission",
+        title: "What happens if I don't finish my submission?",
+        content: "Your form progress is saved automatically in your browser, but any files you've already uploaded (DICOM images, the submission form, supporting documents) are deleted after 7 days of inactivity if the submission hasn't been completed and paid for. You'd need to re-upload them to pick up where you left off after that.",
     },
     {
         id: "refunds",
@@ -274,16 +279,18 @@ const AboutPage = () => {
                     <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, plus the applicable Dogs Australia levy." />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         {examTypes.map((examType) => {
-                            const { base } = calculatePrice(examType, true);
-                            const memberTotal = calculatePrice(examType, true).total;
-                            const nonMemberTotal = calculatePrice(examType, false).total;
+                            const member = calculatePrice(examType, true);
+                            const nonMember = calculatePrice(examType, false);
                             return (
                                 <PricingCard
                                     key={examType}
                                     label={EXAM_LABELS[examType]}
-                                    base={base}
-                                    memberTotal={memberTotal}
-                                    nonMemberTotal={nonMemberTotal}
+                                    memberLevy={member.levy}
+                                    memberFee={member.fee}
+                                    memberTotal={member.total}
+                                    nonMemberLevy={nonMember.levy}
+                                    nonMemberFee={nonMember.fee}
+                                    nonMemberTotal={nonMember.total}
                                 />
                             );
                         })}

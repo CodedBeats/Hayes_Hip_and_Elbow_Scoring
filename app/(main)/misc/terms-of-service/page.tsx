@@ -8,7 +8,7 @@ const TermsOfServicePage = () => {
             <main className="flex flex-1 w-full max-w-6xl flex-col py-10 px-6 sm:px-10">
                 <div className="mb-6 flex flex-col gap-2 text-center sm:text-left">
                     <h1 className="text-3xl font-bold text-brand-brown sm:text-4xl">Terms of Service</h1>
-                    <p className="text-sm text-gray-500">Last updated: 3rd July 2026</p>
+                    <p className="text-sm text-gray-500">Last updated: 31st August 2026</p>
                 </div>
 
                 <div className="flex flex-col rounded-2xl border-2 border-brand-green-mid/20 bg-white p-6 sm:p-10">
@@ -23,23 +23,30 @@ const TermsOfServicePage = () => {
 
                     <PolicySection icon={<ClipboardIcon className="w-7 h-7 text-brand-green" />} title="Submission Process">
                         <p>
-                            To submit, you&apos;ll upload your dog&apos;s radiographs, provide owner and vet and dog
-                            details, and pay the applicable fee. Submissions are reviewed and scored
-                            by a qualified scorer.
+                            To submit, you&apos;ll complete an online form and upload a signed copy of the official
+                            CHED submission form together with your dog&apos;s DICOM radiographs - both are required
+                            for every dog. Owners and clinics can both submit; clinics can submit multiple dogs in
+                            one go, with individual dog and owner details for each. If a dog isn&apos;t registered
+                            with Dogs Australia, a supporting document confirming its details is also required. The
+                            submission form is only available on desktop and tablet devices. Submissions are
+                            reviewed and scored by a qualified scorer.
                         </p>
                     </PolicySection>
 
                     <PolicySection icon={<ScaleIcon />} title="Payment">
                         <p>
-                            For regular use, fees are due at the time of submission and processed securely through Stripe. Current
-                            pricing is listed on our scoring fees page. Clinic pricing is coming soon.
+                            Individual owners pay at the time of submission, processed securely through Stripe.
+                            Clinics can choose to pay upfront, be invoiced, or be billed monthly instead. Current
+                            pricing is listed on our scoring fees page and includes the applicable Dogs Australia
+                            levy and a payment processing fee.
                         </p>
                     </PolicySection>
 
                     <PolicySection icon={<ScanIcon className="w-7 h-7 text-brand-green" />} title="Scoring & Turnaround">
                         <p>
-                            Scores reflect a professional opinion based on the imaging you submit. Turnaround times
-                            are estimates, not guarantees, and the quality and positioning of your radiographs can
+                            Scores reflect a professional opinion based on the imaging you submit. Turnaround is
+                            typically 3-10 business days from receipt of complete radiographs and payment, but this
+                            is an estimate, not a guarantee, and the quality and positioning of your radiographs can
                             affect our ability to score them.
                         </p>
                     </PolicySection>
@@ -48,7 +55,9 @@ const TermsOfServicePage = () => {
                         <p>
                             You&apos;re responsible for providing accurate owner and dog information, and for
                             confirming that submitted radiographs meet our technical requirements. By submitting,
-                            you confirm you have the right to do so on behalf of the dog&apos;s owner.
+                            you confirm you have the right to do so on behalf of the dog&apos;s owner. If a
+                            submission is left incomplete and unpaid, its uploaded files may be automatically
+                            deleted after 7 days of inactivity, and would need to be re-uploaded to continue.
                         </p>
                     </PolicySection>
 

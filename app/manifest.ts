@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
     return {
         name: "Hayes Hip and Elbow Scoring",
-        short_name: "Hayes H&E",
+        short_name: "Hayes H&E Scoring",
         description: "Canine hip & elbow radiograph scoring for veterinary specialists",
         start_url: "/",
         display: "standalone",

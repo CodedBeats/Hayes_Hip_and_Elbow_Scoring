@@ -112,7 +112,7 @@ export const SubmissionFlow = () => {
                                 form for each dog.
                             </li>
                             <li>
-                                • Processing typically takes 3-5 business days
+                                • Processing typically takes 3-10 business days
                                 from receipt of payment.
                             </li>
                         </ul>
