@@ -1,14 +1,12 @@
 "use client";
 
 import { SignInForm } from "@/components/auth/SignInForm";
-import { ShieldCheckIcon } from "@/components/misc/Icons";
 
 export default function AdminSignInPage() {
     return (
         <div className="flex flex-1 flex-col items-center bg-cream font-sans px-6 py-16">
-            <div className="w-14 h-14 rounded-full bg-brand-green-mid/20 flex items-center justify-center mb-4">
-                <ShieldCheckIcon />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo/svg/logo-regular.svg" alt="Hayes Hip and Elbow Scoring" className="w-14 h-14 mb-4" />
             <h1 className="text-3xl font-bold text-brand-brown mb-1">Admin Login</h1>
             <p className="text-sm text-gray-500 mb-8">Hayes Hip &amp; Elbow Scoring</p>
 

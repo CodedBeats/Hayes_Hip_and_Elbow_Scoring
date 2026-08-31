@@ -3,8 +3,6 @@
 import Link from "next/link";
 // hooks
 import { useIsDesktop } from "@/hooks/useIsDesktop";
-// components
-import { MonitorIcon } from "@/components/misc/Icons";
 
 interface DesktopOnlyGateProps {
     children: React.ReactNode;
@@ -15,7 +13,9 @@ export const DesktopOnlyGate = ({ children }: DesktopOnlyGateProps) => {
 
     if (isDesktop === null) {
         return (
-            <div className="flex flex-1 items-center justify-center bg-cream min-h-screen">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-cream min-h-screen">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo/svg/logo-regular.svg" alt="" className="w-10 h-10" />
                 <p className="text-sm text-gray-500">Loading...</p>
             </div>
         );
@@ -30,9 +30,8 @@ export const DesktopOnlyGate = ({ children }: DesktopOnlyGateProps) => {
 
 const DesktopOnlyMessage = () => (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 min-h-screen bg-cream px-6 py-16 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-warm-sand">
-            <MonitorIcon className="w-8 h-8 text-brand-green" />
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo/svg/logo-regular.svg" alt="Hayes Hip and Elbow Scoring" className="w-16 h-16" />
         <h1 className="text-xl font-bold text-brand-brown sm:text-2xl">
             Please use a larger screen
         </h1>

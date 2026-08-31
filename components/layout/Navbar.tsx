@@ -26,9 +26,13 @@ export const Navbar = () => {
 
     return (
         <nav className="relative flex items-center justify-between px-4 sm:px-6 md:px-10 py-4 md:py-5 bg-white shadow-sm font-(--font-plus-jakarta-sans)">
-            <span className="min-w-0 truncate text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-brand-green">
-                Hayes Hip & Elbow Scoring
-            </span>
+            <Link href="/" className="flex min-w-0 items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo/svg/logo-regular.svg" alt="" className="h-8 w-8 flex-shrink-0 sm:h-9 sm:w-9" />
+                <span className="min-w-0 truncate text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-brand-green">
+                    Hayes Hip & Elbow Scoring
+                </span>
+            </Link>
 
             <div className="hidden md:flex items-center gap-8">
                 {navItems.map(({ label, href }) => {
