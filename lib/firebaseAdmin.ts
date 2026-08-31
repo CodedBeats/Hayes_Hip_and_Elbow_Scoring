@@ -236,6 +236,29 @@ export const getSubmissionById = async (id: string): Promise<Submission | null> 
 };
 
 
+// ======================================================= //
+// === DEPRECATED TEST DATA (migrated out of `submissions`) === //
+// ======================================================= //
+//
+// `testSubmissions` holds every submission doc that existed before real cases went
+// live - all of it test data from development, moved out via
+// `scripts/migrateTestSubmissions.ts` so it no longer shows up alongside real cases on
+// the main dashboard/pending-reviews/archive pages. See `/admin/test-data`.
+
+/** @see {@link getAllSubmissions} - same shape, reads `testSubmissions` instead. */
+export const getTestSubmissions = async (): Promise<Submission[]> => {
+    const snapshot = await getAdminDb().collection("testSubmissions").get();
+    return snapshot.docs.map(mapSubmissionDoc);
+};
+
+/** @see {@link getSubmissionById} - same shape, reads `testSubmissions` instead. */
+export const getTestSubmissionById = async (id: string): Promise<Submission | null> => {
+    const docSnap = await getAdminDb().doc(`testSubmissions/${id}`).get();
+    if (!docSnap.exists) return null;
+    return mapSubmissionDoc(docSnap);
+};
+
+
 // ==================================== //
 // === DRAFT CLEANUP (cron-facing) === //
 // ==================================== //
