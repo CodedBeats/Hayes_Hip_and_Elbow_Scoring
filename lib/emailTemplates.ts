@@ -8,7 +8,7 @@ import type { ContactRequest } from "@/types/contact";
  * `/public` path, only a deployed URL. While empty, {@link emailLayout} falls back to
  * a text wordmark banner instead of an `<img>`.
  */
-const LOGO_URL = "https://www.hayes-hip-and-elbow-scoring.com/logo/png/logo-512.png";
+const LOGO_URL = "https://www.hayes-hip-and-elbow-scoring.com/logo/png/logo-180.png";
 
 /** Public site URL, used to link the email banner and footer back to the website. */
 const WEBSITE_URL = "https://www.hayes-hip-and-elbow-scoring.com/";
