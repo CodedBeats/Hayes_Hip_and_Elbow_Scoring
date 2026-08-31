@@ -8,6 +8,7 @@ import {
     ClipboardIcon,
     ArchiveBoxIcon,
     Cog6ToothIcon,
+    BriefcaseIcon,
     PersonIcon,
     ArrowRightOnRectangleIcon,
 } from "@/components/misc/Icons";
@@ -20,6 +21,10 @@ const navItems = [
     { label: "Archive", href: "/admin/archive", icon: ArchiveBoxIcon },
 ];
 const navSupportItems = [
+    // signing in redirects here, and this layout has no other link back to the public
+    // site - this is how an admin gets back to /submit to use the "Admin Test Submit"
+    // button without having to sign out first
+    { label: "Test a Submission", href: "/submit", icon: BriefcaseIcon },
     { label: "Settings", href: "/admin/admin-settings", icon: Cog6ToothIcon },
 ];
 

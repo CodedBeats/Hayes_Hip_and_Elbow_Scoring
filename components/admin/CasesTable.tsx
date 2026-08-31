@@ -110,7 +110,9 @@ export const CasesTable = ({
                             <td className="px-6 py-4 text-gray-700">{submission.owner.name}</td>
                             <td className="px-6 py-4 text-gray-700">{submission.submitterType}</td>
                             <td className="px-6 py-4 text-gray-700">{submission.payer}</td>
-                            <td className="px-6 py-4 text-gray-700">{submission.billing.billingType}</td>
+                            <td className="px-6 py-4 text-gray-700">
+                                { submission.billing.paymentStatus === "test" ? "test-only" : submission.billing.billingType }
+                            </td>
                             <td className="px-6 py-4 text-gray-700">{formatDate(submission.createdAt)}</td>
                             <td className="px-6 py-4">
                                 <StatusPill status={getAdminCaseDisplayStatus(submission)} />
