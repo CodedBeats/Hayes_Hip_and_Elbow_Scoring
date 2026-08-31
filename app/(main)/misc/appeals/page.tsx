@@ -90,7 +90,7 @@ const AppealsPage = () => {
                     <PolicySection icon={<ReceiptIcon />} title="Errors On Our End">
                         <p>
                             Had a payment issue, a duplicate charge, or something didn&apos;t go as expected on our
-                            end? These situations are rare, but if one comes up, just reach out to Anna directly and
+                            end? These situations are rare, but if one comes up, just reach out to Ana directly and
                             she&apos;ll sort it out. This is separate from the appeals process above, which is
                             handled by Dogs Australia.
                         </p>

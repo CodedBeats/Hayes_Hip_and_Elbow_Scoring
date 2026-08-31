@@ -7,7 +7,7 @@ const PrivacyPolicyPage = () => {
             <main className="flex flex-1 w-full max-w-6xl flex-col py-10 px-6 sm:px-10">
                 <div className="mb-6 flex flex-col gap-2 text-center sm:text-left">
                     <h1 className="text-3xl font-bold text-brand-brown sm:text-4xl">Privacy Policy</h1>
-                    <p className="text-sm text-gray-500">Last updated: 3rd July 2026</p>
+                    <p className="text-sm text-gray-500">Last updated: 31st August 2026</p>
                 </div>
 
                 <div className="flex flex-col rounded-2xl border-2 border-brand-green-mid/20 bg-white p-6 sm:p-10">
@@ -29,9 +29,9 @@ const PrivacyPolicyPage = () => {
 
                     <PolicySection icon={<ScanIcon className="w-7 h-7 text-brand-green" />} title="How We Use It">
                         <p>
-                            To score your submission, send you the results, and process your payment. Radiographs
-                            and submission records may also be retained to support a future appeal, should you
-                            need one.
+                            To score your submission, send you the results, and process your payment or, for
+                            clinics, your invoice or monthly bill. Radiographs and submission records may also be
+                            retained to support a future appeal, should you need one.
                         </p>
                     </PolicySection>
 
@@ -39,7 +39,9 @@ const PrivacyPolicyPage = () => {
                         <p>
                             Radiograph images are stored via AWS S3, and submission records are stored in Firebase
                             Firestore. We take reasonable technical measures to keep this data secure, though no
-                            online storage can be guaranteed 100% secure.
+                            online storage can be guaranteed 100% secure. If a submission is started but left
+                            incomplete and unpaid, its uploaded files are automatically and permanently deleted
+                            after 7 days of inactivity.
                         </p>
                     </PolicySection>
 
