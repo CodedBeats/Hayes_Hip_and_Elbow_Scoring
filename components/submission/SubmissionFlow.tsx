@@ -6,8 +6,10 @@ import { DogEntry } from "./DogEntry";
 import { ArrowDownTrayIcon } from "@/components/misc/Icons";
 // hooks
 import { useSubmissionDraft } from "@/hooks/useSubmissionDraft";
+import { useAuth } from "@/hooks/useAuth";
 
 export const SubmissionFlow = () => {
+    const { user: adminUser } = useAuth();
     const {
         submissionId,
         dogCount,
@@ -375,37 +377,55 @@ export const SubmissionFlow = () => {
                         </svg>
                         Secure Encrypted Transaction
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={
-                            !allComplete || isSubmitting
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg bg-brand-green px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#3d4e36] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        {isSubmitting
-                            ? "Preparing checkout..."
-                            : allComplete
-                              ? effectiveBillingType === "payNow"
-                                  ? `Proceed to Payment - $${totalAud}`
-                                  : "Submit for Invoicing"
-                              : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
-                        {!isSubmitting && (
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Staff-only: submits through the same real Stripe Checkout flow,
+                            but scaled to Stripe's enforced minimum charge instead of the
+                            real price - lets an admin exercise the full live submission
+                            pipeline without a real charge. Visibility here is just UX; the
+                            actual auth check happens server-side in
+                            /api/create-checkout-session. */}
+                        {adminUser && (
+                            <button
+                                type="button"
+                                onClick={() => handleSubmit(true)}
+                                disabled={!allComplete || isSubmitting}
+                                className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-amber-500 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                                />
-                            </svg>
+                                Admin Test Submit (no charge)
+                            </button>
                         )}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSubmit()}
+                            disabled={
+                                !allComplete || isSubmitting
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg bg-brand-green px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#3d4e36] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {isSubmitting
+                                ? "Preparing checkout..."
+                                : allComplete
+                                  ? effectiveBillingType === "payNow"
+                                      ? `Proceed to Payment - $${totalAud}`
+                                      : "Submit for Invoicing"
+                                  : `Complete all ${dogCount} dog${dogCount > 1 ? "s" : ""} to continue`}
+                            {!isSubmitting && (
+                                <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                                    />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
