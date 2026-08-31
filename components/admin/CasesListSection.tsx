@@ -16,6 +16,8 @@ interface CasesListSectionProps {
     topBarTitle: string;
     topBarSubtitle: string;
     children?: React.ReactNode;
+    /** @see {@link CasesTable}'s `detailBasePath` prop - passed straight through. */
+    detailBasePath?: string;
 }
 
 export const CasesListSection = ({
@@ -24,6 +26,7 @@ export const CasesListSection = ({
     topBarTitle,
     topBarSubtitle,
     children,
+    detailBasePath,
 }: CasesListSectionProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "all">("all");
@@ -87,6 +90,7 @@ export const CasesListSection = ({
                 availableStatuses={availableStatuses}
                 sortOrder={sortOrder}
                 onSortOrderChange={setSortOrder}
+                detailBasePath={detailBasePath}
             />
         </>
     );
