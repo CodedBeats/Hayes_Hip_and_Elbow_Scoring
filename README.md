@@ -11,7 +11,10 @@ This is a live production website, currently pre-launch and gated behind a passw
 ## Features
 
 **Public site & submission flow**
-- Marketing and informational pages covering the scoring process, radiographic positioning requirements, credentials, pricing, and FAQs
+- Marketing and informational pages covering the scoring process, radiographic positioning requirements (hips and elbows), Dr Ana Hayes' credentials, and FAQs
+- Links out to the official Dogs Australia ORCHID/CHED portal for scheme details and forms
+- Pricing calculator, quoting cost per exam type (hips, elbows, or both) and Dogs Australia registration status
+- Contact form, emailing a notification to the practice and an automatic confirmation back to the sender via Resend
 - Multi-dog submission form - add multiple dogs to a single submission, each independently switchable between a structured online form or an uploaded PDF form
 - In-progress submissions are auto-saved to the browser so a session can be resumed later
 - Direct-to-browser file uploads to S3 (DICOM radiographs, supporting documents, signature images) via short-lived presigned URLs, with per-file progress and type validation
@@ -31,8 +34,9 @@ This is a live production website, currently pre-launch and gated behind a passw
 | Frontend | Next.js (App Router), React, TypeScript, Tailwind CSS |
 | Data & Auth | Firebase (Auth, Firestore) - client SDK for the browser, Admin SDK for server-side access in the admin dashboard |
 | File Storage | AWS S3, via presigned URLs for direct browser upload/download |
-| Payments | Stripe Checkout |
-| Email | Resend (transactional email) |
+| Payments | Stripe Checkout, redirect flow (session created and verified server-side) |
+| Email | Resend, for transactional emails (contact form notification/confirmation) |
+| Scheduled Jobs | Vercel Cron, for background maintenance tasks |
 
 ## Architecture
 
@@ -40,10 +44,10 @@ This is a live production website, currently pre-launch and gated behind a passw
 app/
   (main)/    public site - marketing pages, submission flow, auth, legal pages
   admin/     internal dashboard - case list, case detail, status management
-  api/       route handlers - Stripe checkout/verification, S3 upload URLs, dev access
-components/  UI organized by feature (submission, admin, upload, form, auth, layout, ui)
+  api/       route handlers - Stripe checkout/verification, S3 upload URLs, contact, cron jobs, dev access
+components/  UI organized by feature (submission, admin, upload, form, about, auth, layout, ui)
 hooks/       shared client-side state and logic (auth, file upload, responsive checks)
-lib/         service integrations and business logic (Firebase, Firebase Admin, S3, Stripe, pricing)
+lib/         service integrations and business logic (Firebase, Firebase Admin, S3, Stripe, Resend, pricing)
 types/       domain model (submissions, dogs, owners, veterinarians, billing, uploads)
 ```
 
@@ -52,6 +56,7 @@ A few architectural choices worth noting:
 - Firestore is the primary data store. The browser writes submissions using the client SDK; the admin dashboard reads through the Firebase Admin SDK on the server, using a service account rather than client-side security rules.
 - Payment follows a redirect flow: a Stripe Checkout session is created server-side, the browser is redirected to Stripe, and the result is verified server-side on return before the submission is marked paid.
 - Submitters are anonymous - there is no public account system. Only staff sign in, via Firebase Authentication, to access the admin dashboard.
+- Scheduled maintenance (e.g. deleting abandoned draft submissions and their S3 files after 7+ days) runs via Vercel Cron, hitting bearer-token-authenticated routes under `/app/api/cron/*`.
 
 ## Local Development
 
@@ -61,6 +66,7 @@ npm run dev     # start the dev server
 npm run build   # production build
 npm run start   # run a production build
 npm run lint    # lint the codebase
+npm run docs    # generate browsable TypeDoc reference from /** */ comments
 ```
 
 The app expects a `.env.local` with credentials for the services above:
@@ -69,7 +75,8 @@ The app expects a `.env.local` with credentials for the services above:
 - Firebase Admin service account (`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
 - AWS S3 (`AWS_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 - Stripe (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`)
-- Resend email (`RESEND_API_KEY`, `CONTACT_NOTIFICATION_RECIPIENT`)
+- Resend (`RESEND_API_KEY`, `CONTACT_NOTIFICATION_RECIPIENT`)
+- Cron authentication (`CRON_SECRET`)
 - Pre-launch access gate (`DEV_ACCESS_PASSWORD`)
 
 ## Project Status
