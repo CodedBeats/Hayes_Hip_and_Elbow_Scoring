@@ -19,6 +19,7 @@ This is a live production website, currently pre-launch and gated behind a passw
 - In-progress submissions are auto-saved to the browser so a session can be resumed later
 - Direct-to-browser file uploads to S3 (DICOM radiographs, supporting documents, signature images) via short-lived presigned URLs, with per-file progress and type validation
 - Checkout and payment via Stripe, with pricing calculated per exam type and Dogs Australia registration status
+- Contact form with transactional email (staff notification + submitter confirmation) via Resend, protected by anti-abuse measures: a honeypot field and submission-timing check to catch bots, per-IP rate limiting, field-length caps, rejection of disposable/throwaway email addresses, and a profanity filter that flags (rather than blocks) matched messages for staff review
 
 **Admin dashboard**
 - Firebase-authenticated access, separate from the public submission flow
@@ -73,7 +74,7 @@ The app expects a `.env.local` with credentials for the services above:
 - Firebase client config (`NEXT_PUBLIC_FIREBASE_*`)
 - Firebase Admin service account (`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
 - AWS S3 (`AWS_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-- Stripe (`STRIPE_SECRET_KEY`)
+- Stripe (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`)
 - Resend (`RESEND_API_KEY`, `CONTACT_NOTIFICATION_RECIPIENT`)
 - Cron authentication (`CRON_SECRET`)
 - Pre-launch access gate (`DEV_ACCESS_PASSWORD`)
