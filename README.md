@@ -16,6 +16,7 @@ This is a live production website, currently pre-launch and gated behind a passw
 - In-progress submissions are auto-saved to the browser so a session can be resumed later
 - Direct-to-browser file uploads to S3 (DICOM radiographs, supporting documents, signature images) via short-lived presigned URLs, with per-file progress and type validation
 - Checkout and payment via Stripe, with pricing calculated per exam type and Dogs Australia registration status
+- Contact form with transactional email (staff notification + submitter confirmation) via Resend, protected by anti-abuse measures: a honeypot field and submission-timing check to catch bots, per-IP rate limiting, field-length caps, rejection of disposable/throwaway email addresses, and a profanity filter that flags (rather than blocks) matched messages for staff review
 
 **Admin dashboard**
 - Firebase-authenticated access, separate from the public submission flow
@@ -31,6 +32,7 @@ This is a live production website, currently pre-launch and gated behind a passw
 | Data & Auth | Firebase (Auth, Firestore) - client SDK for the browser, Admin SDK for server-side access in the admin dashboard |
 | File Storage | AWS S3, via presigned URLs for direct browser upload/download |
 | Payments | Stripe Checkout |
+| Email | Resend (transactional email) |
 
 ## Architecture
 
@@ -67,6 +69,7 @@ The app expects a `.env.local` with credentials for the services above:
 - Firebase Admin service account (`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
 - AWS S3 (`AWS_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 - Stripe (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`)
+- Resend email (`RESEND_API_KEY`, `CONTACT_NOTIFICATION_RECIPIENT`)
 - Pre-launch access gate (`DEV_ACCESS_PASSWORD`)
 
 ## Project Status
