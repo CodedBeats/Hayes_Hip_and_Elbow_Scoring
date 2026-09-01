@@ -89,14 +89,30 @@ function emailLayout(bodyHtml: string): string {
 </html>`.trim();
 }
 
-/** Email sent to the practice inbox notifying staff of a new contact form submission. */
-export function contactNotificationEmail({ name, email, message }: ContactRequest): EmailBody {
-    const subject = `New contact form message from ${name}`;
+/**
+ * Email sent to the practice inbox notifying staff of a new contact form submission.
+ *
+ * @param flagged - set by the profanity check in `/api/contact`. When true the
+ *   subject is prefixed and a warning banner is rendered above the content; the
+ *   message is still delivered in full.
+ */
+export function contactNotificationEmail({
+    name,
+    email,
+    message,
+    flagged = false,
+}: ContactRequest & { flagged?: boolean }): EmailBody {
+    const subject = `${flagged ? "[⚠️ FLAGGED] " : ""}New contact form message from ${name}`;
     const safeName = escapeHtml(name);
     const safeEmail = escapeHtml(email);
     const safeMessage = escapeHtml(message);
 
+    const flaggedBanner = flagged
+        ? `<div style="margin:0 0 16px 0; padding:12px 16px; border:1px solid #c0392b; border-radius:6px; background-color:#fdecea; color:#c0392b; font-weight:700;">&#9888;&#65039; This message was automatically flagged for possible profanity. It has not been altered - review before replying.</div>`
+        : "";
+
     const html = emailLayout(`
+    ${flaggedBanner}
     <h1 style="margin:0 0 16px 0; font-size:20px; color:${BRAND_BROWN};">New Contact Form Submission</h1>
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; margin-bottom:20px;">
       <tr>
@@ -112,7 +128,7 @@ export function contactNotificationEmail({ name, email, message }: ContactReques
     <p style="margin:20px 0 0 0; font-size:13px; color:${BRAND_BROWN}; opacity:0.75;">Reply to this email to respond directly to ${safeName}.</p>
   `);
 
-    const text = `New contact form message from ${name}\n\nName: ${name}\nEmail: ${email}\n\n${message}\n\n${WEBSITE_URL}`;
+    const text = `${flagged ? "** FLAGGED: possible profanity - not altered, review before replying **\n\n" : ""}New contact form message from ${name}\n\nName: ${name}\nEmail: ${email}\n\n${message}\n\n${WEBSITE_URL}`;
 
     return { subject, html, text };
 }
