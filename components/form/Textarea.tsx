@@ -6,6 +6,7 @@ interface TextareaProps {
     rows?: number;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    maxLength?: number;
 }
 
 export const Textarea = ({
@@ -15,6 +16,7 @@ export const Textarea = ({
     rows = 5,
     value,
     onChange,
+    maxLength,
 }: TextareaProps) => {
     return (
         <div className="mb-4 w-full">
@@ -27,6 +29,7 @@ export const Textarea = ({
                 placeholder={placeholder}
                 rows={rows}
                 required={true}
+                maxLength={maxLength}
                 value={value}
                 onChange={onChange}
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#506147] focus:ring-2 focus:ring-[#506147]/20 transition"

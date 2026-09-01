@@ -7,6 +7,7 @@ interface InputFieldProps {
     value?: string | boolean;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     autoComplete?: string;
+    maxLength?: number;
 }
 
 export const InputField = ({
@@ -17,6 +18,7 @@ export const InputField = ({
     value,
     onChange,
     autoComplete = "off",
+    maxLength,
 }: InputFieldProps) => {
     if (type === "checkbox") {
         return (
@@ -45,6 +47,7 @@ export const InputField = ({
                 name={name}
                 placeholder={placeholder}
                 required={true}
+                maxLength={maxLength}
                 value={String(value ?? "")}
                 onChange={onChange}
                 autoComplete={autoComplete}
