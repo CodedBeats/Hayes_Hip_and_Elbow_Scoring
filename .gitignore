@@ -53,3 +53,7 @@ next-env.d.ts
 
 # other
 temp.md
+
+# firestore.rules is published directly via the Firebase console, not committed here -
+# this is a local reference-only copy, not used by any deploy step
+/firestore.rules
