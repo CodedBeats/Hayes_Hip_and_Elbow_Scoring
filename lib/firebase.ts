@@ -82,6 +82,50 @@ type CreateSubmissionPayload = {
 };
 
 /**
+ * A hand-editable fake submission used only by the admin dashboard's
+ * "Create Test Submission" button ({@link CreateTestSubmissionButton}) to
+ * seed `testSubmissions` for manual testing.
+ *
+ * @remarks
+ * `s3SubmissionId` is deliberately omitted here and generated fresh per
+ * click (a `crypto.randomUUID()`) instead of being hardcoded - {@link createSubmission}
+ * upserts by doc ID, so a fixed ID would mean every click overwrites the
+ * same doc instead of creating a new one. Everything else can be edited
+ * freely to shape whatever test scenario is needed.
+ */
+export const SAMPLE_TEST_SUBMISSION: Omit<CreateSubmissionPayload, "s3SubmissionId"> = {
+    dogIndex: 0,
+    submitterType: "owner",
+    payer: "owner",
+    owner: {
+        name: "Test Owner",
+        email: "test-owner@example.com",
+        phone: "0000000000",
+        address: "123 Test Street, Testville",
+        memberNumber: "TEST-0000",
+    },
+    dog: {
+        id: "test-dog",
+        examType: "hipsAndElbows",
+        isDogsAustraliaRegistered: false,
+        registeredName: "Test Dog",
+        microchipNumber: "000000000000000",
+        breed: "Test Breed",
+        sex: "male",
+        dateOfBirth: "2020-01-01",
+    },
+    files: {
+        dicomFiles: [],
+        supportingDocuments: [],
+    },
+    billing: {
+        billingType: "payNow",
+        amount: 0,
+        paymentStatus: "test",
+    },
+};
+
+/**
  * Builds the deterministic Firestore doc ID for one dog within a submission.
  *
  * @remarks
@@ -170,8 +214,15 @@ export const saveDraftFiles = async (
  * `submitterType`/`clinicInfo`/`billing.billingType` are whole-submission choices but
  * get duplicated onto every dog's doc, same as `owner`/`payer` - there's no separate
  * parent submission doc, each dog is a fully independent Firestore document.
+ *
+ * `collectionName` defaults to `"submissions"` (the real flow); the admin dashboard's
+ * "Create Test Submission" button passes `"testSubmissions"` instead to seed
+ * {@link SAMPLE_TEST_SUBMISSION} data for manual testing without touching real cases.
  */
-export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
+export const createSubmission = async (
+    payload: CreateSubmissionPayload,
+    collectionName: "submissions" | "testSubmissions" = "submissions",
+): Promise<string> => {
 
     // get payload
     const {
@@ -186,7 +237,7 @@ export const createSubmission = async (payload: CreateSubmissionPayload): Promis
         billing, // billing.paymentStatus is "unpaid" for payNow, "pending" for invoice/batchMonthly
     } = payload;
 
-    const docRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
+    const docRef = doc(db, collectionName, getSubmissionDraftId(s3SubmissionId, dogIndex));
 
     await setDoc(docRef, {
         s3SubmissionId,

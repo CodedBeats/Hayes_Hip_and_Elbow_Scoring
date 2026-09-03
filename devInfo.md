@@ -409,3 +409,34 @@ asking for payment details entirely once a session's total is fully covered by a
 - [ ] `components/buttons/StripeCheckoutBtn.tsx` is dead code - nothing imports it,
       `useSubmissionDraft.ts` duplicates its logic inline instead. Worth deleting in a
       separate cleanup PR.
+
+
+## Firebase App Check (anti-abuse, not yet set up)
+Firestore rules constrain *what* a write can contain; App Check constrains *who* can even
+attempt one - it stops someone extracting the public `NEXT_PUBLIC_FIREBASE_*` config out of
+the JS bundle and scripting requests straight at Firestore instead of going through the
+real site. Worth doing before launch (the anonymous submitter writes in `lib/firebase.ts`
+are the exact surface this protects) but not urgent/blocking today.
+
+- [ ] Register a reCAPTCHA v3 site (free) at https://www.google.com/recaptcha/admin -
+      get the site key + secret key.
+- [ ] Firebase Console → Project settings → App Check → register the web app with the
+      reCAPTCHA v3 provider, pasting in the secret key.
+      https://firebase.google.com/docs/app-check/web/recaptcha-provider
+- [ ] In `lib/firebase.ts`, after `initializeApp`, call `initializeAppCheck(app, { provider:
+      new ReCaptchaV3Provider(NEXT_PUBLIC_RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled:
+      true })` - guard with `typeof window !== "undefined"` since this file can be
+      evaluated outside the browser. Add `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` to Vercel env
+      vars (public value, safe to expose).
+- [ ] Local dev needs the debug provider instead of reCAPTCHA (localhost can't attest) -
+      logs a debug token to the console on first run, which then gets registered in
+      Firebase Console → App Check → Manage debug tokens.
+      https://firebase.google.com/docs/app-check/web/debug-provider
+- [ ] Firebase Console → App Check → run in **monitor mode** first for a few days (check
+      the Cloud Firestore metrics), then flip **Enforce** once confident real traffic
+      isn't being blocked. https://firebase.google.com/docs/app-check/enable-enforcement
+- [ ] Optional stretch: the S3 presign API routes (`/api/upload-url` etc.) aren't Firebase
+      resources, so App Check doesn't cover them automatically - could send the App Check
+      token as a header and verify it server-side with `getAppCheck().verifyToken()`
+      (firebase-admin) to extend the same protection there.
+      https://firebase.google.com/docs/app-check/custom-resource-backend
