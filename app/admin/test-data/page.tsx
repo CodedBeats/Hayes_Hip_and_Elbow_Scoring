@@ -3,6 +3,7 @@ import { getTestSubmissions } from "@/lib/firebaseAdmin";
 // components
 import { CasesListSection } from "@/components/admin/CasesListSection";
 import { DeprecatedDataBanner } from "@/components/admin/DeprecatedDataBanner";
+import { CreateTestSubmissionButton } from "@/components/admin/CreateTestSubmissionButton";
 
 // Same reasoning as the other admin list pages (app/admin/page.tsx, app/admin/archive/page.tsx) -
 // this depends on a live Firestore read, not build-time data.
@@ -21,7 +22,9 @@ const TestDataPage = async () => {
                 topBarTitle="Test data archive"
                 topBarSubtitle="Pre-launch test submissions, kept for reference only"
                 detailBasePath="/admin/test-data"
-            />
+            >
+                <CreateTestSubmissionButton />
+            </CasesListSection>
         </div>
     );
 };
