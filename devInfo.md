@@ -320,10 +320,6 @@ Force testing orphan file and doc cleanup (a draft doc will need to be >7 days o
 - [ ] Complete Stripe's business verification (legal business name/ABN, address, bank
       account for payouts) in the Dashboard - Checkout can't go live until this is done.
 - [ ] Confirm the settlement currency is AUD (Dashboard → Settings → Business settings).
-- [ ] Decide whether GST needs to be itemized/collected via Stripe Tax, or whether prices
-      are treated as GST-inclusive already. This is an accounting question, not a
-      technical one - check with whoever handles the practice's BAS/tax before enabling
-      anything.
 
 ### 2. Switch from test to live keys
 - [ ] In the Stripe Dashboard, toggle to **Live mode** and grab the live
@@ -333,27 +329,76 @@ Force testing orphan file and doc cleanup (a draft doc will need to be >7 days o
       Production environment - never commit live keys to the repo or `.env.local`.
 - [ ] Leave test keys in place for Preview/Development environments so PR previews and
       local dev keep hitting Stripe test mode.
-- [ ] Note: the tracked `.env` file at the repo root contains obviously-fake `RR_`-prefixed
-      credentials (e.g. `RR_STRIPE_SECRET_KEY=...`). The app only ever reads
-      `STRIPE_SECRET_KEY`, not the `RR_`-prefixed names, so this file is inert - looks like
-      a leftover decoy/canary rather than anything real. Worth confirming and removing
-      separately, but not something this pass touches.
 
-### 3. Webhook (strongly recommended, not yet built)
+### 3. Payment confirmation hardening (webhook, idempotency, bot protection) - not yet built
 Payment confirmation today is 100% client-driven: `/success` calls `/api/verify-payment`
-and then writes `paymentStatus: "paid"` to Firestore itself. If the customer closes the
-tab (or their connection drops) between paying and that write landing, **the submission
-stays `"unpaid"` forever** even though Stripe successfully charged the card - there's no
-webhook to catch it.
-- [ ] Consider adding a `checkout.session.completed` webhook endpoint
-      (`app/api/webhooks/stripe/route.ts`) that verifies the Stripe signature
-      (`STRIPE_WEBHOOK_SECRET`) and writes `paymentStatus: "paid"` server-side from the
-      event's `metadata.submissionIds` (now attached to every session - see below).
-- [ ] If added, register the webhook URL + get its signing secret from Dashboard →
-      Developers → Webhooks, and add `STRIPE_WEBHOOK_SECRET` to Vercel env vars.
-- [ ] This is genuinely optional for go-live (the client-side path works for the common
-      case), but it's the difference between "usually works" and "always works" - worth
-      scheduling soon after launch if not before.
+(which only calls `stripe.checkout.sessions.retrieve` - no signature, nothing
+cryptographically trustworthy about the call itself) and then the **browser** writes
+`paymentStatus: "paid"` straight to Firestore. If the customer closes the tab (or their
+connection drops) between paying and that write landing, **the submission stays
+`"unpaid"` forever** even though Stripe successfully charged the card. Firestore rule (d)
+in `firestore.rules` (~line 165) currently *allows* this anonymous client write of
+`"paid"` - it does not block it, despite the comment above it implying otherwise. Work
+through these in order, each building on the last:
+
+1. **Build the webhook endpoint.**
+   - [ ] Add `app/api/webhooks/stripe/route.ts`. Verify the signature with
+         `stripe.webhooks.constructEvent(rawBody, signatureHeader, STRIPE_WEBHOOK_SECRET)`
+         - must read the raw request body, not `req.json()`, or the signature check fails.
+   - [ ] Handle `checkout.session.completed`, read `submissionIds` from
+         `event.data.object.metadata` (already attached to every session), and write
+         `paymentStatus: "paid"` via the **Admin SDK** (`lib/firebaseAdmin.ts`), not the
+         client SDK.
+   - [ ] *Test:* run `stripe listen --forward-to localhost:3000/api/webhooks/stripe` in one
+         terminal, complete a real test-mode checkout locally, and confirm the event shows
+         up in the `listen` output and the submission's `paymentStatus` flips to `"paid"`
+         in Firestore.
+2. **Get the signing secret wired up.**
+   - [ ] Register the webhook URL in Dashboard → Developers → Webhooks (production) - for
+         local dev, `stripe listen` prints its own temporary signing secret.
+   - [ ] Add `STRIPE_WEBHOOK_SECRET` to `.env.local` and Vercel env vars (per-environment,
+         same as the Stripe keys in section 2).
+3. **Tighten the Firestore rule now that the webhook can write instead.**
+   - [ ] In `firestore.rules`, remove (or restrict to `isStaff()`/`"test"` only) the branch
+         in rule (d) that lets anonymous clients set `paymentStatus == 'paid'` - the Admin
+         SDK bypasses rules entirely, so the webhook doesn't need that branch to exist.
+   - [ ] *Test:* after deploying the tightened rules, try calling
+         `updateSubmissionPaymentStatus(id, "paid")` from the browser devtools console
+         directly against a real submission - it should come back `permission-denied`.
+4. **Turn `/success` into a reader, not a writer.**
+   - [ ] Change `app/(main)/success/page.tsx` to poll/read the submission doc (or re-call
+         `/api/verify-payment`) until `paymentStatus` reflects `"paid"`, instead of writing
+         it itself.
+   - [ ] *Test:* after Stripe redirects to `/success`, kill the network before the page's
+         effect can run - confirm the submission still ends up `"paid"` on its own because
+         the webhook already did it, independent of the browser.
+5. **Add idempotency keys to session/coupon creation.**
+   - [ ] In `app/api/create-checkout-session/route.ts`, pass a deterministic
+         `idempotencyKey` (e.g. derived from `submissionIds`) as the request options on
+         both `stripe.checkout.sessions.create` and `stripe.coupons.create`.
+   - [ ] *Test:* fire two rapid duplicate POSTs to `/api/create-checkout-session` with the
+         same `submissionIds` (double-click retry, or a quick curl loop) - confirm the
+         Stripe Dashboard shows only one session/coupon, not two.
+6. **Consider a restricted API key.**
+   - [ ] Dashboard → Developers → API keys → Create restricted key, scoped to just what
+         the app actually calls (Checkout Sessions write, Coupons write, plus whatever the
+         webhook handler needs). Swap `STRIPE_SECRET_KEY` to this instead of the full
+         secret key.
+   - [ ] *Test:* in a scratch script, try an operation outside that scope (e.g.
+         `stripe.customers.list()`) with the restricted key and confirm it's rejected -
+         proves the scope is actually enforced, not just configured.
+7. **Add a bot barrier to the checkout trigger.**
+   - [ ] `lib/security.ts` already has `looksLikeBot()` (honeypot + fill-time heuristic)
+         wired into `/api/contact` - extend the same pattern to
+         `/api/create-checkout-session`, or add a real CAPTCHA/Turnstile if this needs to
+         hold up against actual card-testing bots (a honeypot only stops bots that don't
+         bother).
+   - [ ] *Test:* POST directly to `/api/create-checkout-session` bypassing the form (curl
+         or Postman) and confirm it's rejected the same way a bot contact submission is.
+
+Steps 1-4 are the load-bearing ones (they fix the actual correctness gap); 5-7 are
+hardening and can land after if time is tight, but all are worth doing before this
+handles real cards at volume.
 
 ### 4. Branding & display (Dashboard-only, not code)
 - [ ] Dashboard → Settings → Branding: upload the practice's logo/icon, set an accent
@@ -391,9 +436,9 @@ actual negotiated rate differs.
       before announcing go-live.
 - [ ] Confirm the admin-test checkout button (see `components/submission/
       SubmissionFlow.tsx`) still works in live mode - it's a genuine $0 Stripe Checkout
-      session (see section 8), so no real charges/refunds are involved even in live mode.
+      session (see section 7), so no real charges/refunds are involved even in live mode.
 
-### 8. Admin-test $0 mechanism
+### 7. Admin-test $0 mechanism
 The admin-test flow creates a fresh, single-use 100%-off Stripe Coupon
 (`stripe.coupons.create({ percent_off: 100, duration: "once", max_redemptions: 1 })`) per
 session and applies it via `discounts` on the Checkout Session
@@ -404,6 +449,20 @@ asking for payment details entirely once a session's total is fully covered by a
   nothing to leak, and `max_redemptions: 1` means even a leaked ID couldn't be reused.
 - A $0-total session reports `payment_status: "no_payment_required"`, not `"paid"` -
   `app/api/verify-payment/route.ts` treats both as success.
+
+### 8. Test the ClinicInvoice flow with `stripe listen` (blocked - not yet applicable)
+`billingType: "invoice"` / `"batchMonthly"` submissions don't touch Stripe at all today -
+`app/(main)/success/page.tsx` sets these straight to success since the Firestore doc was
+already written `paymentStatus: "pending"` at submission time. There's no Stripe invoice
+object yet, so there's nothing to run `stripe listen` against.
+- [ ] Once a Stripe Invoicing integration exists for clinic billing (e.g.
+      `stripe.invoices.create()` triggered from the batch-monthly cron or an admin
+      action), come back here: run
+      `stripe listen --events invoice.paid,invoice.payment_failed --forward-to localhost:3000/api/webhooks/stripe`
+      locally, trigger a real invoice send/pay in test mode, and confirm the webhook
+      handler (section 3) updates `paymentStatus` to `"invoiced"`/`"paid"` correctly.
+- [ ] Until that integration exists, this step doesn't apply - don't try to test it
+      against the current code.
 
 ### 9. Housekeeping (out of scope for this pass, noted for later)
 - [ ] `components/buttons/StripeCheckoutBtn.tsx` is dead code - nothing imports it,
