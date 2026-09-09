@@ -1,6 +1,5 @@
 // dependencies
 "use client";
-import { useRouter } from "next/navigation";
 //components
 import { ImageCTASection } from "@/components/ui/ImageCTASection";
 import { ImageTextSection } from "@/components/ui/ImageTextSection";
@@ -79,13 +78,6 @@ const beforeYouSubmit = [
 const chipClassName = "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-brand-brown";
 
 const Home = () => {
-    const router = useRouter();
-
-    const handleExitPreview = async () => {
-        await fetch("/api/dev-login", { method: "DELETE" });
-        router.push("/pre-launch");
-    };
-
     return (
         <main className="flex flex-col bg-cream font-sans">
             <ImageCTASection
@@ -214,28 +206,6 @@ const Home = () => {
             <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-16 sm:px-10">
                 <SectionHeading title="Before You Submit" />
                 <ChecklistCard items={beforeYouSubmit} columns={2} />
-            </section>
-
-            <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-16 sm:px-10">
-                <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                    <div className="flex flex-col gap-6">
-                        <div>
-                            <h1 className="text-2xl font-semibold text-gray-900">
-                                Preview Mode
-                            </h1>
-                            <p className="mt-2 text-sm text-gray-600">
-                                You are currently viewing the application in preview mode.
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={handleExitPreview}
-                            className="rounded-lg bg-brand-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#3d4e36]"
-                        >
-                            Exit Preview
-                        </button>
-                    </div>
-                </div>
             </section>
 
             <ImageCTASection
