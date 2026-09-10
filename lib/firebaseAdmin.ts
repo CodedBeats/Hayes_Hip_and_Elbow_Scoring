@@ -64,7 +64,16 @@ const getAdminApp = () => {
           });
 };
 
-const getAdminDb = (): Firestore => {
+/**
+ * Returns the lazily-initialized Admin SDK Firestore handle.
+ *
+ * @remarks
+ * This handle bypasses `firestore.rules` entirely - it is a superuser. Only ever import
+ * it into server-only code (API routes, cron handlers, Server Components); never a client
+ * component, same as the rest of this file. Used by `lib/payments.ts` to write payment
+ * status after Stripe verification.
+ */
+export const getAdminDb = (): Firestore => {
     if (adminDb) return adminDb;
     adminDb = getFirestore(getAdminApp());
     return adminDb;

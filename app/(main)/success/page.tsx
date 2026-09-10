@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { updateSubmissionPaymentStatus } from "@/lib/firebase";
 
 const SuccessContent = () => {
     const params = useSearchParams();
@@ -35,19 +34,13 @@ const SuccessContent = () => {
                 return;
             }
 
-            const pending = localStorage.getItem("stripe_pending");
-            if (pending) {
-                const { firestoreDocIds, isAdminTest } = JSON.parse(pending) as {
-                    firestoreDocIds: string[];
-                    isAdminTest?: boolean;
-                };
-                // Admin-test submissions are charged Stripe's enforced minimum, not the
-                // real price - kept as "test" so they never get counted as real revenue.
-                const finalStatus = isAdminTest ? "test" : "paid";
-                await Promise.all(firestoreDocIds.map((id) => updateSubmissionPaymentStatus(id, finalStatus)));
-                localStorage.removeItem("stripe_pending");
-                localStorage.removeItem("submission_draft");
-            }
+            // The payment-status write now happens server-side (in /api/verify-payment and,
+            // as the guaranteed backstop, the Stripe webhook). This page is purely a reader.
+            // Payment is confirmed at this point, so the draft is genuinely finished - clear
+            // it. stripe_pending is no longer written; the removeItem is left as cleanup for
+            // any browser that still carries one from a previous release.
+            localStorage.removeItem("submission_draft");
+            localStorage.removeItem("stripe_pending");
 
             setStatus("success");
         };

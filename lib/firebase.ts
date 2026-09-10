@@ -20,7 +20,7 @@ import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
 import type { ClinicInfo } from "../types/clinic";
 import type { DogCase } from "../types/dog";
-import type { BillingInfo, PaymentStatus } from "../types/billing";
+import type { BillingInfo } from "../types/billing";
 
 // config
 const firebaseConfig = {
@@ -266,24 +266,16 @@ export const createSubmission = async (
 };
 
 
-export const updateSubmissionPaymentStatus = async (
-    firestoreDocId: string,
-    status: PaymentStatus,
-): Promise<void> => {
-    const submissionRef = doc(db, "submissions", firestoreDocId);
-    await updateDoc(submissionRef, {
-        "billing.paymentStatus": status,
-        updatedAt: new Date(),
-    });
-};
-
 /**
  * Sets a submission's workflow `status` directly.
  *
  * @remarks
  * Used by the admin dashboard's `ChangeStatusButton`. Called directly from that client
- * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
- * through an API route, since Firestore rules currently allow this write without auth.
+ * component (a dotted-path `updateDoc` write) rather than through an API route, since
+ * Firestore rules currently allow this write without auth.
+ *
+ * Note `billing.paymentStatus` is deliberately NOT writable from the client - it is
+ * owned server-side by `lib/payments.ts` (the Stripe webhook and `/api/verify-payment`).
  */
 export const updateSubmissionStatus = async (
     firestoreDocId: string,
@@ -301,8 +293,9 @@ export const updateSubmissionStatus = async (
  *
  * @remarks
  * Used by the admin dashboard's `ArchiveSubmissionBtn`. Called directly from that client
- * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
- * through an API route, since Firestore rules currently allow this write without auth.
+ * component (same dotted-path `updateDoc` shape as {@link updateSubmissionStatus} above)
+ * rather than through an API route, since Firestore rules currently allow this write
+ * without auth.
  */
 export const archiveSubmission = async (firestoreDocId: string): Promise<void> => {
     const submissionRef = doc(db, "submissions", firestoreDocId);
@@ -319,8 +312,9 @@ export const archiveSubmission = async (firestoreDocId: string): Promise<void> =
  *
  * @remarks
  * Used by the admin dashboard's `RestoreSubmissionBtn`. Called directly from that client
- * component (same pattern as {@link updateSubmissionPaymentStatus} above) rather than
- * through an API route, since Firestore rules currently allow this write without auth.
+ * component (same dotted-path `updateDoc` shape as {@link updateSubmissionStatus} above)
+ * rather than through an API route, since Firestore rules currently allow this write
+ * without auth.
  */
 export const restoreSubmission = async (firestoreDocId: string): Promise<void> => {
     const submissionRef = doc(db, "submissions", firestoreDocId);

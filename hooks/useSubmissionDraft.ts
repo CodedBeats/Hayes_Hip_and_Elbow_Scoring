@@ -149,9 +149,10 @@ export const useSubmissionDraft = () => {
      * `batchMonthly`, which never touch Stripe at all).
      *
      * @remarks
-     * Clears the draft from localStorage right before redirecting - by this point every
-     * dog's data is durably in Firestore, so there's nothing left for the draft to
-     * recover if the user comes back.
+     * On the invoice/batchMonthly path the draft is cleared here - that path is finished.
+     * On the Stripe path it is left in place: payment can still fail or be cancelled, and
+     * the customer would then return to a form that should still be populated. `/success`
+     * clears the draft once payment is confirmed.
      *
      * @param adminTest - When true, skips straight to a Stripe Checkout session scaled
      * down to Stripe's enforced minimum charge instead of the real computed price, and
@@ -197,11 +198,11 @@ export const useSubmissionDraft = () => {
                 return;
             }
 
-            localStorage.setItem(
-                "stripe_pending",
-                JSON.stringify({ firestoreDocIds: docIds, isAdminTest: adminTest }),
-            );
-            localStorage.removeItem(DRAFT_KEY);
+            // The draft is deliberately NOT cleared here. Stripe may decline the card, or
+            // the customer may cancel or hit back - and then they land back on the form,
+            // which should still be populated. `/success` clears the draft once payment is
+            // actually confirmed. The submission IDs travel to Stripe as session metadata
+            // (via the request below), so the confirmation flow no longer needs localStorage.
 
             const items = Object.values(completedDogs).map(({ dog }) => ({
                 dogName: dog.registeredName,
