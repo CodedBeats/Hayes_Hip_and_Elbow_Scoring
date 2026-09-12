@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { calculatePrice, EXAM_LABELS } from "@/lib/pricing";
 import { verifyAdminToken } from "@/lib/firebaseAdmin";
+import { rateLimit, getClientIp } from "@/lib/security";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { ExamType } from "@/types/form";
@@ -12,16 +13,59 @@ type CheckoutItem = {
     isDogsAustraliaRegistered: boolean;
 };
 
+// Defensive ceilings, not real UX limits - there's no existing cap on dog count or name
+// length upstream in the submission form, so these just stop a hostile/malformed request
+// from producing an absurd Stripe payload rather than reflecting an actual product limit.
+const MAX_ITEMS = 20;
+const MAX_DOG_NAME_LENGTH = 200;
+
+const VALID_EXAM_TYPES = new Set(Object.keys(EXAM_LABELS));
+
 export async function POST(req: NextRequest) {
-    const { items, submissionIds, adminTest, adminIdToken } = await req.json() as {
+    // This endpoint is public and unauthenticated for normal (non-admin-test) checkouts -
+    // rate limit by IP before doing any real work, same pattern as /api/contact. A real
+    // 429 rather than a silent fail: unlike a honeypot trap, a legitimate double-clicking
+    // user needs to see what happened.
+    const { ok, retryAfterMs } = rateLimit(`checkout:${getClientIp(req)}`, 10, 60_000);
+    if (!ok) {
+        return NextResponse.json(
+            { error: "Too many requests - please wait a minute and try again." },
+            { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } },
+        );
+    }
+
+    let body: {
         items: CheckoutItem[];
         submissionIds: string[];
         adminTest?: boolean;
         adminIdToken?: string;
     };
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: "Malformed request body" }, { status: 400 });
+    }
+    const { items, submissionIds, adminTest, adminIdToken } = body;
 
     if (!items?.length || !submissionIds?.length) {
         return NextResponse.json({ error: "Missing items or submissionIds" }, { status: 400 });
+    }
+
+    if (items.length !== submissionIds.length) {
+        return NextResponse.json({ error: "items and submissionIds must be the same length" }, { status: 400 });
+    }
+
+    if (items.length > MAX_ITEMS) {
+        return NextResponse.json({ error: "Too many items" }, { status: 400 });
+    }
+
+    for (const item of items) {
+        if (!VALID_EXAM_TYPES.has(item.examType)) {
+            return NextResponse.json({ error: "Invalid exam type" }, { status: 400 });
+        }
+        if (!item.dogName?.trim() || item.dogName.length > MAX_DOG_NAME_LENGTH) {
+            return NextResponse.json({ error: "Invalid dog name" }, { status: 400 });
+        }
     }
 
     // Admin test checkouts still hit real Stripe (so the redirect/verify path gets
@@ -59,6 +103,16 @@ export async function POST(req: NextRequest) {
     }));
 
     try {
+        // Derived from the sorted submissionIds so a double-click (or a retried request)
+        // reuses the same Stripe objects instead of creating duplicates. Namespaced per
+        // call - Stripe idempotency keys are a single namespace per API key, not per
+        // endpoint, so reusing one raw key across two different calls would just return
+        // the first call's cached response instead of running the second. Note keys expire
+        // after ~24h and a replay then returns the *original* (possibly now-expired)
+        // session - fine here since a submission is completed in one sitting, but not a
+        // pattern to reuse for longer-lived flows without thought.
+        const idempotencyKey = [...submissionIds].sort().join(",");
+
         // A fresh, single-use 100%-off coupon rather than a stored/shared one - created
         // per admin-test session so there's no coupon ID to leak or reuse, and
         // max_redemptions: 1 means it self-invalidates the moment it's applied.
@@ -69,7 +123,7 @@ export async function POST(req: NextRequest) {
                     duration: "once",
                     max_redemptions: 1,
                     name: "Admin Test Submission - 100% Off",
-                })).id,
+                }, { idempotencyKey: `coupon:${idempotencyKey}` })).id,
             }]
             : undefined;
 
@@ -95,7 +149,7 @@ export async function POST(req: NextRequest) {
 
             success_url: `${req.nextUrl.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.nextUrl.origin}/cancel`,
-        });
+        }, { idempotencyKey: `session:${idempotencyKey}` });
 
         return NextResponse.json({
             url: session.url,

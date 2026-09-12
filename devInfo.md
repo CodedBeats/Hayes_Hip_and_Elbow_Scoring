@@ -426,9 +426,11 @@ product decision. Currently modeled on Stripe's standard AU domestic card rate
 (1.7% + $0.30). This is an approximation - international and Amex cards cost Stripe more,
 so those slightly under-recover. Retune `STRIPE_FEE` in `lib/pricing.ts` if the practice's
 actual negotiated rate differs.
-- [ ] Add a line to the Privacy Policy / Terms of Service noting that the submission fee
-      includes payment processing costs (per the original ask - "we can add notes about
-      in PP or ToS where appropriate").
+- [x] Fee disclosure done - it lives in the Terms of Service ("Payment" section), the About
+      FAQ, `PricingCard`, and `DogEntry.tsx`. Not the Privacy Policy: that covers data
+      handling, not pricing, so it's the wrong home for this despite the original ask. The
+      one remaining gap - the "Scoring Fees" subtitle on `/about` mentioned the levy but not
+      the fee - has been fixed directly.
 
 ### 6. Final live test
 - [ ] Do one real, small, live-mode submission end-to-end with a real card, confirm it
@@ -465,9 +467,7 @@ object yet, so there's nothing to run `stripe listen` against.
       against the current code.
 
 ### 9. Housekeeping (out of scope for this pass, noted for later)
-- [ ] `components/buttons/StripeCheckoutBtn.tsx` is dead code - nothing imports it,
-      `useSubmissionDraft.ts` duplicates its logic inline instead. Worth deleting in a
-      separate cleanup PR.
+- [x] `components/buttons/StripeCheckoutBtn.tsx` was dead code - deleted in `894fa7f`.
 
 
 ## Firebase App Check (anti-abuse, not yet set up)

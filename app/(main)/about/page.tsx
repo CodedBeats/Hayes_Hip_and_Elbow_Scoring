@@ -276,7 +276,7 @@ const AboutPage = () => {
             {/* pricing */}
             <section id="pricing" className="bg-warm-sand py-16">
                 <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 sm:px-10">
-                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, plus the applicable Dogs Australia levy." />
+                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, inclusive of the applicable Dogs Australia levy and a payment processing fee." />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         {examTypes.map((examType) => {
                             const member = calculatePrice(examType, true);
