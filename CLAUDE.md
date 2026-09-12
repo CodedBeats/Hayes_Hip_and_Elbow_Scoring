@@ -31,7 +31,7 @@ npm run docs    # generate browsable TypeDoc reference from /** */ comments
 - `/hooks`: Custom React hooks (auth, file upload, responsive checks)
 - `/lib`: Business logic and service integrations (Firebase, Firebase Admin, S3, Stripe, pricing)
 - `/types`: TypeScript interfaces and type definitions (submissions, dogs, owners, vets, billing, uploads)
-- `middleware.ts` + `lib/devAccess.ts`: temporary pre-launch password gate in front of the whole site - unrelated to Firebase Auth, will be removed at go-live
+- `lib/devAccess.ts`: leftover from the pre-launch password gate. `middleware.ts` itself is already removed (go-live has happened), so nothing currently invokes this - `app/pre-launch/` and `app/api/dev-login/route.ts` are the other orphaned pieces, worth deleting in a follow-up cleanup pass.
 
 ## Cron Jobs
 Scheduling is Vercel Cron, declared in `vercel.json`; each job gets its own route under `/app/api/cron/*`, signed with a bearer token checked against `CRON_SECRET`.
