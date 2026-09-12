@@ -56,8 +56,9 @@ const TermsOfServicePage = () => {
                             You&apos;re responsible for providing accurate owner and dog information, and for
                             confirming that submitted radiographs meet our technical requirements. By submitting,
                             you confirm you have the right to do so on behalf of the dog&apos;s owner. If a
-                            submission is left incomplete and unpaid, its uploaded files may be automatically
-                            deleted after 7 days of inactivity, and would need to be re-uploaded to continue.
+                            submission is left incomplete, or completed but never paid for, its uploaded files
+                            may be automatically deleted after 7 days of inactivity, and would need to be
+                            re-uploaded to continue.
                         </p>
                     </PolicySection>
 
