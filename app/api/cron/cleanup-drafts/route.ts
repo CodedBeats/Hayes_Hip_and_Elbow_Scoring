@@ -1,25 +1,12 @@
 import { NextResponse } from "next/server";
 import { getStaleDraftSubmissions, deleteSubmissionDoc } from "@/lib/firebaseAdmin";
-import { deleteObjects } from "@/lib/s3";
-import type { Files } from "@/types/submission";
+import { deleteObjects, collectFileKeys } from "@/lib/s3";
 
 // Drafts untouched for this long are considered abandoned. Chosen to comfortably
 // outlast a customer just taking a break mid-form (localStorage keeps their
 // in-progress form data around indefinitely anyway) while not leaving paid-for
 // storage costs accruing on files nobody will ever finish submitting.
 const STALE_AFTER_DAYS = 7;
-
-// Pulls every S3 key referenced by a draft's files object, across all the upload
-// categories DogEntry.tsx can produce (some may be absent depending on how far the
-// customer got).
-const collectFileKeys = (files: Files): string[] => {
-    const keys: string[] = [
-        ...files.dicomFiles.map((f) => f.key),
-        ...files.supportingDocuments.map((f) => f.key),
-    ];
-    if (files.pdfForm) keys.push(files.pdfForm.key);
-    return keys;
-};
 
 /**
  * Deletes draft submissions (and their S3 files) that have sat untouched for 7+ days.
