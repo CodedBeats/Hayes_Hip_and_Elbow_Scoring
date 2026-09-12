@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { calculatePrice, EXAM_LABELS } from "@/lib/pricing";
 import { verifyAdminToken } from "@/lib/firebaseAdmin";
+import { rateLimit, getClientIp } from "@/lib/security";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { ExamType } from "@/types/form";
@@ -13,6 +14,18 @@ type CheckoutItem = {
 };
 
 export async function POST(req: NextRequest) {
+    // This endpoint is public and unauthenticated for normal (non-admin-test) checkouts -
+    // rate limit by IP before doing any real work, same pattern as /api/contact. A real
+    // 429 rather than a silent fail: unlike a honeypot trap, a legitimate double-clicking
+    // user needs to see what happened.
+    const { ok, retryAfterMs } = rateLimit(`checkout:${getClientIp(req)}`, 10, 60_000);
+    if (!ok) {
+        return NextResponse.json(
+            { error: "Too many requests - please wait a minute and try again." },
+            { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } },
+        );
+    }
+
     const { items, submissionIds, adminTest, adminIdToken } = await req.json() as {
         items: CheckoutItem[];
         submissionIds: string[];
