@@ -154,12 +154,12 @@ export const useSubmissionDraft = () => {
      * the customer would then return to a form that should still be populated. `/success`
      * clears the draft once payment is confirmed.
      *
-     * @param adminTest - When true, skips straight to a Stripe Checkout session scaled
-     * down to Stripe's enforced minimum charge instead of the real computed price, and
-     * marks the resulting submissions `paymentStatus: "test"` instead of `"paid"` once
-     * confirmed. Requires the caller to be signed in (`auth.currentUser`) - the actual
-     * authorization check happens server-side in `/api/create-checkout-session` via the
-     * ID token sent below, since a client-side gate alone can't stop a direct API call.
+     * @param adminTest - When true, still charges the real computed price but applies a
+     * single-use 100%-off Stripe coupon so the checkout totals $0, and marks the resulting
+     * submissions `paymentStatus: "test"` instead of `"paid"` once confirmed. Requires the
+     * caller to be signed in (`auth.currentUser`) - the actual authorization check happens
+     * server-side in `/api/create-checkout-session` via the ID token sent below, since a
+     * client-side gate alone can't stop a direct API call.
      */
     const handleSubmit = async (adminTest = false) => {
         setIsSubmitting(true);

@@ -379,11 +379,10 @@ export const SubmissionFlow = () => {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Staff-only: submits through the same real Stripe Checkout flow,
-                            but scaled to Stripe's enforced minimum charge instead of the
-                            real price - lets an admin exercise the full live submission
-                            pipeline without a real charge. Visibility here is just UX; the
-                            actual auth check happens server-side in
-                            /api/create-checkout-session. */}
+                            but with a single-use 100%-off coupon applied so the total comes
+                            to $0 - lets an admin exercise the full live submission pipeline
+                            without a real charge. Visibility here is just UX; the actual
+                            auth check happens server-side in /api/create-checkout-session. */}
                         {adminUser && (
                             <button
                                 type="button"

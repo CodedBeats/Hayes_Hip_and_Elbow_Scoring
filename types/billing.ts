@@ -27,6 +27,7 @@ export type PaymentStatus =
     | "paid"
     | "invoiced"
     | "overdue"
-    // an admin-test submission, charged the Stripe-enforced minimum rather than the real
-    // price - kept distinct from "paid" so it never gets counted as real revenue
+    // an admin-test submission, brought to $0 via a single-use 100%-off Stripe coupon
+    // rather than a real charge - kept distinct from "paid" so it never gets counted as
+    // real revenue
     | "test";
