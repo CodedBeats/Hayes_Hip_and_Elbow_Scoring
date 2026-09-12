@@ -292,6 +292,13 @@ export type StaleDraft = {
  * without one. See the header comment in `app/api/cron/cleanup-drafts/route.ts` (the
  * only caller) for the one-time setup steps.
  *
+ * The admin dashboard's status dropdown (`ChangeStatusButton.tsx`) allows staff to
+ * manually set ANY real submission - paid or not - back to `"draft"`, which also bumps
+ * `updatedAt`. A genuine draft (written by `saveDraftFiles`) never has a `billing` field
+ * at all - only `createSubmission` adds one, at checkout - so a doc that has one here is
+ * a real submission that got reverted, not an abandoned upload, and must never be swept
+ * up regardless of what its paymentStatus says.
+ *
  * @param updatedBefore - Drafts whose `updatedAt` is older than this are considered
  * stale and returned.
  */
@@ -302,10 +309,12 @@ export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<Sta
         .where("updatedAt", "<", Timestamp.fromDate(updatedBefore))
         .get();
 
-    return snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        files: (docSnap.data().files ?? {}) as Files,
-    }));
+    return snapshot.docs
+        .filter((docSnap) => docSnap.data().billing === undefined)
+        .map((docSnap) => ({
+            id: docSnap.id,
+            files: (docSnap.data().files ?? {}) as Files,
+        }));
 };
 
 /**
