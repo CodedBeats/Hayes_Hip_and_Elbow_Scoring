@@ -6,7 +6,7 @@ A platform for submitting and managing canine hip & elbow radiograph scoring cas
 
 Dog owners and referring veterinarians use the site to submit hip and elbow radiographs for professional scoring, either through a structured online form or by uploading a completed official PDF submission form. Submissions are paid for online and then move through a review workflow managed by the practice via an internal admin dashboard.
 
-This is a live production website, currently pre-launch and gated behind a password while final work is completed ahead of go-live.
+This is a live production website. Stripe payments run in live mode, verified end-to-end with a real transaction and refund.
 
 ## Features
 
@@ -18,7 +18,7 @@ This is a live production website, currently pre-launch and gated behind a passw
 - Multi-dog submission form - add multiple dogs to a single submission, each independently switchable between a structured online form or an uploaded PDF form
 - In-progress submissions are auto-saved to the browser so a session can be resumed later
 - Direct-to-browser file uploads to S3 (DICOM radiographs, supporting documents, signature images) via short-lived presigned URLs, with per-file progress and type validation
-- Checkout and payment via Stripe, with pricing calculated per exam type and Dogs Australia registration status
+- Checkout and payment via Stripe, with pricing calculated per exam type and Dogs Australia registration status, confirmed server-side via a signature-verified webhook (with a faster redirect-based fast path) rather than trusting the browser
 - Contact form with transactional email (staff notification + submitter confirmation) via Resend, protected by anti-abuse measures: a honeypot field and submission-timing check to catch bots, per-IP rate limiting, field-length caps, rejection of disposable/throwaway email addresses, and a profanity filter that flags (rather than blocks) matched messages for staff review
 
 **Admin dashboard**
@@ -77,7 +77,11 @@ The app expects a `.env.local` with credentials for the services above:
 - Stripe (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`)
 - Resend (`RESEND_API_KEY`, `CONTACT_NOTIFICATION_RECIPIENT`)
 - Cron authentication (`CRON_SECRET`)
-- Pre-launch access gate (`DEV_ACCESS_PASSWORD`)
+
+`STRIPE_SECRET_KEY` should be a **restricted key** (Checkout Sessions + Coupons, both
+Write - nothing else), not the full account secret key, per the principle of least
+privilege. Production uses live-mode keys; Preview/Development stay on test-mode keys, so
+PR previews and local dev never touch real money.
 
 `STRIPE_WEBHOOK_SECRET` is the signing secret for the Stripe webhook. For local development, run the Stripe CLI alongside the dev server and use the `whsec_...` it prints (this is a per-session secret, different from the one on the Dashboard-registered production endpoint):
 
@@ -87,4 +91,14 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 ## Project Status
 
-The site is feature-complete and in final pre-launch preparation. A middleware-based access gate currently sits in front of the entire site and will be removed at go-live.
+Live. Stripe runs in live mode behind a restricted API key, payment status is confirmed
+server-side via a signature-verified webhook, Firestore rules no longer allow a client to
+mark a submission paid directly, and both the checkout endpoint and the two maintenance
+cron jobs (stale drafts, abandoned checkouts) are hardened and running on schedule. The
+one deliberately deferred piece is Firebase App Check - not launch-blocking, tracked as a
+follow-up.
+
+The middleware-based pre-launch password gate has been removed. `app/pre-launch/` and
+`app/api/dev-login/route.ts` are leftover from it and currently unreachable - nothing
+redirects a visitor through them anymore - and are worth deleting in a follow-up cleanup
+pass.
