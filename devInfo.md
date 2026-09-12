@@ -266,8 +266,6 @@ submissions/
 
 ## Helpful Links
 - [QuickBooks Documentation](https://developer.intuit.com/app/developer/qbo/docs/get-started)
-- [Resend](https://resend.com/docs/send-with-nextjs)
-
 
 ## GIT stuff
 ### Branches
