@@ -56,7 +56,7 @@ A few architectural choices worth noting:
 - Firestore is the primary data store. The browser writes submissions using the client SDK; the admin dashboard reads through the Firebase Admin SDK on the server, using a service account rather than client-side security rules.
 - Payment follows a redirect flow: a Stripe Checkout session is created server-side, the browser is redirected to Stripe, and the result is confirmed server-side over two channels - the `/success` redirect verifies the session and writes payment status immediately (fast path), and a signature-verified Stripe webhook (`/api/webhooks/stripe`, handling `checkout.session.completed`) writes it as the guaranteed backstop even if the browser never returns. Both go through the Admin SDK and are idempotent.
 - Submitters are anonymous - there is no public account system. Only staff sign in, via Firebase Authentication, to access the admin dashboard.
-- Scheduled maintenance (e.g. deleting abandoned draft submissions and their S3 files after 7+ days) runs via Vercel Cron, hitting bearer-token-authenticated routes under `/app/api/cron/*`.
+- Scheduled maintenance (deleting abandoned draft submissions, and separately submissions stuck unpaid after a cancelled/failed Stripe checkout, along with their S3 files, after 7+ days) runs via Vercel Cron, hitting bearer-token-authenticated routes under `/app/api/cron/*`.
 
 ## Local Development
 

@@ -37,6 +37,7 @@ npm run docs    # generate browsable TypeDoc reference from /** */ comments
 Scheduling is Vercel Cron, declared in `vercel.json`; each job gets its own route under `/app/api/cron/*`, signed with a bearer token checked against `CRON_SECRET`.
 
 - `app/api/cron/cleanup-drafts` (daily, 03:00 UTC): deletes draft submissions and their S3 files after 7+ days untouched. Drafts are created on first file upload, before payment/completion - so this never touches a completed/paid submission.
+- `app/api/cron/cleanup-abandoned` (daily, 03:00 UTC): deletes submissions stuck at `pendingReview` + `unpaid` and their S3 files after 7+ days untouched - the other half of `cleanup-drafts`, for a Stripe checkout that was started but never completed. Guarded on `paymentStatus == "unpaid"` specifically, so a `"pending"` (unpaid invoice), `"paid"`, or `"test"` submission is never touched.
 - New cron jobs should get their own file and `vercel.json` entry rather than being added to an existing handler, so one job's failure can't silently take another down with it.
 
 ## Archiving
