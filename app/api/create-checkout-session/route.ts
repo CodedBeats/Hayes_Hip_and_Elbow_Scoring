@@ -72,6 +72,16 @@ export async function POST(req: NextRequest) {
     }));
 
     try {
+        // Derived from the sorted submissionIds so a double-click (or a retried request)
+        // reuses the same Stripe objects instead of creating duplicates. Namespaced per
+        // call - Stripe idempotency keys are a single namespace per API key, not per
+        // endpoint, so reusing one raw key across two different calls would just return
+        // the first call's cached response instead of running the second. Note keys expire
+        // after ~24h and a replay then returns the *original* (possibly now-expired)
+        // session - fine here since a submission is completed in one sitting, but not a
+        // pattern to reuse for longer-lived flows without thought.
+        const idempotencyKey = [...submissionIds].sort().join(",");
+
         // A fresh, single-use 100%-off coupon rather than a stored/shared one - created
         // per admin-test session so there's no coupon ID to leak or reuse, and
         // max_redemptions: 1 means it self-invalidates the moment it's applied.
@@ -82,7 +92,7 @@ export async function POST(req: NextRequest) {
                     duration: "once",
                     max_redemptions: 1,
                     name: "Admin Test Submission - 100% Off",
-                })).id,
+                }, { idempotencyKey: `coupon:${idempotencyKey}` })).id,
             }]
             : undefined;
 
@@ -108,7 +118,7 @@ export async function POST(req: NextRequest) {
 
             success_url: `${req.nextUrl.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.nextUrl.origin}/cancel`,
-        });
+        }, { idempotencyKey: `session:${idempotencyKey}` });
 
         return NextResponse.json({
             url: session.url,
