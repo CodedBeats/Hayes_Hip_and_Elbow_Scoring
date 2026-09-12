@@ -115,6 +115,10 @@ export const SubmissionFlow = () => {
                                 • Processing typically takes 3-10 business days
                                 from receipt of payment.
                             </li>
+                            <li>
+                                • Unpaid or incomplete submissions are
+                                automatically deleted after 7 days.
+                            </li>
                         </ul>
                     </div>
                 </div>

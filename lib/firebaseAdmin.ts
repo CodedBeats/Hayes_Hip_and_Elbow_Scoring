@@ -292,6 +292,13 @@ export type StaleDraft = {
  * without one. See the header comment in `app/api/cron/cleanup-drafts/route.ts` (the
  * only caller) for the one-time setup steps.
  *
+ * The admin dashboard's status dropdown (`ChangeStatusButton.tsx`) allows staff to
+ * manually set ANY real submission - paid or not - back to `"draft"`, which also bumps
+ * `updatedAt`. A genuine draft (written by `saveDraftFiles`) never has a `billing` field
+ * at all - only `createSubmission` adds one, at checkout - so a doc that has one here is
+ * a real submission that got reverted, not an abandoned upload, and must never be swept
+ * up regardless of what its paymentStatus says.
+ *
  * @param updatedBefore - Drafts whose `updatedAt` is older than this are considered
  * stale and returned.
  */
@@ -299,6 +306,50 @@ export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<Sta
     const snapshot = await getAdminDb()
         .collection("submissions")
         .where("status", "==", "draft")
+        .where("updatedAt", "<", Timestamp.fromDate(updatedBefore))
+        .get();
+
+    return snapshot.docs
+        .filter((docSnap) => docSnap.data().billing === undefined)
+        .map((docSnap) => ({
+            id: docSnap.id,
+            files: (docSnap.data().files ?? {}) as Files,
+        }));
+};
+
+export type StaleUnpaidSubmission = {
+    id: string;
+    files: Files;
+};
+
+/**
+ * Finds submissions stuck at `pendingReview` + `unpaid` - an abandoned or failed Stripe
+ * checkout - that haven't been touched since before `updatedBefore`.
+ *
+ * @remarks
+ * `createSubmission` writes one Firestore doc per dog *before* the Stripe redirect, at
+ * `status: "pendingReview"`, `billing.paymentStatus: "unpaid"`. If the customer cancels,
+ * is declined, or closes the tab, that doc is never `"draft"` (so
+ * {@link getStaleDraftSubmissions} never finds it) and never gets paid, so nothing else
+ * reconciles it either - this is the other half of that gap. Used only by
+ * `app/api/cron/cleanup-abandoned`.
+ *
+ * Guarded tightly on both fields - `status == "pendingReview"` excludes drafts and
+ * anything already reviewed/completed; `billing.paymentStatus == "unpaid"` excludes
+ * `"pending"` (a legitimate unpaid *invoice*, which must survive), `"paid"`, and
+ * `"test"`. Requires a composite index on `submissions` (`status` ASC,
+ * `billing.paymentStatus` ASC, `updatedAt` ASC) - Firestore will throw with a direct
+ * console link to create it the first time this runs without one, same as
+ * {@link getStaleDraftSubmissions}.
+ *
+ * @param updatedBefore - Submissions whose `updatedAt` is older than this are
+ * considered stale and returned.
+ */
+export const getStaleUnpaidSubmissions = async (updatedBefore: Date): Promise<StaleUnpaidSubmission[]> => {
+    const snapshot = await getAdminDb()
+        .collection("submissions")
+        .where("status", "==", "pendingReview")
+        .where("billing.paymentStatus", "==", "unpaid")
         .where("updatedAt", "<", Timestamp.fromDate(updatedBefore))
         .get();
 

@@ -3,6 +3,7 @@ import { S3Client, GetObjectCommand, HeadObjectCommand, DeleteObjectsCommand } f
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // types
 import type { UploadedFile } from "@/types/upload";
+import type { Files } from "@/types/submission";
 
 
 
@@ -62,6 +63,25 @@ export const deleteObjects = async (keys: string[]): Promise<void> => {
         Bucket: process.env.AWS_BUCKET_NAME!,
         Delete: { Objects: keys.map((Key) => ({ Key })) },
     }));
+};
+
+/**
+ * Pulls every S3 key referenced by a submission/draft's files object, across all the
+ * upload categories `DogEntry.tsx` can produce (some may be absent depending on how far
+ * the customer got).
+ *
+ * @remarks
+ * Shared by both cleanup cron jobs (`cleanup-drafts` and `cleanup-abandoned`) ahead of a
+ * {@link deleteObjects} call - lives here rather than in either route so neither job
+ * duplicates the other's key-flattening logic.
+ */
+export const collectFileKeys = (files: Files): string[] => {
+    const keys: string[] = [
+        ...files.dicomFiles.map((f) => f.key),
+        ...files.supportingDocuments.map((f) => f.key),
+    ];
+    if (files.pdfForm) keys.push(files.pdfForm.key);
+    return keys;
 };
 
 /**

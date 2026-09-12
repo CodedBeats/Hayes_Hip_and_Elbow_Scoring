@@ -123,7 +123,7 @@ const faqItems = [
     {
         id: "unfinished-submission",
         title: "What happens if I don't finish my submission?",
-        content: "Your form progress is saved automatically in your browser, but any files you've already uploaded (DICOM images, the submission form, supporting documents) are deleted after 7 days of inactivity if the submission hasn't been completed and paid for. You'd need to re-upload them to pick up where you left off after that.",
+        content: "Your form progress is saved automatically in your browser, but any files you've already uploaded (DICOM images, the submission form, supporting documents) are deleted after 7 days of inactivity if the submission hasn't been completed and paid for (including if you started checkout but didn't finish paying). You'd need to re-upload them to pick up where you left off after that.",
     },
     {
         id: "refunds",

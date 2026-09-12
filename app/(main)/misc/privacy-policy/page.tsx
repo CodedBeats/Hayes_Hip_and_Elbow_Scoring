@@ -40,8 +40,8 @@ const PrivacyPolicyPage = () => {
                             Radiograph images are stored via AWS S3, and submission records are stored in Firebase
                             Firestore. We take reasonable technical measures to keep this data secure, though no
                             online storage can be guaranteed 100% secure. If a submission is started but left
-                            incomplete and unpaid, its uploaded files are automatically and permanently deleted
-                            after 7 days of inactivity.
+                            incomplete, or completed but never paid for, its uploaded files are automatically
+                            and permanently deleted after 7 days of inactivity.
                         </p>
                     </PolicySection>
 
