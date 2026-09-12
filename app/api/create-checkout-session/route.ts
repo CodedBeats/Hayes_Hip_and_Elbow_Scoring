@@ -13,6 +13,14 @@ type CheckoutItem = {
     isDogsAustraliaRegistered: boolean;
 };
 
+// Defensive ceilings, not real UX limits - there's no existing cap on dog count or name
+// length upstream in the submission form, so these just stop a hostile/malformed request
+// from producing an absurd Stripe payload rather than reflecting an actual product limit.
+const MAX_ITEMS = 20;
+const MAX_DOG_NAME_LENGTH = 200;
+
+const VALID_EXAM_TYPES = new Set(Object.keys(EXAM_LABELS));
+
 export async function POST(req: NextRequest) {
     // This endpoint is public and unauthenticated for normal (non-admin-test) checkouts -
     // rate limit by IP before doing any real work, same pattern as /api/contact. A real
@@ -26,15 +34,38 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const { items, submissionIds, adminTest, adminIdToken } = await req.json() as {
+    let body: {
         items: CheckoutItem[];
         submissionIds: string[];
         adminTest?: boolean;
         adminIdToken?: string;
     };
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: "Malformed request body" }, { status: 400 });
+    }
+    const { items, submissionIds, adminTest, adminIdToken } = body;
 
     if (!items?.length || !submissionIds?.length) {
         return NextResponse.json({ error: "Missing items or submissionIds" }, { status: 400 });
+    }
+
+    if (items.length !== submissionIds.length) {
+        return NextResponse.json({ error: "items and submissionIds must be the same length" }, { status: 400 });
+    }
+
+    if (items.length > MAX_ITEMS) {
+        return NextResponse.json({ error: "Too many items" }, { status: 400 });
+    }
+
+    for (const item of items) {
+        if (!VALID_EXAM_TYPES.has(item.examType)) {
+            return NextResponse.json({ error: "Invalid exam type" }, { status: 400 });
+        }
+        if (!item.dogName?.trim() || item.dogName.length > MAX_DOG_NAME_LENGTH) {
+            return NextResponse.json({ error: "Invalid dog name" }, { status: 400 });
+        }
     }
 
     // Admin test checkouts still hit real Stripe (so the redirect/verify path gets
