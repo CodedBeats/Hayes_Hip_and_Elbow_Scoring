@@ -317,6 +317,48 @@ export const getStaleDraftSubmissions = async (updatedBefore: Date): Promise<Sta
         }));
 };
 
+export type StaleUnpaidSubmission = {
+    id: string;
+    files: Files;
+};
+
+/**
+ * Finds submissions stuck at `pendingReview` + `unpaid` - an abandoned or failed Stripe
+ * checkout - that haven't been touched since before `updatedBefore`.
+ *
+ * @remarks
+ * `createSubmission` writes one Firestore doc per dog *before* the Stripe redirect, at
+ * `status: "pendingReview"`, `billing.paymentStatus: "unpaid"`. If the customer cancels,
+ * is declined, or closes the tab, that doc is never `"draft"` (so
+ * {@link getStaleDraftSubmissions} never finds it) and never gets paid, so nothing else
+ * reconciles it either - this is the other half of that gap. Used only by
+ * `app/api/cron/cleanup-abandoned`.
+ *
+ * Guarded tightly on both fields - `status == "pendingReview"` excludes drafts and
+ * anything already reviewed/completed; `billing.paymentStatus == "unpaid"` excludes
+ * `"pending"` (a legitimate unpaid *invoice*, which must survive), `"paid"`, and
+ * `"test"`. Requires a composite index on `submissions` (`status` ASC,
+ * `billing.paymentStatus` ASC, `updatedAt` ASC) - Firestore will throw with a direct
+ * console link to create it the first time this runs without one, same as
+ * {@link getStaleDraftSubmissions}.
+ *
+ * @param updatedBefore - Submissions whose `updatedAt` is older than this are
+ * considered stale and returned.
+ */
+export const getStaleUnpaidSubmissions = async (updatedBefore: Date): Promise<StaleUnpaidSubmission[]> => {
+    const snapshot = await getAdminDb()
+        .collection("submissions")
+        .where("status", "==", "pendingReview")
+        .where("billing.paymentStatus", "==", "unpaid")
+        .where("updatedAt", "<", Timestamp.fromDate(updatedBefore))
+        .get();
+
+    return snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        files: (docSnap.data().files ?? {}) as Files,
+    }));
+};
+
 /**
  * Deletes a document from firestore
  * 
