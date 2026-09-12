@@ -63,7 +63,7 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------- //
-    // submissions - one doc per dog. Contains owner PII and medical data.
+    // submissions - one doc per dog. Contains dog, owner and medical data.
     // ---------------------------------------------------------------- //
     match /submissions/{submissionId} {
 
@@ -179,8 +179,7 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------- //
-    // Deny everything else by default - replaces the Firebase-generated
-    // "open to anyone until 2027-05-12" placeholder rule.
+    // Deny everything else by default
     // ---------------------------------------------------------------- //
     match /{document=**} {
       allow read, write: if false;
