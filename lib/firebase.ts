@@ -166,6 +166,13 @@ const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string 
  * Safe to call repeatedly (every upload batch) - `setDoc` with `merge: true` just layers
  * the new file keys on top of whatever was written last time, keyed by the same
  * deterministic ID (see `getSubmissionDraftId` above).
+ *
+ * `status: "draft"` is likewise only written on the first write. The doc may already be
+ * `pendingReview` + `unpaid` - the customer went to Stripe, backed out, and is editing
+ * the same submission again - and must stay that way: `cleanup-drafts` skips any doc
+ * with a `billing` field, so reverting it to "draft" would leave it swept by neither
+ * cleanup job. Firestore rules only allow `files`/`updatedAt` to change on an existing
+ * doc here (see `firestore.rules`, update branch (c)).
  */
 export const saveDraftFiles = async (
     s3SubmissionId: string,
@@ -196,10 +203,9 @@ export const saveDraftFiles = async (
         {
             s3SubmissionId,
             dogIndex,
-            status: "draft",
             files: definedFiles,
             updatedAt: serverTimestamp(),
-            ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+            ...(existing.exists() ? {} : { status: "draft", createdAt: serverTimestamp() }),
         },
         { merge: true },
     );
