@@ -279,9 +279,10 @@ submissions/
 - firebase
 - mobile-ui
 - prelaucnh-landing
-- prod
 - submit-form
 - transactions
+- testing
+- prod
 
 ### Commit format & Notes
 commitType(topic): small description

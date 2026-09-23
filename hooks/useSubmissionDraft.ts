@@ -2,6 +2,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
 // components
 import type { DogDraft } from "@/components/submission/DogEntry";
 // lib
@@ -222,7 +223,15 @@ export const useSubmissionDraft = () => {
             if (!data.url) throw new Error("No checkout URL returned");
             window.location.href = data.url;
         } catch (err) {
-            setSubmitError(err instanceof Error ? err.message : "Submission failed");
+            // the Firebase SDK's own permission-denied text ("Missing or insufficient
+            // permissions.") means nothing to a submitter - swap it for something they
+            // can act on
+            const isPermissionDenied = err instanceof FirebaseError && err.code === "permission-denied";
+            setSubmitError(
+                isPermissionDenied
+                    ? "We couldn't save your submission. Please refresh the page and try again, or contact us if this keeps happening."
+                    : err instanceof Error ? err.message : "Submission failed",
+            );
             setIsSubmitting(false);
         }
     };

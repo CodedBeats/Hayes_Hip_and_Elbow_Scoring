@@ -23,8 +23,10 @@ rules_version = '2';
  * an anonymous client-write branch here for this exact field (rules can check
  * the SHAPE of a write, not the truth of a claim - nothing here could prove a
  * claimed "paid" corresponded to a real charge); it's been removed now that
- * the webhook exists, so no rule below can touch billing.paymentStatus at all
- * once a doc is off "draft".
+ * the webhook exists, so no rule below can ever set billing.paymentStatus to
+ * "paid"/"test". The only client writes to it are createSubmission's "unpaid"
+ * or "pending" - on a draft, or on an unpaid checkout being resubmitted (see
+ * isUnpaidCheckout) - never on a doc that's already paid, test or invoiced.
  */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -60,6 +62,20 @@ service cloud.firestore {
     // expected.
     function underSizeLimit() {
       return request.resource.size() < 8000;
+    }
+
+    // True for a doc that createSubmission already flipped to pendingReview
+    // for a Stripe checkout that never completed (cancelled, declined, or
+    // the customer hit back). The customer's browser still holds the same
+    // localStorage draft - same s3SubmissionId, so same doc ID - so from
+    // their side it's still an in-progress form they can edit and resubmit.
+    // Without this, every write after returning from Stripe is rejected,
+    // leaving Firestore frozen at the first attempt while S3 moves on.
+    // Guarded on "unpaid" specifically, so a paid/test/pending (invoiced)
+    // doc is never reopened to anonymous writes.
+    function isUnpaidCheckout() {
+      return resource.data.status == 'pendingReview' &&
+        resource.data.billing.paymentStatus == 'unpaid';
     }
 
     // ---------------------------------------------------------------- //
@@ -132,10 +148,11 @@ service cloud.firestore {
         (isAdmin() && onlyChanged(['status', 'archived', 'archivedAt', 'archivedBy', 'updatedAt'])) ||
 
         // (b) Anonymous checkout write (createSubmission merging onto an
-        // existing draft) - only a draft -> pendingReview transition, same
-        // required-fields + paymentStatus restriction as the create rule.
+        // existing draft, or resubmitting after an abandoned Stripe checkout)
+        // - only ever lands on pendingReview, same required-fields +
+        // paymentStatus restriction as the create rule.
         (
-          resource.data.status == 'draft' &&
+          (resource.data.status == 'draft' || isUnpaidCheckout()) &&
           request.resource.data.status == 'pendingReview' &&
           request.resource.data.keys().hasAll([
             'status', 's3SubmissionId', 'dogIndex', 'submitterType', 'payer',
@@ -146,12 +163,14 @@ service cloud.firestore {
           request.resource.data.billing.paymentStatus in ['unpaid', 'pending']
         ) ||
 
-        // (c) Anonymous draft file-batch merge (saveDraftFiles called again
-        // as a later upload batch lands, e.g. supporting docs after DICOM
-        // files) - doc stays "draft", only files/updatedAt actually change.
+        // (c) Anonymous file-batch merge (saveDraftFiles called again as a
+        // later upload/delete lands) - on a draft, or on an unpaid checkout
+        // the customer came back to edit. Only files/updatedAt can change, so
+        // status stays put: an unpaid checkout stays pendingReview and is
+        // still swept by cleanup-abandoned (which reads `files`) if it's
+        // abandoned again.
         (
-          resource.data.status == 'draft' &&
-          request.resource.data.status == 'draft' &&
+          (resource.data.status == 'draft' || isUnpaidCheckout()) &&
           onlyChanged(['files', 'updatedAt'])
         )
 

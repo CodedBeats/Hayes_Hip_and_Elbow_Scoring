@@ -74,9 +74,12 @@ export const useDogFileUpload = ({
      * ever changes, the slicing offsets below must change to match, or files will
      * silently land in the wrong `Files` field.
      *
-     * A failed {@link saveDraftFiles} call is swallowed (logged only) since the S3
-     * upload itself already succeeded by that point - the cleanup cron job existing is
-     * a nice-to-have, not something worth failing the user's upload over.
+     * A failed {@link saveDraftFiles} call doesn't undo the upload - the files are already
+     * in S3 and kept in local state, and the next successful sync writes the full merged
+     * list anyway. But it is surfaced via `uploadError` rather than only logged: silently
+     * swallowing this is how Firestore and S3 drifted apart unnoticed when a customer came
+     * back from an abandoned Stripe checkout (rules rejected every sync, the UI showed
+     * success).
      */
     const handleUploadAll = async () => {
         const orderedFiles: File[] = [
@@ -166,11 +169,13 @@ export const useDogFileUpload = ({
             // confirmed in S3 - this is what lets the cleanup cron job
             // (app/api/cron/cleanup-drafts) find and delete orphaned uploads if the
             // customer never marks this dog complete / never checks out. A failure here
-            // must never block the user's upload, which already succeeded - just log it.
+            // must never block the user's upload, which already succeeded - but it must
+            // be visible, not just logged.
             try {
                 await saveDraftFiles(submissionId, dogIndex, mergedFiles);
             } catch (draftErr) {
                 console.error("Failed to save draft submission record:", draftErr);
+                setUploadError("Your files uploaded, but we couldn't link them to your submission. Please contact us if this keeps happening.");
             }
 
             setUploadedNames((prev) => ({
@@ -190,50 +195,62 @@ export const useDogFileUpload = ({
     };
 
     /**
-     * Removes one uploaded file: deletes the S3 object, clears the reference from
-     * `uploadedFiles`, and updates the Firestore draft doc to match.
+     * Removes one uploaded file: drops the reference from the Firestore draft doc and
+     * `uploadedFiles`, then deletes the S3 object.
      *
      * @remarks
      * Confirmation already happened in `UploadedFileList` before this is called.
-     * Mirrors {@link handleUploadAll}'s error handling: a failed {@link saveDraftFiles}
-     * is logged only, since the S3 deletion itself already succeeded by that point.
+     *
+     * Firestore is updated *before* S3, and a failure there aborts the whole delete. The
+     * Firestore write is the step that can be rejected (security rules), the S3 delete
+     * is the one that can't be undone - so checking first means a rejected write leaves
+     * everything intact, instead of a doc pointing at a file that no longer exists. If
+     * the S3 delete then fails, the worst case is an unreferenced object under this
+     * submission's prefix - wasted storage, versus a case admin can't download.
      */
     const handleDeleteFile = async (category: keyof Files, file: UploadedFile) => {
+        if (!uploadedFiles) return;
         setUploadError(null);
+
+        const updated: Files = category === "dicomFiles" || category === "supportingDocuments"
+            ? { ...uploadedFiles, [category]: uploadedFiles[category].filter((f) => f.key !== file.key) }
+            : { ...uploadedFiles, [category]: undefined };
+
+        try {
+            await saveDraftFiles(submissionId, dogIndex, updated);
+        } catch (draftErr) {
+            console.error("Failed to update draft before file deletion:", draftErr);
+            setUploadError("Couldn't remove this file from your submission. Please try again.");
+            return;
+        }
+
+        // the reference is gone from Firestore now, so local state follows it regardless
+        // of how the S3 delete below goes - otherwise the next sync would write the stale
+        // reference straight back
+        setUploadedFiles(updated);
+
+        // allow re-selecting a file with the same name without hitting the
+        // "duplicate" warning, since the previous upload no longer exists
+        const nameField = UPLOADED_NAMES_FIELD[category];
+        setUploadedNames((prev) => ({
+            ...prev,
+            [nameField]: prev[nameField].filter((n) => n !== file.fileName),
+        }));
+
+        // nothing references this object anymore, so a failure here is only wasted
+        // storage - logged, not surfaced, since there's nothing the customer can do
         try {
             const res = await fetch("/api/delete-file", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ submissionId, key: file.key }),
             });
-
             if (!res.ok) {
                 const body = await res.json();
-                throw new Error(body.error ?? "Failed to delete file");
+                console.error("S3 delete failed after draft update:", body.error);
             }
-
-            setUploadedFiles((prev) => {
-                if (!prev) return prev;
-                const updated: Files = category === "dicomFiles" || category === "supportingDocuments"
-                    ? { ...prev, [category]: prev[category].filter((f) => f.key !== file.key) }
-                    : { ...prev, [category]: undefined };
-
-                saveDraftFiles(submissionId, dogIndex, updated).catch((draftErr) => {
-                    console.error("Failed to update draft after file deletion:", draftErr);
-                });
-
-                return updated;
-            });
-
-            // allow re-selecting a file with the same name without hitting the
-            // "duplicate" warning, since the previous upload no longer exists
-            const nameField = UPLOADED_NAMES_FIELD[category];
-            setUploadedNames((prev) => ({
-                ...prev,
-                [nameField]: prev[nameField].filter((n) => n !== file.fileName),
-            }));
         } catch (err) {
-            setUploadError(err instanceof Error ? err.message : "Failed to delete file");
+            console.error("S3 delete failed after draft update:", err);
         }
     };
 

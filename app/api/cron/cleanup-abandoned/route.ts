@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { getStaleUnpaidSubmissions, deleteSubmissionDoc } from "@/lib/firebaseAdmin";
 import { deleteObjects, collectFileKeys } from "@/lib/s3";
 
-// Matches cleanup-drafts's window - a customer who cancels and comes back a week later
-// has typically already re-uploaded and started a fresh submission anyway.
+// Matches cleanup-drafts's window. A customer who cancels at Stripe and comes back
+// keeps editing the SAME doc (their localStorage draft holds the same submission ID),
+// and every file upload/delete or resubmit bumps updatedAt - so this only ever
+// catches a checkout that's been genuinely left alone for a week.
 const STALE_AFTER_DAYS = 7;
 
 /**
