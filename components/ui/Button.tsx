@@ -7,6 +7,7 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     solid: "bg-brand-green-mid text-white hover:bg-[#6a7b61]",
     outline: "bg-transparent border-2 border-white text-white hover:bg-white/10",
     dark: "bg-brand-brown text-white hover:bg-[#2f221b]",
+    danger: "bg-red-600 text-white hover:bg-red-700",
 };
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
     sm: "px-3 py-1.5 text-xs",
@@ -18,7 +19,7 @@ interface ButtonProps {
     children: React.ReactNode;
     href?: string;
     target?: "_blank";
-    variant?: "solid" | "outline" | "dark";
+    variant?: "solid" | "outline" | "dark" | "danger";
     size?: "sm" | "md";
     type?: "button" | "submit";
     onClick?: () => void;

@@ -1,15 +1,18 @@
 "use client";
 // dependencies
+import { useState } from "react";
 import Link from "next/link";
 // components
 import { DogEntry } from "./DogEntry";
 import { ArrowDownTrayIcon } from "@/components/misc/Icons";
+import { Button } from "../ui/Button";
 // hooks
 import { useSubmissionDraft } from "@/hooks/useSubmissionDraft";
 import { useAuth } from "@/hooks/useAuth";
 
 export const SubmissionFlow = () => {
     const { user: adminUser } = useAuth();
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const {
         submissionId,
         dogCount,
@@ -31,6 +34,7 @@ export const SubmissionFlow = () => {
         handleDraftChange,
         handleCountChange,
         handleSubmit,
+        handleResetSubmission,
     } = useSubmissionDraft();
 
     return (
@@ -284,7 +288,7 @@ export const SubmissionFlow = () => {
                 {Array.from({ length: dogCount }, (_, i) => i + 1).map(
                     (dogIndex) => (
                         <DogEntry
-                            key={dogIndex}
+                            key={`${submissionId}-${dogIndex}`}
                             submissionId={submissionId}
                             dogIndex={dogIndex}
                             submitterType={submitterType}
@@ -370,23 +374,28 @@ export const SubmissionFlow = () => {
                     <p className="mb-3 text-sm text-red-600">{submitError}</p>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <svg
-                            className="w-4 h-4 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                            />
-                        </svg>
-                        Secure Encrypted Transaction
+                    <div className="flex flex-col gap-3">
+                        <Button variant="danger" onClick={() => setIsResetModalOpen(true)}>
+                            Start a new Submission
+                        </Button>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <svg
+                                className="w-4 h-4 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                                />
+                            </svg>
+                            Secure Encrypted Transaction
+                        </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 mb-auto">
                         {/* Staff-only: submits through the same real Stripe Checkout flow,
                             but with a single-use 100%-off coupon applied so the total comes
                             to $0 - lets an admin exercise the full live submission pipeline
@@ -436,6 +445,44 @@ export const SubmissionFlow = () => {
                     </div>
                 </div>
             </div>
+
+            {/* -- Start-over confirmation -- */}
+            {isResetModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+                    onClick={() => setIsResetModalOpen(false)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="reset-modal-title"
+                        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 id="reset-modal-title" className="mb-2 text-lg font-semibold text-red-600">
+                            Start a new submission?
+                        </h2>
+                        <p className="mb-6 text-sm text-gray-600">
+                            This clears everything you&apos;ve entered and uploaded so far. This
+                            cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <Button variant="dark" onClick={() => setIsResetModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="danger"
+                                onClick={() => {
+                                    handleResetSubmission();
+                                    setIsResetModalOpen(false);
+                                }}
+                            >
+                                Yes, start over
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
