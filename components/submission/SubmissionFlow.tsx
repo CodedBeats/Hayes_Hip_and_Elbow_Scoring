@@ -112,6 +112,11 @@ export const SubmissionFlow = () => {
                                 form for each dog.
                             </li>
                             <li>
+                                • Dogs Australia pedigree certificate, or other document 
+                                confirming the dog&apos;s details (DOB, sex, microchip number, 
+                                eg vacc or microchip certificate)
+                            </li>
+                            <li>
                                 • Processing typically takes 3-10 business days
                                 from receipt of payment.
                             </li>
