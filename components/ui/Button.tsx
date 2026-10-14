@@ -38,7 +38,7 @@ export const Button = ({
     className = "",
 }: ButtonProps) => {
     const classes = [
-        "inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex items-center justify-center gap-2 rounded-md font-semibold cursor-pointer transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40",
         sizeClasses[size],
         variantClasses[variant],
         className,
