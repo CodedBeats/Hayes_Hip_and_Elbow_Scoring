@@ -26,7 +26,8 @@ const TermsOfServicePage = () => {
                             To submit, you&apos;ll complete an online form and upload a signed copy of the official
                             CHED submission form together with your dog&apos;s DICOM radiographs - both are required
                             for every dog. Owners and clinics can both submit; clinics can submit multiple dogs in
-                            one go, with individual dog and owner details for each. If a dog isn&apos;t registered
+                            one go, with individual dog and owner details for each. For supporting documents you&apos;ll 
+                            need a Dogs Australia pedigree certificate, or if a dog isn&apos;t registered
                             with Dogs Australia, a supporting document confirming its details is also required. The
                             submission form is only available on desktop and tablet devices. Submissions are
                             reviewed and scored by a qualified scorer.

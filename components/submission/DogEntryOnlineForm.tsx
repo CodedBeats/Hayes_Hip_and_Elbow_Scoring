@@ -310,11 +310,8 @@ export const DogEntryOnlineForm = ({
                     label="Supporting Documents"
                     hint="Click to upload supporting documents (optional)"
                     icon={<DocumentIcon />}
-                    description={
-                        !isDogsAustraliaRegistered
-                            ? "For dogs not registered with Dogs Australia, please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number."
-                            : undefined
-                    }
+                    isRequired
+                    description={"Please upload the Dogs Australia pedigree certificate, or if your dog is not registered with Dogs Australia then, please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number."}
                     files={selectedDocs}
                     isMultiple
                     onMultiChange={onDocsChange}

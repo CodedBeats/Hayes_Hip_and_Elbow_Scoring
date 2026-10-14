@@ -61,7 +61,7 @@ export const useSubmissionDraft = () => {
     const router = useRouter();
     const [savedDraft] = useState<SubmissionDraft | null>(() => loadDraft());
 
-    const [submissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
+    const [submissionId, setSubmissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
     const [dogCount, setDogCount] = useState(() => savedDraft?.dogCount ?? 1);
 
     // whole-submission choices
@@ -236,6 +236,36 @@ export const useSubmissionDraft = () => {
         }
     };
 
+    /**
+     * Throws away the whole in-progress submission and starts a blank one.
+     *
+     * @remarks
+     * Rather than clearing localStorage by hand, this resets every piece of state the
+     * persistence effect watches - the effect then overwrites the stored draft with the
+     * blank one. A manual `removeItem` would be undone by that same effect on the next
+     * render anyway.
+     *
+     * A fresh `submissionId` is the important part: it gives the new submission its own S3
+     * prefix and Firestore doc IDs, so nothing new can land on the old draft. `SubmissionFlow`
+     * also keys each `DogEntry` on it, which remounts them - they hold their own local form
+     * state and would otherwise report their stale values back through `handleDraftChange`.
+     *
+     * Files already uploaded under the old `submissionId` are not deleted here - they and
+     * their Firestore draft docs are left for `app/api/cron/cleanup-drafts` (clients can't
+     * delete Firestore docs; see `firestore.rules`).
+     */
+    const handleResetSubmission = () => {
+        setSubmissionId(crypto.randomUUID());
+        setDogCount(1);
+        setSubmitterType("owner");
+        setClinicInfo(EMPTY_CLINIC_INFO);
+        setBillingType("payNow");
+        setCompletedDogs({});
+        setDogDrafts({});
+        setIsSubmitting(false);
+        setSubmitError(null);
+    };
+
     return {
         submissionId,
         dogCount,
@@ -257,5 +287,6 @@ export const useSubmissionDraft = () => {
         handleDraftChange,
         handleCountChange,
         handleSubmit,
+        handleResetSubmission,
     };
 };

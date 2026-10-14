@@ -113,7 +113,7 @@ const faqItems = [
     {
         id: "before-submitting",
         title: "What information do I need before submitting?",
-        content: "For each dog: dog details, owner details, a completed and signed official CHED submission form, and DICOM file(s) for the relevant exam type (hips, elbows, or both). The online form and the signed submission form are both required together, not one or the other. If the dog isn't registered with Dogs Australia, you'll also need a supporting document confirming its details (e.g. a registration certificate).",
+        content: "For each dog: dog details, owner details, a completed and signed official CHED submission form, and DICOM file(s) for the relevant exam type (hips, elbows, or both). The online form and the signed submission form are both required together, not one or the other. You'll also need a supporting document confirming the Dogs Australia pedigree certificateit, or if your dog is not registered with Dogs Australia then please upload a registration certificate or other document confirming the dog's details, including date of birth, sex, and microchip number.",
     },
     {
         id: "payment",

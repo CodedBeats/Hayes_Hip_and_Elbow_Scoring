@@ -12,7 +12,7 @@ import type { ValidationIssue } from "@/types/validation";
  * everything wrong at once.
  *
  * @remarks
- * A supporting document is only required when the dog is NOT Dogs Australia
+ * A supporting document is always required but the type depends on if a dof is registered with Dogs Australia
  * registered (registered dogs don't need one).
  */
 export const validateDogEntry = (
@@ -37,8 +37,8 @@ export const validateDogEntry = (
     // uploads
     if (!uploadedFiles?.pdfForm) issues.push({ section: "Uploads", label: "Completed & signed PDF submission form" });
     if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) issues.push({ section: "Uploads", label: "At least one DICOM file" });
-    if (!dogData.isDogsAustraliaRegistered && (uploadedFiles?.supportingDocuments.length ?? 0) === 0) {
-        issues.push({ section: "Uploads", label: "Registration certificate or supporting document (dog not Dogs Australia registered)" });
+    if (!uploadedFiles?.supportingDocuments || uploadedFiles?.supportingDocuments.length === 0) {
+        issues.push({ section: "Uploads", label: "Dogs Australia pedigree certificate or supporting documents for non DA registered dogs" });
     }
 
     return issues;
