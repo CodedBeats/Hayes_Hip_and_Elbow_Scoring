@@ -1,4 +1,6 @@
+// components
 import { ChecklistItem } from "@/components/ui/ChecklistItem";
+
 
 interface ChecklistCardProps {
     items: string[];

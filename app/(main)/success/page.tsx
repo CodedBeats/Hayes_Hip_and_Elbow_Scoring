@@ -2,14 +2,21 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { updateSubmissionPaymentStatus } from "@/lib/firebase";
 
 const SuccessContent = () => {
     const params = useSearchParams();
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const isInvoiceMode = params.get("mode") === "invoice";
+
+    // Invoice/batch-monthly submissions never go through Stripe - the Firestore docs
+    // were already written with paymentStatus "pending" at submission time, so there's
+    // nothing to verify or reconcile, and the success state can be set as the initial
+    // value rather than via an effect.
+    const [status, setStatus] = useState<"loading" | "success" | "error">(() => isInvoiceMode ? "success" : "loading");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
+        if (isInvoiceMode) return;
+
         const finalise = async () => {
             const sessionId = params.get("session_id");
             if (!sessionId) {
@@ -27,19 +34,19 @@ const SuccessContent = () => {
                 return;
             }
 
-            const pending = localStorage.getItem("stripe_pending");
-            if (pending) {
-                const { firestoreDocIds } = JSON.parse(pending) as { firestoreDocIds: string[] };
-                await Promise.all(firestoreDocIds.map((id) => updateSubmissionPaymentStatus(id, "paid")));
-                localStorage.removeItem("stripe_pending");
-                localStorage.removeItem("submission_draft");
-            }
+            // The payment-status write now happens server-side (in /api/verify-payment and,
+            // as the guaranteed backstop, the Stripe webhook). This page is purely a reader.
+            // Payment is confirmed at this point, so the draft is genuinely finished - clear
+            // it. stripe_pending is no longer written; the removeItem is left as cleanup for
+            // any browser that still carries one from a previous release.
+            localStorage.removeItem("submission_draft");
+            localStorage.removeItem("stripe_pending");
 
             setStatus("success");
         };
 
         finalise();
-    }, [params]);
+    }, [params, isInvoiceMode]);
 
     if (status === "loading") {
         return (
@@ -54,6 +61,15 @@ const SuccessContent = () => {
             <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-8 text-center">
                 <p className="text-2xl font-bold text-red-700">Payment Not Confirmed</p>
                 <p className="mt-2 text-sm text-gray-600">{errorMessage}</p>
+            </div>
+        );
+    }
+
+    if (isInvoiceMode) {
+        return (
+            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-8 text-center">
+                <p className="text-2xl font-bold text-green-700">Submission Received</p>
+                <p className="mt-2 text-sm text-gray-600">You&apos;ll be invoiced separately - no payment is needed right now.</p>
             </div>
         );
     }

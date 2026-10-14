@@ -1,0 +1,292 @@
+// dependencies
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
+// components
+import type { DogDraft } from "@/components/submission/DogEntry";
+// lib
+import { auth, createSubmission } from "@/lib/firebase";
+import { calculatePrice } from "@/lib/pricing";
+// types
+import type { DogCase } from "@/types/dog";
+import type { Files } from "@/types/submission";
+import type { OwnerDetails } from "@/types/owner";
+import type { ClinicInfo } from "@/types/clinic";
+import type { BillingInfo } from "@/types/billing";
+
+const DRAFT_KEY = "submission_draft";
+
+export type CompletedDogEntry = {
+    dog: DogCase;
+    files: Files;
+    owner: OwnerDetails;
+    payer: "owner" | "clinic";
+};
+
+type SubmissionDraft = {
+    submissionId: string;
+    dogCount: number;
+    savedAt: number;
+    submitterType: "owner" | "clinic";
+    clinicInfo: ClinicInfo;
+    billingType: "payNow" | "invoice" | "batchMonthly";
+    completedDogs: Record<number, CompletedDogEntry>;
+    dogDrafts: Record<number, DogDraft>;
+};
+
+const EMPTY_CLINIC_INFO: ClinicInfo = { clinicName: "", contactName: "", email: "", phone: "" };
+
+const loadDraft = (): SubmissionDraft | null => {
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as SubmissionDraft;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Owns the whole-submission draft: dog count, submitter/billing choices, per-dog
+ * completion state, per-dog form drafts, localStorage persistence, and final checkout
+ * submission.
+ *
+ * @remarks
+ * Extracted out of `SubmissionFlow.tsx`, which stays a pure JSX/orchestration layer.
+ * Mirrors {@link useDogFileUpload | useDogFileUpload}'s split for `DogEntry.tsx` -
+ * state/handlers live in the hook, rendering stays in the component.
+ */
+export const useSubmissionDraft = () => {
+    const router = useRouter();
+    const [savedDraft] = useState<SubmissionDraft | null>(() => loadDraft());
+
+    const [submissionId, setSubmissionId] = useState(() => savedDraft?.submissionId ?? crypto.randomUUID());
+    const [dogCount, setDogCount] = useState(() => savedDraft?.dogCount ?? 1);
+
+    // whole-submission choices
+    const [submitterType, setSubmitterType] = useState<"owner" | "clinic">(savedDraft?.submitterType ?? "owner");
+    const [clinicInfo, setClinicInfo] = useState<ClinicInfo>(savedDraft?.clinicInfo ?? EMPTY_CLINIC_INFO);
+    const [billingType, setBillingType] = useState<"payNow" | "invoice" | "batchMonthly">(savedDraft?.billingType ?? "payNow");
+
+    const [completedDogs, setCompletedDogs] = useState<Record<number, CompletedDogEntry>>(
+        () => savedDraft?.completedDogs ?? {},
+    );
+    const [dogDrafts, setDogDrafts] = useState<Record<number, DogDraft>>(
+        () => savedDraft?.dogDrafts ?? {},
+    );
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // true once any dog draft in a clinic submission is billed to its owner - sourced
+    // from dogDrafts (synced on every payer change, complete or not) rather than
+    // completedDogs, so this reacts as soon as the payer radio is touched instead of
+    // waiting for "Mark Dog Complete". A clinic can't pay for an owner-billed dog
+    // through its own Stripe checkout, so once this is true there's no "when would you
+    // like to pay" choice left to offer
+    const hasOwnerBilledDog = submitterType === "clinic" &&
+        Object.values(dogDrafts).some((draft) => draft.payer === "owner");
+
+    // owner submissions are always payNow, regardless of whatever the billingType radio
+    // was last set to before submitterType flipped back - derived rather than synced via
+    // an effect, since the radio itself is only ever shown for clinic submissions anyway.
+    // A clinic submission with an owner-billed dog is always invoiced, for the same reason.
+    const effectiveBillingType = submitterType !== "clinic"
+        ? "payNow"
+        : hasOwnerBilledDog
+          ? "invoice"
+          : billingType;
+
+    // persist to localStorage whenever relevant state changes
+    useEffect(() => {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            submissionId, dogCount, savedAt: Date.now(), submitterType, clinicInfo, billingType, completedDogs, dogDrafts,
+        } satisfies SubmissionDraft));
+    }, [submissionId, dogCount, submitterType, clinicInfo, billingType, completedDogs, dogDrafts]);
+
+    const handleDogComplete = (
+        dogIndex: number,
+        dog: DogCase,
+        files: Files,
+        owner: OwnerDetails,
+        payer: "owner" | "clinic",
+    ) => {
+        setCompletedDogs((prev) => ({ ...prev, [dogIndex]: { dog, files, owner, payer } }));
+    };
+
+    const handleDraftChange = useCallback((dogIndex: number, draft: DogDraft) => {
+        setDogDrafts((prev) => ({ ...prev, [dogIndex]: draft }));
+    }, []);
+
+    const handleCountChange = (newCount: number) => {
+        if (newCount < 1) return;
+        setDogCount(newCount);
+        if (newCount < dogCount) {
+            setCompletedDogs((prev) => {
+                const updated = { ...prev };
+                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
+                return updated;
+            });
+            setDogDrafts((prev) => {
+                const updated = { ...prev };
+                for (let i = newCount + 1; i <= dogCount; i++) delete updated[i];
+                return updated;
+            });
+        }
+    };
+
+    const completedCount = Object.keys(completedDogs).length;
+    const allComplete = completedCount === dogCount;
+
+    const totalAud = Object.values(completedDogs).reduce(
+        (sum, { dog }) => sum + calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+        0,
+    );
+
+    /**
+     * Creates one Firestore submission doc per completed dog, then either redirects to
+     * Stripe Checkout (`payNow`) or straight to the success page (`invoice`/
+     * `batchMonthly`, which never touch Stripe at all).
+     *
+     * @remarks
+     * On the invoice/batchMonthly path the draft is cleared here - that path is finished.
+     * On the Stripe path it is left in place: payment can still fail or be cancelled, and
+     * the customer would then return to a form that should still be populated. `/success`
+     * clears the draft once payment is confirmed.
+     *
+     * @param adminTest - When true, still charges the real computed price but applies a
+     * single-use 100%-off Stripe coupon so the checkout totals $0, and marks the resulting
+     * submissions `paymentStatus: "test"` instead of `"paid"` once confirmed. Requires the
+     * caller to be signed in (`auth.currentUser`) - the actual authorization check happens
+     * server-side in `/api/create-checkout-session` via the ID token sent below, since a
+     * client-side gate alone can't stop a direct API call.
+     */
+    const handleSubmit = async (adminTest = false) => {
+        setIsSubmitting(true);
+        setSubmitError(null);
+        try {
+            // adminTest always goes through Stripe (see docstring), so the created docs
+            // should reflect that regardless of whatever billing type was selected in the
+            // draft - otherwise a doc could end up billingType: "invoice" despite having
+            // actually been paid via Stripe.
+            const billingType = adminTest ? "payNow" : effectiveBillingType;
+
+            const docIds = await Promise.all(
+                Object.entries(completedDogs).map(([idx, { dog, files, owner, payer }]) => {
+                    const billing: BillingInfo = {
+                        billingType,
+                        paymentStatus: billingType === "payNow" ? "unpaid" : "pending",
+                        amount: calculatePrice(dog.examType, dog.isDogsAustraliaRegistered).total,
+                    };
+                    return createSubmission({
+                        s3SubmissionId: submissionId,
+                        dogIndex: Number(idx),
+                        submitterType,
+                        clinicInfo: submitterType === "clinic" ? clinicInfo : undefined,
+                        payer,
+                        owner,
+                        dog,
+                        files,
+                        billing,
+                    });
+                }),
+            );
+
+            if (effectiveBillingType !== "payNow" && !adminTest) {
+                localStorage.removeItem(DRAFT_KEY);
+                router.push("/success?mode=invoice");
+                return;
+            }
+
+            // The draft is deliberately NOT cleared here. Stripe may decline the card, or
+            // the customer may cancel or hit back - and then they land back on the form,
+            // which should still be populated. `/success` clears the draft once payment is
+            // actually confirmed. The submission IDs travel to Stripe as session metadata
+            // (via the request below), so the confirmation flow no longer needs localStorage.
+
+            const items = Object.values(completedDogs).map(({ dog }) => ({
+                dogName: dog.registeredName,
+                examType: dog.examType,
+                isDogsAustraliaRegistered: dog.isDogsAustraliaRegistered,
+            }));
+
+            const adminIdToken = adminTest ? await auth.currentUser?.getIdToken() : undefined;
+            if (adminTest && !adminIdToken) throw new Error("Not signed in as an admin");
+
+            const res = await fetch("/api/create-checkout-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items, submissionIds: docIds, adminTest, adminIdToken }),
+            });
+            const data = await res.json();
+            if (!data.url) throw new Error("No checkout URL returned");
+            window.location.href = data.url;
+        } catch (err) {
+            // the Firebase SDK's own permission-denied text ("Missing or insufficient
+            // permissions.") means nothing to a submitter - swap it for something they
+            // can act on
+            const isPermissionDenied = err instanceof FirebaseError && err.code === "permission-denied";
+            setSubmitError(
+                isPermissionDenied
+                    ? "We couldn't save your submission. Please refresh the page and try again, or contact us if this keeps happening."
+                    : err instanceof Error ? err.message : "Submission failed",
+            );
+            setIsSubmitting(false);
+        }
+    };
+
+    /**
+     * Throws away the whole in-progress submission and starts a blank one.
+     *
+     * @remarks
+     * Rather than clearing localStorage by hand, this resets every piece of state the
+     * persistence effect watches - the effect then overwrites the stored draft with the
+     * blank one. A manual `removeItem` would be undone by that same effect on the next
+     * render anyway.
+     *
+     * A fresh `submissionId` is the important part: it gives the new submission its own S3
+     * prefix and Firestore doc IDs, so nothing new can land on the old draft. `SubmissionFlow`
+     * also keys each `DogEntry` on it, which remounts them - they hold their own local form
+     * state and would otherwise report their stale values back through `handleDraftChange`.
+     *
+     * Files already uploaded under the old `submissionId` are not deleted here - they and
+     * their Firestore draft docs are left for `app/api/cron/cleanup-drafts` (clients can't
+     * delete Firestore docs; see `firestore.rules`).
+     */
+    const handleResetSubmission = () => {
+        setSubmissionId(crypto.randomUUID());
+        setDogCount(1);
+        setSubmitterType("owner");
+        setClinicInfo(EMPTY_CLINIC_INFO);
+        setBillingType("payNow");
+        setCompletedDogs({});
+        setDogDrafts({});
+        setIsSubmitting(false);
+        setSubmitError(null);
+    };
+
+    return {
+        submissionId,
+        dogCount,
+        dogDrafts,
+        submitterType,
+        setSubmitterType,
+        clinicInfo,
+        setClinicInfo,
+        billingType,
+        setBillingType,
+        effectiveBillingType,
+        isSubmitting,
+        submitError,
+        completedCount,
+        allComplete,
+        totalAud,
+        hasOwnerBilledDog,
+        handleDogComplete,
+        handleDraftChange,
+        handleCountChange,
+        handleSubmit,
+        handleResetSubmission,
+    };
+};

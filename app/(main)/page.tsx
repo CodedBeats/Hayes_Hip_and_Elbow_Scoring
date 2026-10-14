@@ -1,6 +1,5 @@
 // dependencies
 "use client";
-import { useRouter } from "next/navigation";
 //components
 import { ImageCTASection } from "@/components/ui/ImageCTASection";
 import { ImageTextSection } from "@/components/ui/ImageTextSection";
@@ -18,6 +17,7 @@ import {
     MagnifyingGlassIcon,
     ShieldCheckIcon,
     CheckCircleIcon,
+    ArrowUpRightIcon,
 } from "@/components/misc/Icons";
 
 const steps = [
@@ -34,7 +34,7 @@ const steps = [
     {
         icon: <ClipboardIcon className="w-6 h-6 text-brand-green-mid" />,
         title: "Submit Online",
-        description: "Upload your DICOM files together with patient and owner information through the submission form.",
+        description: "Upload your DICOM files together with Dog, Owner, Signed PDF and Supporting document information through the submission form.",
     },
     {
         icon: <MagnifyingGlassIcon className="w-6 h-6 text-brand-green-mid" />,
@@ -71,30 +71,53 @@ const beforeYouSubmit = [
     "Payment method ready",
     "Dog details available",
     "Owner details available",
-    "Veterinary clinic information available",
+    "Signed official CHED submission form available",
+    "Any required supporting documents available",
 ];
 
 const chipClassName = "inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-brand-brown";
 
 const Home = () => {
-    const router = useRouter();
-
-    const handleExitPreview = async () => {
-        await fetch("/api/dev-login", { method: "DELETE" });
-        router.push("/pre-launch");
-    };
-
     return (
         <main className="flex flex-col bg-cream font-sans">
             <ImageCTASection
-                image={{ src: "/images/Golden Retriever.png", alt: "Golden Retriever" }}
-                title="Professional assessment of canine hip and elbow radiographs by Dr Ana Hayes"
+                image={{ src: "/images/labrador-grass.jpg", alt: "Golden Retriever" }}
+                title="Professional assessment of canine hip and elbow radiographs by"
+                titleName="Dr Ana Hayes"
                 subtitle="Submit DICOM radiographs for hip and elbow scoring in accordance with Dogs Australia requirements."
-                minHeightClassName="min-h-[560px] sm:min-h-[640px]"
+                minHeightClassName="min-h-[560px] sm:min-h-[740px]"
             >
                 <Button href="/submit" variant="solid">Start Submission</Button>
                 <Button href="/about" variant="outline">Learn More</Button>
             </ImageCTASection>
+
+            <section className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-10 text-center sm:px-10">
+                <h2 className="text-xl font-bold text-brand-brown">Looking for official CHED information?</h2>
+                <p className="max-w-2xl text-sm text-gray-600 leading-relaxed">
+                    ORCHID is the official Dogs Australia portal for the Canine Hip and Elbow Dysplasia (CHED)
+                    scheme, including scheme details and submission forms.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                        href="https://orchid.ankc.org.au/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the ORCHID Website
+                    </a>
+                    <a
+                        href="https://orchid.ankc.org.au/Home/HomeChed"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the CHED Home Page
+                    </a>
+                </div>
+            </section>
 
             <ImageTextSection image={{ src: "/images/Ana portrait.jpg", alt: "Dr Ana Hayes" }} imagePosition="left">
                 <div>
@@ -111,7 +134,7 @@ const Home = () => {
                     services in small animal practice for more than three decades.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    In 2019, Dr Hayes joined the CHED Panel for Dogs Australia after being invited by Dr Roger
+                    In 2019, Dr Hayes joined the CHED Panel for Dogs Australia after being invited by <br /> Dr Roger
                     Lavelle, one of the developers of the canine hip and elbow scoring system used throughout
                     Australia.
                 </p>
@@ -183,28 +206,6 @@ const Home = () => {
             <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-16 sm:px-10">
                 <SectionHeading title="Before You Submit" />
                 <ChecklistCard items={beforeYouSubmit} columns={2} />
-            </section>
-
-            <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-16 sm:px-10">
-                <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                    <div className="flex flex-col gap-6">
-                        <div>
-                            <h1 className="text-2xl font-semibold text-gray-900">
-                                Preview Mode
-                            </h1>
-                            <p className="mt-2 text-sm text-gray-600">
-                                You are currently viewing the application in preview mode.
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={handleExitPreview}
-                            className="rounded-lg bg-brand-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#3d4e36]"
-                        >
-                            Exit Preview
-                        </button>
-                    </div>
-                </div>
             </section>
 
             <ImageCTASection

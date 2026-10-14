@@ -1,27 +1,31 @@
+// dependencies
 import Link from "next/link";
+
+
+// constants for tailwind classes
+const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
+    solid: "bg-brand-green-mid text-white hover:bg-[#6a7b61]",
+    outline: "bg-transparent border-2 border-white text-white hover:bg-white/10",
+    dark: "bg-brand-brown text-white hover:bg-[#2f221b]",
+    danger: "bg-red-600 text-white hover:bg-red-700",
+};
+const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-5 py-2.5 text-sm",
+};
+
 
 interface ButtonProps {
     children: React.ReactNode;
     href?: string;
     target?: "_blank";
-    variant?: "solid" | "outline" | "dark";
+    variant?: "solid" | "outline" | "dark" | "danger";
     size?: "sm" | "md";
     type?: "button" | "submit";
     onClick?: () => void;
     disabled?: boolean;
     className?: string;
 }
-
-const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
-    solid: "bg-brand-green-mid text-white hover:bg-[#6a7b61]",
-    outline: "bg-transparent border-2 border-white text-white hover:bg-white/10",
-    dark: "bg-brand-brown text-white hover:bg-[#2f221b]",
-};
-
-const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-};
 
 export const Button = ({
     children,
@@ -35,7 +39,7 @@ export const Button = ({
     className = "",
 }: ButtonProps) => {
     const classes = [
-        "inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex items-center justify-center gap-2 rounded-md font-semibold cursor-pointer transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40",
         sizeClasses[size],
         variantClasses[variant],
         className,

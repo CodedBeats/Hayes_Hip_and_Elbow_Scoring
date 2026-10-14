@@ -3,13 +3,20 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "@/lib/s3";
 import type { FileCategory, UploadUrlRequest, UploadUrlResponse } from "@/types/upload";
 
-const VALID_CATEGORIES = new Set<FileCategory>(["dicom", "supporting-documents", "signatures", "pdf-forms"]);
+const VALID_CATEGORIES = new Set<FileCategory>(["dicom", "supporting-documents", "pdf-forms"]);
 
+/**
+ * Allowed file extensions and MIME types per upload category.
+ *
+ * @remarks
+ * A file is accepted if it matches EITHER an allowed extension OR an allowed MIME
+ * type (see {@link isValidForCategory}) - browsers are inconsistent about setting
+ * `File.type` for some formats (notably `.dcm`), so extension alone has to be enough.
+ */
 const CATEGORY_RULES: Record<FileCategory, { extensions: string[]; mimeTypes: string[] }> = {
-    "dicom":                { extensions: [".dcm"],                  mimeTypes: ["application/dicom"] },
-    "supporting-documents": { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
-    "signatures":           { extensions: [".png", ".jpg", ".jpeg"], mimeTypes: ["image/png", "image/jpeg"] },
-    "pdf-forms":            { extensions: [".pdf"],                  mimeTypes: ["application/pdf"] },
+    "dicom":                { extensions: [".dcm"],                              mimeTypes: ["application/dicom"] },
+    "supporting-documents": { extensions: [".pdf",".jpg",".jpeg", ".png"],       mimeTypes: ["application/pdf"] },
+    "pdf-forms":            { extensions: [".pdf",".jpg",".jpeg", ".png"],       mimeTypes: ["application/pdf"] },
 };
 
 function isValidForCategory(fileName: string, contentType: string, category: FileCategory): boolean {
@@ -21,6 +28,18 @@ function isValidForCategory(fileName: string, contentType: string, category: Fil
     );
 }
 
+/**
+ * Validates a batch of file upload requests and generates presigned S3 PUT URLs.
+ *
+ * @remarks
+ * All files are validated up front (into an accumulated `errors` array) before any S3
+ * call is made, so a bad file in a batch never leaves some files half-uploaded. Each
+ * accepted file gets a key shaped like
+ * `submissions/{submissionId}/dog{dogIndex}/{category}/{uuid}-{fileName}` - this exact
+ * format is later re-parsed by `keyToUploadedFileStub` in `lib/firebaseAdmin.ts` to
+ * recover a human-readable filename, so changing the key shape here would break that
+ * parsing.
+ */
 export async function POST(req: Request) {
     try {
         const body: UploadUrlRequest = await req.json();

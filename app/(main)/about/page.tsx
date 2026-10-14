@@ -16,6 +16,7 @@ import {
     DogIcon,
     ScaleIcon,
     EnvelopeIcon,
+    ArrowUpRightIcon,
 } from "@/components/misc/Icons";
 // types
 import type { ExamType } from "@/types/form";
@@ -92,7 +93,7 @@ const faqItems = [
     {
         id: "turnaround",
         title: "How long does assessment take?",
-        content: "Most submissions are reviewed as quickly as possible following receipt of complete radiographs and payment.",
+        content: "Processing typically takes 3-10 business days from receipt of complete radiographs and payment. This is a typical range, not a guarantee.",
     },
     {
         id: "dicom",
@@ -112,12 +113,17 @@ const faqItems = [
     {
         id: "before-submitting",
         title: "What information do I need before submitting?",
-        content: "You'll need dog details, owner details, veterinary clinic information, and DICOM files for the relevant exam type (hips, elbows, or both).",
+        content: "For each dog: dog details, owner details, a completed and signed official CHED submission form, and DICOM file(s) for the relevant exam type (hips, elbows, or both). The online form and the signed submission form are both required together, not one or the other. You'll also need a supporting document confirming the Dogs Australia pedigree certificateit, or if your dog is not registered with Dogs Australia then please upload a registration certificate or other document confirming the dog's details, including date of birth, sex, and microchip number.",
     },
     {
         id: "payment",
         title: "How do I pay for a submission?",
-        content: "Payment is processed securely at the time of submission. Current pricing for each exam type is listed above in Scoring Fees.",
+        content: "For individual owners, payment is processed securely through Stripe at the time of submission. Clinics can also choose to be invoiced or billed monthly instead of paying upfront. Current pricing for each exam type, including the Dogs Australia levy and payment processing fee, is listed above in Scoring Fees.",
+    },
+    {
+        id: "unfinished-submission",
+        title: "What happens if I don't finish my submission?",
+        content: "Your form progress is saved automatically in your browser, but any files you've already uploaded (DICOM images, the submission form, supporting documents) are deleted after 7 days of inactivity if the submission hasn't been completed and paid for (including if you started checkout but didn't finish paying). You'd need to re-upload them to pick up where you left off after that.",
     },
     {
         id: "refunds",
@@ -204,7 +210,7 @@ const AboutPage = () => {
                     radiology services in small animal practice in Melbourne&apos;s eastern suburbs.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                    Following extensive training in the Dogs Australia hip and elbow scoring system by Dr Roger
+                    Following extensive training in the Dogs Australia hip and elbow scoring system by <br /> Dr Roger
                     Lavelle, Ana was invited to join the CHED panel in 2019 and has since provided official
                     scoring services for Dogs Australia.
                 </p>
@@ -232,6 +238,33 @@ const AboutPage = () => {
                 </div>
             </ImageTextSection>
 
+            <section id="ched-resources" className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-16 text-center sm:px-10">
+                <SectionHeading
+                    title="Official CHED Resources"
+                    subtitle="ORCHID is the official Dogs Australia portal for the Canine Hip and Elbow Dysplasia (CHED) scheme - it's where you'll find all official scheme information and submission forms."
+                />
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                        href="https://orchid.ankc.org.au/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the ORCHID Website
+                    </a>
+                    <a
+                        href="https://orchid.ankc.org.au/Home/HomeChed"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-warm-sand px-4 py-3 text-sm font-medium text-brand-green hover:underline"
+                    >
+                        <ArrowUpRightIcon />
+                        Visit the CHED Home Page
+                    </a>
+                </div>
+            </section>
+
             <section id="positioning" className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16 sm:px-10">
                 <SectionHeading
                     title="Radiographic Positioning Guide"
@@ -243,19 +276,21 @@ const AboutPage = () => {
             {/* pricing */}
             <section id="pricing" className="bg-warm-sand py-16">
                 <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 sm:px-10">
-                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, plus the applicable Dogs Australia levy." />
+                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, inclusive of the applicable Dogs Australia levy and a payment processing fee." />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         {examTypes.map((examType) => {
-                            const { base } = calculatePrice(examType, true);
-                            const memberTotal = calculatePrice(examType, true).total;
-                            const nonMemberTotal = calculatePrice(examType, false).total;
+                            const member = calculatePrice(examType, true);
+                            const nonMember = calculatePrice(examType, false);
                             return (
                                 <PricingCard
                                     key={examType}
                                     label={EXAM_LABELS[examType]}
-                                    base={base}
-                                    memberTotal={memberTotal}
-                                    nonMemberTotal={nonMemberTotal}
+                                    memberLevy={member.levy}
+                                    memberFee={member.fee}
+                                    memberTotal={member.total}
+                                    nonMemberLevy={nonMember.levy}
+                                    nonMemberFee={nonMember.fee}
+                                    nonMemberTotal={nonMember.total}
                                 />
                             );
                         })}

@@ -1,5 +1,5 @@
 export type BillingInfo = {
-    billingType: "payNow" | "invoice";
+    billingType: "payNow" | "invoice" | "batchMonthly";
 
     amount: number;
 
@@ -12,9 +12,22 @@ export type BillingInfo = {
     invoiceSentAt?: Date;
 };
 
+/**
+ * A submission's real payment state.
+ *
+ * @remarks
+ * Distinct from `SubmissionStatus`'s `"unpaid"` value - this is the actual field stored
+ * at `Submission.billing.paymentStatus`, and it's what `getAdminCaseDisplayStatus`
+ * (`lib/status.ts`) reads to decide whether to override the workflow status for admin
+ * display.
+ */
 export type PaymentStatus =
     | "unpaid"
     | "pending"
     | "paid"
     | "invoiced"
-    | "overdue";
+    | "overdue"
+    // an admin-test submission, brought to $0 via a single-use 100%-off Stripe coupon
+    // rather than a real charge - kept distinct from "paid" so it never gets counted as
+    // real revenue
+    | "test";

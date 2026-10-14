@@ -3,27 +3,24 @@ import { initializeApp } from "firebase/app";
 import {
     getAuth,
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
     signOut,
+    sendPasswordResetEmail,
 } from "firebase/auth";
 import {
     getFirestore,
-    collection,
-    addDoc,
     doc,
     setDoc,
     updateDoc,
-    deleteDoc,
-    getDocs,
     getDoc,
+    serverTimestamp,
+    deleteField,
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // types
 import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
-import type { VeterinarianDetails } from "../types/vet";
+import type { ClinicInfo } from "../types/clinic";
 import type { DogCase } from "../types/dog";
-import type { BillingInfo, PaymentStatus } from "../types/billing";
+import type { BillingInfo } from "../types/billing";
 
 // config
 const firebaseConfig = {
@@ -39,7 +36,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 // ============ //
 // === AUTH === //
@@ -54,39 +50,19 @@ export const signOutUser = () => {
     signOut(auth);
 };
 
-// probably don't need
-// export const createUser = async (email: string, password: string) => {
-//     const user = await createUserWithEmailAndPassword(auth, email, password);
-//     return user;
-// };
-
-// ================= //
-// === FIRESTORE === //
-// ================= //
-
-// === READ === //
-// get single dog entry data
-
-
-// get single submission entry data
-
-
-// get all dog entry data
-
-
-// get all submission entry data
-
-
-
-// === UPLOAD === //
-// update submission status ("draft", "submitted", "pendingReview", "reviewing", "completed", "archived")
-
-
-// === DELETE === //
-// simple delete dog entry, shouldn't be needed due to archiving
-
-// simple delete submission, shouldn't be needed due to archiving
-
+/**
+ * Sends a Firebase Auth password reset email.
+ *
+ * @remarks
+ * Always resolves successfully, or throws only for real failures
+ * (`auth/invalid-email`, `auth/too-many-requests`, `auth/network-request-failed`).
+ * Callers must show the same generic "if an account exists..." message on both the
+ * resolved path and an `auth/user-not-found` rejection - see {@link getResetErrorMessage}
+ * in `lib/auth.ts` - so account existence is never leaked.
+ */
+export const resetPassword = async (email: string): Promise<void> => {
+    await sendPasswordResetEmail(auth, email);
+};
 
 
 // ===================== //
@@ -96,98 +72,217 @@ export const signOutUser = () => {
 type CreateSubmissionPayload = {
     s3SubmissionId: string;
     dogIndex: number;
-    submissionType: string;
+    submitterType: "owner" | "clinic";
+    clinicInfo?: ClinicInfo;
+    payer: "owner" | "clinic";
     owner: OwnerDetails;
-    veterinarian: VeterinarianDetails;
     dog: DogCase;
     files: Files;
     billing: BillingInfo;
 };
 
-// creates one firestore submission document per dog (though many many have same s3SubmissionId)
-export const createSubmission = async (payload: CreateSubmissionPayload): Promise<string> => {
+/**
+ * A hand-editable fake submission used only by the admin dashboard's
+ * "Create Test Submission" button ({@link CreateTestSubmissionButton}) to
+ * seed `testSubmissions` for manual testing.
+ *
+ * @remarks
+ * `s3SubmissionId` is deliberately omitted here and generated fresh per
+ * click (a `crypto.randomUUID()`) instead of being hardcoded - {@link createSubmission}
+ * upserts by doc ID, so a fixed ID would mean every click overwrites the
+ * same doc instead of creating a new one. Everything else can be edited
+ * freely to shape whatever test scenario is needed.
+ */
+export const SAMPLE_TEST_SUBMISSION: Omit<CreateSubmissionPayload, "s3SubmissionId"> = {
+    dogIndex: 0,
+    submitterType: "owner",
+    payer: "owner",
+    owner: {
+        name: "Test Owner",
+        email: "test-owner@example.com",
+        phone: "0000000000",
+        address: "123 Test Street, Testville",
+        memberNumber: "TEST-0000",
+    },
+    dog: {
+        id: "test-dog",
+        examType: "hipsAndElbows",
+        isDogsAustraliaRegistered: false,
+        registeredName: "Test Dog",
+        microchipNumber: "000000000000000",
+        breed: "Test Breed",
+        sex: "male",
+        dateOfBirth: "2020-01-01",
+    },
+    files: {
+        dicomFiles: [],
+        supportingDocuments: [],
+    },
+    billing: {
+        billingType: "payNow",
+        amount: 0,
+        paymentStatus: "test",
+    },
+};
+
+/**
+ * Builds the deterministic Firestore doc ID for one dog within a submission.
+ *
+ * @remarks
+ * One Firestore doc per dog, but the ID is deterministic (not Firestore's random
+ * `addDoc` ID) so that a "draft" write made while files are still uploading (see
+ * {@link saveDraftFiles}) and the final "pendingReview" write made at checkout
+ * (see {@link createSubmission}) land on the SAME document instead of creating a
+ * duplicate.
+ */
+const getSubmissionDraftId = (s3SubmissionId: string, dogIndex: number): string =>
+    `${s3SubmissionId}_dog${dogIndex}`;
+
+/**
+ * Writes (or upserts) a "draft" submission doc as soon as a dog's files start landing
+ * in S3, well before the dog is marked complete or checkout starts.
+ *
+ * @remarks
+ * Called as soon as a dog's first file successfully lands in S3 (from `DogEntry`'s
+ * `handleUploadAll`). Without this, a customer who uploads files and abandons the form
+ * leaves S3 objects with zero Firestore record - nothing to know they exist or to clean
+ * them up later. Writing a "draft" doc here means every S3 upload always has a
+ * corresponding Firestore doc from the moment it happens, and the scheduled cleanup job
+ * (`app/api/cron/cleanup-drafts/route.ts`) only ever has to query Firestore, never
+ * reconcile against a live S3 listing.
+ *
+ * `createdAt` is only stamped on the very first write for this dog - if every upload
+ * batch reset it, the cleanup job's "how old is this draft" check would only ever see
+ * the age of the most recent upload, never how long the submission has truly existed.
+ * `updatedAt` (always stamped) is what cleanup actually keys off, since it needs to know
+ * when the customer last did anything at all, not when the doc first existed.
+ *
+ * Firestore's `setDoc` rejects explicit `undefined` field values (unlike a merge that
+ * simply omits a key) - `pdfForm` is undefined whenever a dog hasn't uploaded it yet
+ * (or had it removed via the mid-submission delete flow), so `deleteField()` is written
+ * instead - a plain omission would leave a stale reference in Firestore after a file is
+ * deleted, since a merge write only overwrites the keys it includes.
+ *
+ * Safe to call repeatedly (every upload batch) - `setDoc` with `merge: true` just layers
+ * the new file keys on top of whatever was written last time, keyed by the same
+ * deterministic ID (see `getSubmissionDraftId` above).
+ *
+ * `status: "draft"` is likewise only written on the first write. The doc may already be
+ * `pendingReview` + `unpaid` - the customer went to Stripe, backed out, and is editing
+ * the same submission again - and must stay that way: `cleanup-drafts` skips any doc
+ * with a `billing` field, so reverting it to "draft" would leave it swept by neither
+ * cleanup job. Firestore rules only allow `files`/`updatedAt` to change on an existing
+ * doc here (see `firestore.rules`, update branch (c)).
+ */
+export const saveDraftFiles = async (
+    s3SubmissionId: string,
+    dogIndex: number,
+    files: Files,
+): Promise<void> => {
+    const draftRef = doc(db, "submissions", getSubmissionDraftId(s3SubmissionId, dogIndex));
+
+    // Only stamp createdAt on the very first write for this dog - if every upload batch
+    // reset it, the cron job's "how old is this draft" check would only ever see the age
+    // of the most recent upload, never how long the submission has truly existed.
+    // updatedAt (always stamped below) is what cleanup actually keys off, since it needs
+    // to know when the customer last did anything at all, not when the doc first existed.
+    const existing = await getDoc(draftRef);
+
+    // Firestore's setDoc rejects explicit `undefined` field values (unlike a merge that
+    // simply omits a key) - pdfForm is undefined whenever a dog hasn't uploaded it yet or
+    // had it removed, so deleteField() is written instead of omitting the key entirely -
+    // omitting would leave a stale reference from a prior write untouched by this merge.
+    const definedFiles: Record<string, unknown> = {
+        dicomFiles: files.dicomFiles,
+        supportingDocuments: files.supportingDocuments,
+        pdfForm: files.pdfForm ?? deleteField(),
+    };
+
+    await setDoc(
+        draftRef,
+        {
+            s3SubmissionId,
+            dogIndex,
+            files: definedFiles,
+            updatedAt: serverTimestamp(),
+            ...(existing.exists() ? {} : { status: "draft", createdAt: serverTimestamp() }),
+        },
+        { merge: true },
+    );
+};
+
+/**
+ * Creates (or upserts, if a draft already exists from {@link saveDraftFiles}) one
+ * Firestore submission document per dog (though many may share the same
+ * `s3SubmissionId`).
+ *
+ * @remarks
+ * `submitterType`/`clinicInfo`/`billing.billingType` are whole-submission choices but
+ * get duplicated onto every dog's doc, same as `owner`/`payer` - there's no separate
+ * parent submission doc, each dog is a fully independent Firestore document.
+ *
+ * `collectionName` defaults to `"submissions"` (the real flow); the admin dashboard's
+ * "Create Test Submission" button passes `"testSubmissions"` instead to seed
+ * {@link SAMPLE_TEST_SUBMISSION} data for manual testing without touching real cases.
+ */
+export const createSubmission = async (
+    payload: CreateSubmissionPayload,
+    collectionName: "submissions" | "testSubmissions" = "submissions",
+): Promise<string> => {
 
     // get payload
-    const { 
-        s3SubmissionId, 
-        dogIndex, 
-        submissionType,
-        owner, 
-        veterinarian, 
-        dog, 
-        files, 
-        billing, // billing.paymentStatus always starts as "unpaid"
+    const {
+        s3SubmissionId,
+        dogIndex,
+        submitterType,
+        clinicInfo,
+        payer,
+        owner,
+        dog,
+        files,
+        billing, // billing.paymentStatus is "unpaid" for payNow, "pending" for invoice/batchMonthly
     } = payload;
 
-    // handle difference between online and pdf submission types
-    if (submissionType === "pdf") {
-        // create submission with just files
-        const docRef = await addDoc(collection(db, "submissions"), {
-            s3SubmissionId,
-            dogIndex,
-            status: "pendingReview",
-            submitterType: "anon",
-            submissionType,
-            createdAt: new Date(),
-            billing,
-            pdfFormRef: files.pdfForm?.key ?? null,
-            // owner and vet fields just become refs to signatures
-            owner: files.ownerSignature?.key ?? null,
-            veterinarian: files.veterinarianSignature?.key ?? null,
-            dog: {
-                dicomFilesRef: files.dicomFiles.map((f) => f.key),
-                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
-            },
-        });
+    const docRef = doc(db, collectionName, getSubmissionDraftId(s3SubmissionId, dogIndex));
 
-        return docRef.id;
+    await setDoc(docRef, {
+        s3SubmissionId,
+        dogIndex,
+        status: "pendingReview",
+        submitterType,
+        clinicInfo: clinicInfo ?? deleteField(),
+        payer,
+        createdAt: new Date(),
+        updatedAt: serverTimestamp(),
+        archived: false,
+        archivedAt: deleteField(),
+        archivedBy: "",
+        billing,
+        owner,
+        dog: {
+            ...dog,
+            registeredNumber: dog.registeredNumber ?? null,
+            dicomFilesRef: files.dicomFiles.map((f) => f.key),
+            supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
+        },
+        pdfFormRef: files.pdfForm?.key ?? null,
+    }, { merge: true });
 
-    } else {
-        // create submission with all form fields and files
-        const docRef = await addDoc(collection(db, "submissions"), {
-            s3SubmissionId,
-            dogIndex,
-            status: "pendingReview",
-            submitterType: "anon",
-            submissionType,
-            createdAt: new Date(),
-            billing,
-            owner: {
-                ...owner,
-                ownerSignatureRef: files.ownerSignature?.key ?? null,
-            },
-            veterinarian: {
-                ...veterinarian,
-                vetSignatureRef: files.veterinarianSignature?.key ?? null,
-            },
-            dog: {
-                ...dog,
-                registeredNumber: dog.registeredNumber ?? null,
-                dicomFilesRef: files.dicomFiles.map((f) => f.key),
-                supportingDocumentsRef: files.supportingDocuments.map((f) => f.key),
-            },
-        });
-
-        return docRef.id;
-    }
+    return docRef.id;
 };
 
 
-export const updateSubmissionPaymentStatus = async (
-    firestoreDocId: string,
-    status: PaymentStatus,
-): Promise<void> => {
-    const submissionRef = doc(db, "submissions", firestoreDocId);
-    await updateDoc(submissionRef, {
-        "billing.paymentStatus": status,
-        updatedAt: new Date(),
-    });
-};
-
-// Used by the admin dashboard's ChangeStatusButton. Called directly from that client
-// component (same pattern as updateSubmissionPaymentStatus above, e.g. from
-// app/(main)/success/page.tsx) rather than through an API route, since Firestore rules
-// currently allow this write without auth.
+/**
+ * Sets a submission's workflow `status` directly.
+ *
+ * @remarks
+ * Used by the admin dashboard's `ChangeStatusButton`. Called directly from that client
+ * component (a dotted-path `updateDoc` write) rather than through an API route, since
+ * Firestore rules currently allow this write without auth.
+ *
+ * Note `billing.paymentStatus` is deliberately NOT writable from the client - it is
+ * owned server-side by `lib/payments.ts` (the Stripe webhook and `/api/verify-payment`).
+ */
 export const updateSubmissionStatus = async (
     firestoreDocId: string,
     status: SubmissionStatus,
@@ -199,15 +294,58 @@ export const updateSubmissionStatus = async (
     });
 };
 
-// Mirrors getAuthErrorMessage's style above. Kept in this client-safe file (not
-// lib/firebaseAdmin.ts) since it has no actual dependency on firebase-admin - it's pure
-// error-shape inspection, and the admin dashboard's error.tsx boundary that uses it must
-// be a Client Component (Next.js requirement), which can never import firebase-admin
-// without breaking the browser bundle.
-//
-// Note the Admin SDK surfaces Firestore errors as numeric gRPC status codes (e.g.
-// 7 = PERMISSION_DENIED), NOT the string codes ("permission-denied") the client SDK
-// uses - both are matched below since either could theoretically show up.
+/**
+ * Archives a submission & updates the aproriate fields.
+ *
+ * @remarks
+ * Used by the admin dashboard's `ArchiveSubmissionBtn`. Called directly from that client
+ * component (same dotted-path `updateDoc` shape as {@link updateSubmissionStatus} above)
+ * rather than through an API route, since Firestore rules currently allow this write
+ * without auth.
+ */
+export const archiveSubmission = async (firestoreDocId: string): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        updatedAt: new Date(),
+        archived: true,
+        archivedAt: new Date(),
+        archivedBy: "admin",
+    });
+};
+
+/**
+ * un-archives/restores a submission & updates the aproriate fields.
+ *
+ * @remarks
+ * Used by the admin dashboard's `RestoreSubmissionBtn`. Called directly from that client
+ * component (same dotted-path `updateDoc` shape as {@link updateSubmissionStatus} above)
+ * rather than through an API route, since Firestore rules currently allow this write
+ * without auth.
+ */
+export const restoreSubmission = async (firestoreDocId: string): Promise<void> => {
+    const submissionRef = doc(db, "submissions", firestoreDocId);
+    await updateDoc(submissionRef, {
+        updatedAt: new Date(),
+        archived: false,
+        archivedAt: deleteField(),
+        archivedBy: "",
+    });
+};
+
+/**
+ * Maps a Firestore error into a user-facing message.
+ *
+ * @remarks
+ * Kept in this client-safe file (not `lib/firebaseAdmin.ts`) since it has no actual
+ * dependency on firebase-admin - it's pure error-shape inspection, and the admin
+ * dashboard's `error.tsx` boundary that uses it must be a Client Component (Next.js
+ * requirement), which can never import firebase-admin without breaking the browser
+ * bundle.
+ *
+ * The Admin SDK surfaces Firestore errors as numeric gRPC status codes (e.g.
+ * `7` = `PERMISSION_DENIED`), NOT the string codes (`"permission-denied"`) the client
+ * SDK uses - both are matched below since either could theoretically show up.
+ */
 export const getFirestoreErrorMessage = (error: unknown): string => {
     if (error && typeof error === "object" && "code" in error) {
         switch (String((error as { code: unknown }).code)) {

@@ -3,12 +3,13 @@ import Link from 'next/link';
 // components
 import { EnvelopeIcon, PhoneIcon, ReceiptIcon } from '../misc/Icons';
 
+
+// constants for links
 const quickLinks = [
     { label: 'Submit Case', href: '/submit' },
     { label: 'Scoring Fees', href: '/about#pricing' }, // link to pricing in about page
     { label: 'Contact Us', href: '/about#contact' },// link to contact in about page
 ];
-
 const legalLinks = [
     { label: 'Privacy Policy', href: '/misc/privacy-policy' },
     { label: 'Terms of Service', href: '/misc/terms-of-service' },
@@ -16,17 +17,22 @@ const legalLinks = [
     { label: 'FAQ', href: '/about#faq' }, //link to section of about page
 ];
 
+
 export const Footer = () => {
     return (
         <footer className="bg-[#3E2B23] text-white font-[var(--font-plus-jakarta-sans)] mt-auto">
             {/* Main content row */}
-            <div className="px-6 sm:px-10 py-10 sm:py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div className="px-6 sm:px-10 py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_2fr] gap-10 md:gap-15">
 
                 {/* Column 1 - About blurb */}
                 <div className="flex flex-col gap-3">
-                    <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
-                        Hayes Hip & Elbow
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/logo/svg/logo-brown.svg" alt="" className="h-7 w-7 flex-shrink-0" />
+                        <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
+                            Hayes Hip & Elbow
+                        </h3>
+                    </div>
                     <p className="text-sm text-white/60 leading-relaxed">
                         A dedicated scoring platform for veterinary hip and elbow assessments,
                         supporting breeders and clinicians with reliable, standardised results.
@@ -74,7 +80,7 @@ export const Footer = () => {
                 {/* Column 4 - Contact */}
                 <div className="flex flex-col gap-3">
                     <h3 className="text-base font-bold tracking-wide uppercase text-white/90">
-                        Contact Us
+                        Contact
                     </h3>
                     <div className="flex flex-col gap-4">
                         <a
@@ -98,7 +104,6 @@ export const Footer = () => {
                         </a>
 
                         <a
-                            href="#"
                             className="flex items-center gap-3 text-sm text-white/60 hover:text-white transition-colors duration-200 group"
                         >
                             <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors duration-200 flex items-center justify-center">

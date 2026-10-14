@@ -4,26 +4,28 @@ import { useEffect, useState } from "react";
 // components
 import { DogCompleteSummary } from "./DogCompletedSummary";
 import { DogEntryOnlineForm } from "./DogEntryOnlineForm";
-import { DogEntryPdfForm } from "./DogEntryPdfForm";
+import { ValidationSummary } from "../form/ValidationSummary";
+// hooks
+import { useDogFileUpload, EMPTY_UPLOADED_NAMES } from "@/hooks/useDogFileUpload";
+import type { UploadedNames } from "@/hooks/useDogFileUpload";
 // types
 import type { DogEntryFormData, ExamType } from "@/types/form";
 import type { DogCase } from "@/types/dog";
 import type { OwnerDetails } from "@/types/owner";
-import type { VeterinarianDetails } from "@/types/vet";
 import type { Files } from "@/types/submission";
-import type { UploadedFile, UploadUrlResponse } from "@/types/upload";
+import type { ValidationIssue } from "@/types/validation";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
+import { validateDogEntry } from "@/lib/validation";
 
 // all serialisable per-dog state - persisted to localStorage by SubmissionFlow
 export type DogDraft = {
     dogId: string;
     dogData: DogEntryFormData;
     ownerData: OwnerDetails;
-    vetData: VeterinarianDetails;
-    submissionType: "online" | "pdf";
+    payer: "owner" | "clinic";
     uploadedFiles: Files | null;
-    uploadedNames: { dicom: string[]; docs: string[]; pdfForm: string[]; ownerSig: string[]; vetSig: string[] };
+    uploadedNames: UploadedNames;
     isComplete: boolean;
 };
 
@@ -36,63 +38,61 @@ const EMPTY_DOG: DogEntryFormData = {
     breed: "",
     sex: "male",
     dateOfBirth: "",
-    dateOfRadiograph: "",
 };
 
 const EMPTY_OWNER: OwnerDetails = {
     name: "", email: "", phone: "", address: "", memberNumber: "",
 };
 
-const EMPTY_VET: VeterinarianDetails = {
-    veterinarianName: "", practiceName: "", address: "", phone: "",
-    positiveIdentificationSighted: false, certificateOfRegistrationSighted: false,
-};
-
-const EMPTY_UPLOADED_NAMES = {
-    dicom: [] as string[], docs: [] as string[], pdfForm: [] as string[],
-    ownerSig: [] as string[], vetSig: [] as string[],
-};
-
 type Props = {
     submissionId: string;
     dogIndex: number;
+    submitterType: "owner" | "clinic";
     initialDraft?: DogDraft;
     onComplete: (
-        submissionType: string,
         dog: DogCase,
         files: Files,
         owner: OwnerDetails,
-        veterinarian: VeterinarianDetails,
+        payer: "owner" | "clinic",
     ) => void;
     onDraftChange?: (draft: DogDraft) => void;
 };
 
-export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onDraftChange }: Props) => {
+export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, onComplete, onDraftChange }: Props) => {
     const [dogId] = useState(() => initialDraft?.dogId ?? crypto.randomUUID());
     const [dogData, setDogData] = useState<DogEntryFormData>(initialDraft?.dogData ?? EMPTY_DOG);
     const [ownerData, setOwnerData] = useState<OwnerDetails>(initialDraft?.ownerData ?? EMPTY_OWNER);
-    const [vetData, setVetData] = useState<VeterinarianDetails>(initialDraft?.vetData ?? EMPTY_VET);
 
-    // file objects
-    const [selectedDicom, setSelectedDicom] = useState<File[]>([]);
-    const [selectedDocs, setSelectedDocs] = useState<File[]>([]);
-    const [ownerSigFile, setOwnerSigFile] = useState<File | null>(null);
-    const [vetSigFile, setVetSigFile] = useState<File | null>(null);
-    const [pdfFormFile, setPdfFormFile] = useState<File | null>(null);
-
-    // upload state
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadError, setUploadError] = useState<string | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<Files | null>(initialDraft?.uploadedFiles ?? null);
-    const [uploadKey, setUploadKey] = useState(0);
-    const [uploadedNames, setUploadedNames] = useState(initialDraft?.uploadedNames ?? EMPTY_UPLOADED_NAMES);
-
-    // mode toggles
-    const [submissionType, setSubmissionType] = useState<"online" | "pdf">(initialDraft?.submissionType ?? "online");
+    // who is being billed for this dog - only relevant/editable when a clinic is submitting
+    const [payer, setPayer] = useState<"owner" | "clinic">(initialDraft?.payer ?? "owner");
 
     // completion state
     const [isComplete, setIsComplete] = useState(initialDraft?.isComplete ?? false);
-    const [validationError, setValidationError] = useState<string | null>(null);
+    const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
+
+    // file selection, upload, and deletion for this dog - see hooks/useDogFileUpload.ts
+    const {
+        selectedDicom, setSelectedDicom,
+        selectedDocs, setSelectedDocs,
+        pdfFormFile, setPdfFormFile,
+        isUploading,
+        uploadError,
+        uploadedFiles,
+        uploadKey,
+        uploadedNames,
+        handleUploadAll,
+        handleDeleteFile,
+    } = useDogFileUpload({
+        submissionId,
+        dogIndex,
+        initialUploadedFiles: initialDraft?.uploadedFiles ?? null,
+        initialUploadedNames: initialDraft?.uploadedNames ?? EMPTY_UPLOADED_NAMES,
+    });
+
+    // owner-submitted dogs always bill the owner, regardless of whatever the payer radio
+    // was last set to before submitterType flipped back - derived rather than synced via
+    // an effect, since the radio itself is only ever shown for clinic submissions anyway
+    const effectivePayer = submitterType === "clinic" ? payer : "owner";
 
     // report serialisable state changes to parent for localStorage persistence
     useEffect(() => {
@@ -100,15 +100,14 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
             dogId,
             dogData,
             ownerData,
-            vetData,
-            submissionType,
+            payer: effectivePayer,
             uploadedFiles,
             uploadedNames,
             isComplete,
         });
     // onDraftChange intentionally omitted - parent callback identity is not meaningful here
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dogId, dogData, ownerData, vetData, submissionType, uploadedFiles, uploadedNames, isComplete]);
+    }, [dogId, dogData, ownerData, effectivePayer, uploadedFiles, uploadedNames, isComplete]);
 
     const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
@@ -116,176 +115,18 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
     const setOwner = (field: keyof OwnerDetails, value: string) =>
         setOwnerData((prev) => ({ ...prev, [field]: value }));
 
-    const setVet = (field: keyof VeterinarianDetails, value: string | boolean) =>
-        setVetData((prev) => ({ ...prev, [field]: value }));
+    /**
+     * Validates the dog entry's required fields/uploads (see `lib/validation.ts`)
+     * and, if everything's present, marks the dog complete.
+     */
+    const handleMarkComplete = () => {
+        const issues = validateDogEntry(dogData, ownerData, uploadedFiles);
 
-    const handleUploadAll = async () => {
-        const signatureFiles = [ownerSigFile, vetSigFile].filter(Boolean) as File[];
-
-        // build ordered file arrays per mode so results can be sliced back cleanly
-        const orderedFiles: File[] = submissionType === "pdf"
-            ? [
-                ...(pdfFormFile ? [pdfFormFile] : []),
-                ...selectedDicom,
-                ...selectedDocs,
-                ...signatureFiles,
-            ]
-            : [...selectedDicom, ...selectedDocs, ...signatureFiles];
-
-        if (orderedFiles.length === 0) {
-            setUploadError("Select at least one file before uploading.");
+        if (issues.length > 0) {
+            setValidationIssues(issues);
             return;
         }
-
-        setIsUploading(true);
-        setUploadError(null);
-
-        // there is no AI, I am the AI, and I aM aLIvE!!!!
-        // i think when propted, therefore I am only when observed, like the light slit experiment
-        // pls work pls work pls work pls work pls work pls work pls work pls work pls work
-        try {
-            const fileRequests = submissionType === "pdf"
-                ? [
-                    ...(pdfFormFile ? [{ fileName: pdfFormFile.name, contentType: pdfFormFile.type || "application/pdf", dogIndex, category: "pdf-forms" as const }] : []),
-                    ...selectedDicom.map((f) => ({ fileName: f.name, contentType: f.type || "application/dicom", dogIndex, category: "dicom" as const })),
-                    ...selectedDocs.map((f) => ({ fileName: f.name, contentType: f.type || "application/pdf", dogIndex, category: "supporting-documents" as const })),
-                    ...signatureFiles.map((f) => ({ fileName: f.name, contentType: f.type || "image/png", dogIndex, category: "signatures" as const })),
-                ]
-                : [
-                    ...selectedDicom.map((f) => ({ fileName: f.name, contentType: f.type || "application/dicom", dogIndex, category: "dicom" as const })),
-                    ...selectedDocs.map((f) => ({ fileName: f.name, contentType: f.type || "application/pdf", dogIndex, category: "supporting-documents" as const })),
-                    ...signatureFiles.map((f) => ({ fileName: f.name, contentType: f.type || "image/png", dogIndex, category: "signatures" as const })),
-                ];
-
-            const urlRes = await fetch("/api/upload-url", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ submissionId, files: fileRequests }),
-            });
-
-            if (!urlRes.ok) {
-                const body = await urlRes.json();
-                throw new Error(body.errors?.join(", ") ?? body.error ?? "Failed to get upload URLs");
-            }
-
-            const { urls }: UploadUrlResponse = await urlRes.json();
-
-            const results = await Promise.all(
-                orderedFiles.map((file, i) =>
-                    new Promise<UploadedFile>((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open("PUT", urls[i].uploadUrl);
-                        xhr.setRequestHeader("Content-Type", file.type);
-                        xhr.onload = () => {
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                resolve({
-                                    fileName: file.name,
-                                    key: urls[i].key,
-                                    size: file.size,
-                                    contentType: file.type,
-                                    uploadedAt: new Date(),
-                                });
-                            } else {
-                                reject(new Error(`Upload failed for ${file.name}`));
-                            }
-                        };
-                        xhr.onerror = () => reject(new Error(`Upload failed for ${file.name}`));
-                        xhr.send(file);
-                    }),
-                ),
-            );
-
-            // slice results back into the Files shape using known counts
-            let cursor = 0;
-            const pdfOffset = submissionType === "pdf" && pdfFormFile ? 1 : 0;
-            const pdfFormResult = pdfOffset ? results[0] : undefined;
-            cursor += pdfOffset;
-
-            const dicomCount = selectedDicom.length;
-            const docsCount = selectedDocs.length;
-
-            const dogFiles: Files = {
-                pdfForm: pdfFormResult,
-                dicomFiles: results.slice(cursor, cursor + dicomCount),
-                supportingDocuments: results.slice(cursor + dicomCount, cursor + dicomCount + docsCount),
-                ownerSignature: ownerSigFile ? results[cursor + dicomCount + docsCount] : undefined,
-                veterinarianSignature: vetSigFile
-                    ? results[cursor + dicomCount + docsCount + (ownerSigFile ? 1 : 0)]
-                    : undefined,
-            };
-            setUploadedFiles(prev => ({
-                pdfForm: dogFiles.pdfForm ?? prev?.pdfForm,
-                dicomFiles: [...(prev?.dicomFiles ?? []), ...dogFiles.dicomFiles],
-                supportingDocuments: [...(prev?.supportingDocuments ?? []), ...dogFiles.supportingDocuments],
-                ownerSignature: dogFiles.ownerSignature ?? prev?.ownerSignature,
-                veterinarianSignature: dogFiles.veterinarianSignature ?? prev?.veterinarianSignature,
-            }));
-            setUploadedNames((prev) => ({
-                dicom:    [...prev.dicom,    ...selectedDicom.map((f) => f.name)],
-                docs:     [...prev.docs,     ...selectedDocs.map((f) => f.name)],
-                pdfForm:  [...prev.pdfForm,  ...(pdfFormFile ? [pdfFormFile.name] : [])],
-                ownerSig: [...prev.ownerSig, ...(ownerSigFile ? [ownerSigFile.name] : [])],
-                vetSig:   [...prev.vetSig,   ...(vetSigFile ? [vetSigFile.name] : [])],
-            }));
-            setSelectedDicom([]);
-            setSelectedDocs([]);
-            setOwnerSigFile(null);
-            setVetSigFile(null);
-            setPdfFormFile(null);
-            setUploadKey((k) => k + 1);
-        } catch (err) {
-            setUploadError(err instanceof Error ? err.message : "Upload failed");
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const handleMarkComplete = () => {
-        setValidationError(null);
-
-        // validate dog entry form before marked as complete
-        if (submissionType === "pdf") {
-            if (!uploadedFiles || !uploadedFiles.pdfForm) {
-                setValidationError("Please upload the PDF submission form before completing.");
-                return;
-            }
-            if (uploadedFiles.dicomFiles.length === 0) {
-                setValidationError("Please upload at least one DICOM file before completing.");
-                return;
-            }
-            // supporting document only required when Not DA Registered
-            if (!dogData.isDogsAustraliaRegistered && uploadedFiles.supportingDocuments.length === 0) {
-                setValidationError("Please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number.");
-                return;
-            }
-        } else {
-            // dog
-            if (!dogData.registeredName || !dogData.microchipNumber || !dogData.breed ||
-                !dogData.dateOfBirth || !dogData.sex) {
-                setValidationError("Please fill in all required dog fields.");
-                return;
-            }
-            // owner
-            if (!ownerData.name || !ownerData.email || !ownerData.phone) {
-                setValidationError("Please fill in all required owner fields.");
-                return;
-            }
-            // vet
-            if (!vetData.veterinarianName || !vetData.practiceName || !vetData.phone || !dogData.dateOfRadiograph) {
-                setValidationError("Please fill in all required veterinarian fields.");
-                return;
-            }
-            // dicom
-            if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) {
-                setValidationError("Please upload at least one DICOM file.");
-                return;
-            }
-            // owner and vet signatures
-            if (!uploadedFiles.ownerSignature || !uploadedFiles.veterinarianSignature) {
-                setValidationError("Please upload both owner and veterinarian signatures before completing.");
-                return;
-            }
-        }
+        setValidationIssues([]);
 
         const dogCase: DogCase = {
             id: dogId,
@@ -297,25 +138,20 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
             breed: dogData.breed,
             sex: dogData.sex,
             dateOfBirth: dogData.dateOfBirth,
-            dateOfRadiograph: dogData.dateOfRadiograph,
         };
 
         setIsComplete(true);
-        onComplete(submissionType, dogCase, uploadedFiles!, ownerData, vetData);
+        onComplete(dogCase, uploadedFiles!, ownerData, effectivePayer);
     };
 
     // completed summary view
     if (isComplete && uploadedFiles) {
-        const signatureCount = [uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length;
         return (
             <DogCompleteSummary
                 dogIndex={dogIndex}
-                submissionType={submissionType}
                 dogData={dogData}
                 ownerData={ownerData}
-                vetData={vetData}
                 uploadedFiles={uploadedFiles}
-                signatureCount={signatureCount}
                 onEdit={() => {
                     setIsComplete(false);
                 }}
@@ -323,16 +159,13 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
         );
     }
 
-    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length +
-        (ownerSigFile ? 1 : 0) + (vetSigFile ? 1 : 0);
+    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
 
-    const duplicateWarnings: string[] = [
-        ...selectedDicom.filter((file) => uploadedNames.dicom.includes(file.name)).map((file) => `"${file.name}" in DICOM Files`),
-        ...selectedDocs.filter((file) => uploadedNames.docs.includes(file.name)).map((file) => `"${file.name}" in Supporting Documents`),
-        ...(pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [`"${pdfFormFile.name}" in PDF Submission Form`] : []),
-        ...(ownerSigFile && uploadedNames.ownerSig.includes(ownerSigFile.name) ? [`"${ownerSigFile.name}" in Owner Signature`] : []),
-        ...(vetSigFile && uploadedNames.vetSig.includes(vetSigFile.name) ? [`"${vetSigFile.name}" in Veterinarian Signature`] : []),
-    ];
+    // per-category duplicate filenames, surfaced inline at the relevant upload box
+    // rather than flattened into one combined message
+    const duplicateDicomNames = selectedDicom.filter((f) => uploadedNames.dicom.includes(f.name)).map((f) => f.name);
+    const duplicateDocsNames = selectedDocs.filter((f) => uploadedNames.docs.includes(f.name)).map((f) => f.name);
+    const duplicatePdfFormNames = pdfFormFile && uploadedNames.pdfForm.includes(pdfFormFile.name) ? [pdfFormFile.name] : [];
 
     return (
         <div className="space-y-4">
@@ -357,105 +190,101 @@ export const DogEntry = ({ submissionId, dogIndex, initialDraft, onComplete, onD
                 </div>
             </div>
 
-            {/* -- Mode + price card -- */}
+            {/* -- Payer + price card -- */}
             <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={submissionType === "pdf"}
-                        onChange={(e) => {
-                            setSubmissionType(e.target.checked ? "pdf" : "online");
-                            setUploadedFiles(null);
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 accent-[#506147]"
-                    />
-                    Submit via PDF form
-                </label>
+                {submitterType === "clinic" ? (
+                    <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium text-gray-700">Bill this dog to:</span>
+                        <div className="flex gap-5">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name={`payer-${dogId}`}
+                                    checked={payer === "clinic"}
+                                    onChange={() => setPayer("clinic")}
+                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                />
+                                <span className="text-sm text-gray-700">Clinic</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name={`payer-${dogId}`}
+                                    checked={payer === "owner"}
+                                    onChange={() => setPayer("owner")}
+                                    className="h-4 w-4 border-gray-300 accent-[#506147]"
+                                />
+                                <span className="text-sm text-gray-700">Owner</span>
+                            </label>
+                        </div>
+                    </div>
+                ) : (
+                    <div />
+                )}
                 {(() => {
                     const { base, levy, total } = calculatePrice(dogData.examType, dogData.isDogsAustraliaRegistered);
                     return (
-                        <p className="text-sm text-gray-600">
-                            <span className="font-medium text-gray-900">${base}</span>
-                            <span className="mx-1.5 text-gray-400">+</span>
-                            <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
-                            <span className="mx-1.5 text-gray-400">=</span>
-                            <span className="font-semibold text-gray-900">${total}</span>
-                        </p>
+                        <div>
+                            <p className="text-sm text-gray-600">
+                                <span className="font-medium text-gray-900">${base}</span>
+                                <span className="mx-1.5 text-gray-400">+</span>
+                                <span className="font-medium text-gray-900">${levy} ANKC Levy</span>
+                                <span className="mx-1.5 text-gray-400">=</span>
+                                <span className="font-semibold text-gray-900">${total}</span>
+                                <span className="mx-1.5 font-medium text-gray-600">(total includes a payment processing fee)</span>
+                            </p>
+                        </div>
                     );
                 })()}
             </div>
 
-            {/* -- mode specific form sections -- */}
-            {submissionType === "online" ? (
-                <DogEntryOnlineForm
-                    isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
-                    dogData={dogData}
-                    ownerData={ownerData}
-                    vetData={vetData}
-                    setDog={setDog}
-                    setOwner={setOwner}
-                    setVet={setVet}
-                    selectedDicom={selectedDicom}
-                    selectedDocs={selectedDocs}
-                    ownerSigFile={ownerSigFile}
-                    vetSigFile={vetSigFile}
-                    onDicomChange={setSelectedDicom}
-                    onDocsChange={setSelectedDocs}
-                    onOwnerSigChange={setOwnerSigFile}
-                    onVetSigChange={setVetSigFile}
-                    resetKey={uploadKey}
-                    uploadedFiles={uploadedFiles}
-                />
-            ) : (
-                <DogEntryPdfForm
-                    isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
-                    setDog={setDog}
-                    pdfFormFile={pdfFormFile}
-                    selectedDicom={selectedDicom}
-                    selectedDocs={selectedDocs}
-                    ownerSigFile={ownerSigFile}
-                    vetSigFile={vetSigFile}
-                    onPdfFormChange={setPdfFormFile}
-                    onDicomChange={setSelectedDicom}
-                    onDocsChange={setSelectedDocs}
-                    onOwnerSigChange={setOwnerSigFile}
-                    onVetSigChange={setVetSigFile}
-                    resetKey={uploadKey}
-                    uploadedFiles={uploadedFiles}
-                />
-            )}
+            {/* -- form sections -- */}
+            <DogEntryOnlineForm
+                isDogsAustraliaRegistered={dogData.isDogsAustraliaRegistered}
+                dogData={dogData}
+                ownerData={ownerData}
+                setDog={setDog}
+                setOwner={setOwner}
+                pdfFormFile={pdfFormFile}
+                selectedDicom={selectedDicom}
+                selectedDocs={selectedDocs}
+                onPdfFormChange={setPdfFormFile}
+                onDicomChange={setSelectedDicom}
+                onDocsChange={setSelectedDocs}
+                resetKey={uploadKey}
+                uploadedFiles={uploadedFiles}
+                duplicatePdfFormNames={duplicatePdfFormNames}
+                duplicateDicomNames={duplicateDicomNames}
+                duplicateDocsNames={duplicateDocsNames}
+                onDeleteFile={handleDeleteFile}
+            />
 
             {/* -- Upload + Mark Complete action card -- */}
-            <div className="flex justify-between items-end rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="h-full flex flex-col align-bottom">
-                    {duplicateWarnings.length > 0 && (
-                        <p className="mt-2 text-sm text-amber-700">
-                            Already uploaded: {duplicateWarnings.join(", ")}
-                        </p>
-                    )}
-                    {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+                <ValidationSummary issues={validationIssues} />
+                <div className="flex justify-between items-end">
+                    <div className="h-full flex flex-col align-bottom">
+                        {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
 
-                    <div className="h-full flex flex-col flex-wrap items-start gap-4">
-                        {uploadedFiles && (
-                            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
-                                {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
-                                [uploadedFiles.pdfForm, uploadedFiles.ownerSignature, uploadedFiles.veterinarianSignature].filter(Boolean).length} files uploaded
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleUploadAll}
-                            disabled={isUploading || uploadCount === 0}
-                            className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
-                        </button>
+                        <div className="h-full flex flex-col flex-wrap items-start gap-4">
+                            {uploadedFiles && (
+                                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
+                                    {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
+                                    (uploadedFiles.pdfForm ? 1 : 0)} files uploaded
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleUploadAll}
+                                disabled={isUploading || uploadCount === 0}
+                                className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col items-center gap-3 border-t border-gray-100">
-                    {validationError && <p className="text-sm text-end text-red-600">{validationError}</p>}
                     <button
                         type="button"
                         onClick={handleMarkComplete}

@@ -1,4 +1,6 @@
+// components
 import { CheckCircleIcon } from "@/components/misc/Icons";
+
 
 interface ChecklistItemProps {
     icon?: React.ReactNode;

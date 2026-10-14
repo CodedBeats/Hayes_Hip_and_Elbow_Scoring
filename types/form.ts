@@ -9,5 +9,4 @@ export type DogEntryFormData = {
     breed: string;
     sex: "male" | "female";
     dateOfBirth: string;
-    dateOfRadiograph: string;
 };

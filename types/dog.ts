@@ -18,6 +18,4 @@ export type DogCase = {
     sex: "male" | "female";
 
     dateOfBirth: string;
-
-    dateOfRadiograph: string;
 };

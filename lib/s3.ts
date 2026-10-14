@@ -1,6 +1,11 @@
-import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+// dependencies
+import { S3Client, GetObjectCommand, HeadObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// types
 import type { UploadedFile } from "@/types/upload";
+import type { Files } from "@/types/submission";
+
+
 
 // Shared client so upload (PUT) and download (GET) presigning use one consistent
 // config instead of two independently-configured clients drifting apart over time.
@@ -12,11 +17,16 @@ export const s3 = new S3Client({
     },
 });
 
+/**
+ * Generates a presigned S3 GET URL for downloading/viewing a file.
+ *
+ * @remarks
+ * Expires after 30 minutes - comfortably longer than the 5-minute upload-PUT window used
+ * by `app/api/upload-url/route.ts`, since this is for a human actively viewing/
+ * downloading on a single case page, not a fire-and-forget upload slot.
+ */
 export const getFileDownloadUrl = async (key: string): Promise<string> => {
     const command = new GetObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: key });
-    // 30 minutes - comfortably longer than the 5-minute upload-PUT window, since this is
-    // for a human actively viewing/downloading on a single case page, not a fire-and-
-    // forget upload slot.
     return getSignedUrl(s3, command, { expiresIn: 60 * 30 });
 };
 
@@ -38,12 +48,54 @@ export const getFileMetadata = async (
     }
 };
 
-// Takes a Firestore-derived stub (key + best-effort filename only, see
-// lib/firebaseAdmin.ts's keyToUploadedFileStub) and backfills it with real S3 data.
-// Deliberately swallows failures (including getFileDownloadUrl throwing) and returns the
-// original stub unchanged - every asset-card component already renders `url: undefined`
-// as a disabled/greyed "unavailable" state, so this is a free, correct degradation with
-// no extra UI work needed for a single bad file.
+/**
+ * Deletes `1 - many` files from s3 parsing file reference strings as keys 
+ * 
+ * @remarks
+ * Manily used for deleting files during submission. But also used by the drafts-cleanup 
+ * cron job (app/api/cron/cleanup-drafts) to remove orphaned uploads. DeleteObjectsCommand 
+ * caps out at 1000 keys per call - not chunked here since a single dog's file set will 
+ * never come close to that.
+ */
+export const deleteObjects = async (keys: string[]): Promise<void> => {
+    if (keys.length === 0) return;
+    await s3.send(new DeleteObjectsCommand({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Delete: { Objects: keys.map((Key) => ({ Key })) },
+    }));
+};
+
+/**
+ * Pulls every S3 key referenced by a submission/draft's files object, across all the
+ * upload categories `DogEntry.tsx` can produce (some may be absent depending on how far
+ * the customer got).
+ *
+ * @remarks
+ * Shared by both cleanup cron jobs (`cleanup-drafts` and `cleanup-abandoned`) ahead of a
+ * {@link deleteObjects} call - lives here rather than in either route so neither job
+ * duplicates the other's key-flattening logic.
+ */
+export const collectFileKeys = (files: Files): string[] => {
+    const keys: string[] = [
+        ...files.dicomFiles.map((f) => f.key),
+        ...files.supportingDocuments.map((f) => f.key),
+    ];
+    if (files.pdfForm) keys.push(files.pdfForm.key);
+    return keys;
+};
+
+/**
+ * Backfills a Firestore-derived file stub with real S3 metadata and a download URL.
+ *
+ * @remarks
+ * Takes a stub built from just a key (key + best-effort filename only - see
+ * `keyToUploadedFileStub` in `lib/firebaseAdmin.ts`) and enriches it with real S3 data.
+ * Deliberately swallows failures (including {@link getFileDownloadUrl} throwing) and
+ * returns the original stub unchanged - every asset-card component already renders
+ * `url: undefined` as a disabled/greyed "unavailable" state, so this is a free, correct
+ * degradation with no extra UI work needed for a single bad file. Callers must treat
+ * `url: undefined` on the result as "unavailable," not as an error to handle separately.
+ */
 export const enrichUploadedFile = async (file: UploadedFile): Promise<UploadedFile> => {
     try {
         const [metadata, url] = await Promise.all([getFileMetadata(file.key), getFileDownloadUrl(file.key)]);

@@ -16,6 +16,15 @@ export const useFileUpload = (): UseUploadFileReturn => {
         setUploadedFile(undefined);
     };
 
+    /**
+     * Uploads one file: requests a presigned S3 PUT URL, then PUTs directly to S3 with
+     * progress tracking.
+     *
+     * @remarks
+     * Two-step contract with `app/api/upload-url/route.ts`: this hook never talks to S3
+     * credentials directly, it only ever receives a short-lived presigned URL to PUT to.
+     * Progress percentage comes from the raw XHR upload event, not the URL-fetch step.
+     */
     const uploadSingleFile = (
         file: File,
         opts: { submissionId: string; dogIndex: number; category: FileCategory },
@@ -89,6 +98,15 @@ export const useFileUpload = (): UseUploadFileReturn => {
         });
     };
 
+    /**
+     * Uploads multiple files for the same dog/category in one batch.
+     *
+     * @remarks
+     * Same presigned-URL-then-PUT contract as {@link uploadSingleFile}, but requests all
+     * URLs in a single `/api/upload-url` call and relies on the response `urls` array
+     * being in the same order as the `files` array passed in - if that ordering ever
+     * changed on the route side, uploads would land under the wrong keys.
+     */
     const uploadBatch = (
         files: File[],
         opts: { submissionId: string; dogIndex: number; category: FileCategory },

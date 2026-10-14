@@ -1,4 +1,6 @@
+// types
 import type { DogCase } from "@/types/dog";
+// components
 import { DogIcon } from "@/components/misc/Icons";
 
 const examTypeLabels: Record<DogCase["examType"], string> = {

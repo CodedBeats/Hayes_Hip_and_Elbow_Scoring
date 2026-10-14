@@ -38,9 +38,14 @@ public/dicom-testing
 public/signature-testing
 # design files/imgs
 public/designs/
+# other
+# public/temp
 
 # vercel
 .vercel
+
+# typedoc
+/docs-typedoc/
 
 # typescript
 *.tsbuildinfo
