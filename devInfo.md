@@ -399,3 +399,86 @@ are the exact surface this protects) but not urgent/blocking today.
       token as a header and verify it server-side with `getAppCheck().verifyToken()`
       (firebase-admin) to extend the same protection there.
       https://firebase.google.com/docs/app-check/custom-resource-backend
+
+
+
+
+## Known Bugs (found by Vitest)
+Each one has a test written for the *correct* behaviour, marked `it.fails` so the suite stays
+green. Once a bug is fixed, that test starts failing ("expected to fail but passed") - flip
+`it.fails` to `it` and it becomes a normal regression test.
+```bash
+npm run test:run          # unit (offline, dummy keys)
+npm run test:integration  # live smoke tests against .env.local keys
+```
+
+### 1. Cron auth passes with `Bearer undefined` if `CRON_SECRET` is unset
+- **Where:** `app/api/cron/cleanup-drafts/route.ts:51`, `app/api/cron/cleanup-abandoned/route.ts:39`
+- **Problem:** the check is `authHeader !== \`Bearer ${process.env.CRON_SECRET}\``. If the env var is
+  ever missing in Vercel, the expected header becomes the literal string `"Bearer undefined"`,
+  which anyone can send to trigger real deletions.
+- **Fix idea:** fail closed - return 401 (or 500) if `CRON_SECRET` is falsy before comparing.
+  Shared helper for both routes.
+- **Test:** `tests/unit/api/cron.test.ts` - "401s 'Bearer undefined' when CRON_SECRET is unset"
+
+### 2. One bad doc aborts the whole cron run
+- **Where:** cron loops (`cleanup-drafts/route.ts:59`, `cleanup-abandoned/route.ts:47`),
+  `lib/s3.ts:78` (`collectFileKeys`), `lib/firebaseAdmin.ts:316,358` (`files ?? {}` cast)
+- **Problem:** no per-item try/catch, so one S3 error throws out of the loop - every later doc
+  waits another day and the response never reports what was already deleted. A doc with no
+  `files` field reaches `collectFileKeys` as `{}` and crashes on `.map`.
+- **Fix idea:** try/catch per doc, collect `failedIds` alongside `deletedIds` in the response;
+  make `collectFileKeys` default missing arrays to `[]`.
+- **Tests:** `tests/unit/api/cron.test.ts` ("keeps going past one failing doc", "skips a stale
+  doc with no files field"), `tests/unit/lib/s3.test.ts` ("tolerates a doc with no files")
+
+### 3. Checkout error messages are swallowed on the client
+- **Where:** `hooks/useSubmissionDraft.ts:222-223`
+- **Problem:** `create-checkout-session` deliberately returns user-safe messages (429 "Too many
+  requests - please wait a minute", Stripe's own error text), but `handleSubmit` only checks
+  for `data.url` and replaces all of them with "No checkout URL returned".
+- **Fix idea:** `if (!res.ok || !data.url) throw new Error(data.error ?? "No checkout URL returned")`
+- **Test:** `tests/unit/hooks/useSubmissionDraft.test.ts` - "surfaces the server's own error message"
+
+### 4. Cancel -> edit -> resubmit checkout fails for 24h (confirmed against real Stripe)
+- **Where:** `app/api/create-checkout-session/route.ts:114`
+- **Problem:** the idempotency key is built from the submission IDs only, and those IDs are
+  deterministic (`{s3SubmissionId}_dog{n}`). Customer goes to Stripe, backs out, changes exam
+  type (or dog name / registration), resubmits -> same key, different params -> Stripe
+  returns `StripeIdempotencyError` and the customer can't pay until the key expires (~24h).
+- **Fix idea:** include a hash of the priced cart in the key (e.g. sha256 of
+  `JSON.stringify(line_items)`), so an identical double-click still dedupes but a changed
+  cart gets a fresh session. Same for the coupon key.
+- **Tests:** `tests/unit/api/create-checkout-session.test.ts` ("gives a changed cart ... a
+  different idempotency key"), `tests/integration/stripe.test.ts` (live sandbox proof)
+
+### 5. `upload-url` accepts bad `dogIndex` / filenames
+- **Where:** `app/api/upload-url/route.ts:64` (dogIndex), `:89` (key built from raw fileName)
+- **Problem:** `dogIndex` of `1.5`, `"abc"` or `"1"` passes (only `!dogIndex || dogIndex < 1`
+  is checked), producing keys like `dog1.5/`. A `/` in `fileName` adds extra key segments, so
+  `keyToUploadedFileStub` (`lib/firebaseAdmin.ts`) shows the wrong filename on the dashboard.
+- **Fix idea:** `Number.isInteger(dogIndex) && dogIndex >= 1`; strip/replace `/` and `\` in
+  `fileName` before building the key.
+- **Tests:** `tests/unit/api/upload-url.test.ts` ("rejects a non-integer dogIndex", "a filename
+  containing '/' survives the round trip")
+
+### 6. Webhook signature failures log the full event payload (customer PII)
+- **Where:** `app/api/webhooks/stripe/route.ts:38`
+- **Problem:** `console.error("...signature verification failed:", err)` prints the whole
+  `StripeSignatureVerificationError`, which carries the raw `payload` - for a real checkout
+  that's the customer's name, email, phone and address, written to Vercel logs on every
+  failed check (wrong/rotated secret, or anyone POSTing junk at the public endpoint). Found
+  during the post-rotation webhook test, when the local secret didn't match `stripe listen`.
+- **Fix idea:** log `err instanceof Error ? err.message : err` only (still enough to diagnose).
+- **Test:** `tests/unit/api/stripe-webhook.test.ts` - "never logs the event payload (customer PII)"
+
+### Also worth a task (not bugs in the app logic)
+- **`npm audit`: 12 advisories, 1 critical on `next`** (several RCE advisories) plus `firebase`/
+  grpc, `postcss`, `sharp`. Upgrade `next` + `firebase` in their own PR, then re-run both suites.
+- **Dead code:** `hooks/useFileUpload.ts` + `components/upload/FileUploader.tsx` - nothing
+  imports `FileUploader`. Delete alongside the other orphaned pre-launch pieces.
+- **Disposable-email subdomains slip through:** `isDisposableEmail("x@inbox.mailinator.com")`
+  is `false` (exact-domain lookup only) - `tests/unit/lib/security.test.ts`. Low priority.
+- **Profanity false positives (accepted, FYI):** "bitch" (female dog), "anal glands", names like
+  "Dick" all get flagged. Fine while profanity only *flags* the staff email - if it's ever
+  changed to *block*, these must be handled first.
