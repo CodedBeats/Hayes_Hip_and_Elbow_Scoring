@@ -50,7 +50,7 @@ const fullDoc = () => ({
     archivedBy: "",
     billing: {
         billingType: "invoice",
-        amount: 133,
+        amount: 130,
         paymentStatus: "pending",
         invoiceSentAt: Timestamp.fromDate(new Date("2026-03-03T10:00:00Z")),
     },
