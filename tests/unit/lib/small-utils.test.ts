@@ -10,7 +10,7 @@ import type { SubmissionStatus } from "@/types/submission";
 vi.mock("@/lib/firebase", () => ({ auth: {} }));
 
 describe("getAdminCaseDisplayStatus", () => {
-    const billing = (paymentStatus: PaymentStatus) => ({ billingType: "payNow" as const, amount: 133, paymentStatus });
+    const billing = (paymentStatus: PaymentStatus) => ({ billingType: "payNow" as const, amount: 130, paymentStatus });
 
     it("overrides any workflow status with 'unpaid' while payment is outstanding", () => {
         for (const status of ["pendingReview", "reviewing", "completed", "draft"] as SubmissionStatus[]) {

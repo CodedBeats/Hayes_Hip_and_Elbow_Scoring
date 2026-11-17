@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Stripe from "stripe";
 import { jsonRequest, freshIp } from "../../helpers/requests";
-import { calculatePrice } from "@/lib/pricing";
 
 const mocks = vi.hoisted(() => ({
     sessionsCreate: vi.fn(),
@@ -128,13 +127,16 @@ describe("POST /api/create-checkout-session - session payload", () => {
             submissionIds: ["s_dog1", "s_dog2"],
         });
         const [params] = mocks.sessionsCreate.mock.calls[0];
+        // Literal cents on purpose, not derived from calculatePrice - this is what the
+        // customer is actually charged, so a pricing regression (e.g. a fee sneaking back
+        // in) must fail here rather than be silently mirrored by the expectation.
         expect(params.line_items).toEqual([
             {
-                price_data: { currency: "aud", product_data: { name: "Hips & Elbows - Rex" }, unit_amount: calculatePrice("hipsAndElbows", true).total * 100 },
+                price_data: { currency: "aud", product_data: { name: "Hips & Elbows - Rex" }, unit_amount: 13000 },
                 quantity: 1,
             },
             {
-                price_data: { currency: "aud", product_data: { name: "Elbows Only - Bella" }, unit_amount: calculatePrice("elbowsOnly", false).total * 100 },
+                price_data: { currency: "aud", product_data: { name: "Elbows Only - Bella" }, unit_amount: 7000 },
                 quantity: 1,
             },
         ]);

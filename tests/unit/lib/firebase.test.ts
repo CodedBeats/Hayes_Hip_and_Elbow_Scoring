@@ -115,7 +115,7 @@ describe("createSubmission", () => {
         owner: makeOwner(),
         dog: makeDog({ registeredNumber: undefined }),
         files: makeFiles(),
-        billing: { billingType: "payNow" as const, amount: 133, paymentStatus: "unpaid" as const },
+        billing: { billingType: "payNow" as const, amount: 130, paymentStatus: "unpaid" as const },
     });
 
     it("upserts onto the same doc ID the draft used and returns it", async () => {

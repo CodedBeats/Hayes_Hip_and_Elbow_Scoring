@@ -8,7 +8,7 @@ const TermsOfServicePage = () => {
             <main className="flex flex-1 w-full max-w-6xl flex-col py-10 px-6 sm:px-10">
                 <div className="mb-6 flex flex-col gap-2 text-center sm:text-left">
                     <h1 className="text-3xl font-bold text-brand-brown sm:text-4xl">Terms of Service</h1>
-                    <p className="text-sm text-gray-500">Last updated: 31st August 2026</p>
+                    <p className="text-sm text-gray-500">Last updated: 17th November 2026</p>
                 </div>
 
                 <div className="flex flex-col rounded-2xl border-2 border-brand-green-mid/20 bg-white p-6 sm:p-10">
@@ -39,7 +39,7 @@ const TermsOfServicePage = () => {
                             Individual owners pay at the time of submission, processed securely through Stripe.
                             Clinics can choose to pay upfront, be invoiced, or be billed monthly instead. Current
                             pricing is listed on our scoring fees page and includes the applicable Dogs Australia
-                            levy and a payment processing fee.
+                            levy.
                         </p>
                     </PolicySection>
 

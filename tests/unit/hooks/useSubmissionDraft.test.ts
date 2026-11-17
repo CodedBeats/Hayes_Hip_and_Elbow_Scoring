@@ -2,7 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { FirebaseError } from "firebase/app";
-import { calculatePrice } from "@/lib/pricing";
 import { makeDog, makeFiles, makeOwner, makeDogFormData } from "../../helpers/fixtures";
 import type { DogDraft } from "@/components/submission/DogEntry";
 
@@ -147,9 +146,9 @@ describe("useSubmissionDraft - dog count", () => {
             result.current.handleDogComplete(1, makeDog({ examType: "hipsAndElbows", isDogsAustraliaRegistered: true }), makeFiles(), makeOwner(), "owner");
             result.current.handleDogComplete(2, makeDog({ examType: "elbowsOnly", isDogsAustraliaRegistered: false }), makeFiles(), makeOwner(), "owner");
         });
-        expect(result.current.totalAud).toBe(
-            calculatePrice("hipsAndElbows", true).total + calculatePrice("elbowsOnly", false).total,
-        );
+        // $130 (H&E, registered) + $70 (elbows, unregistered) - literal so a pricing
+        // regression can't be mirrored by the expectation
+        expect(result.current.totalAud).toBe(200);
     });
 });
 
@@ -171,7 +170,7 @@ describe("useSubmissionDraft - handleSubmit", () => {
             dogIndex: 1,
             submitterType: "owner",
             clinicInfo: undefined,
-            billing: { billingType: "payNow", paymentStatus: "unpaid", amount: calculatePrice("hipsAndElbows", true).total },
+            billing: { billingType: "payNow", paymentStatus: "unpaid", amount: 130 },
         });
 
         const [url, init] = fetchMock.mock.calls[0];
