@@ -118,7 +118,7 @@ const faqItems = [
     {
         id: "payment",
         title: "How do I pay for a submission?",
-        content: "For individual owners, payment is processed securely through Stripe at the time of submission. Clinics can also choose to be invoiced or billed monthly instead of paying upfront. Current pricing for each exam type, including the Dogs Australia levy and payment processing fee, is listed above in Scoring Fees.",
+        content: "For individual owners, payment is processed securely through Stripe at the time of submission. Clinics can also choose to be invoiced or billed monthly instead of paying upfront. Current pricing for each exam type, including the Dogs Australia levy, is listed above in Scoring Fees.",
     },
     {
         id: "unfinished-submission",
@@ -276,7 +276,7 @@ const AboutPage = () => {
             {/* pricing */}
             <section id="pricing" className="bg-warm-sand py-16">
                 <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 sm:px-10">
-                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, inclusive of the applicable Dogs Australia levy and a payment processing fee." />
+                    <SectionHeading title="Scoring Fees" subtitle="Current pricing per exam type, inclusive of the applicable Dogs Australia levy." />
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         {examTypes.map((examType) => {
                             const member = calculatePrice(examType, true);
@@ -286,10 +286,8 @@ const AboutPage = () => {
                                     key={examType}
                                     label={EXAM_LABELS[examType]}
                                     memberLevy={member.levy}
-                                    memberFee={member.fee}
                                     memberTotal={member.total}
                                     nonMemberLevy={nonMember.levy}
-                                    nonMemberFee={nonMember.fee}
                                     nonMemberTotal={nonMember.total}
                                 />
                             );

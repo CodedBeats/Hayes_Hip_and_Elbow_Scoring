@@ -1,20 +1,16 @@
 interface PricingCardProps {
     label: string;
     memberLevy: number;
-    memberFee: number;
     memberTotal: number;
     nonMemberLevy: number;
-    nonMemberFee: number;
     nonMemberTotal: number;
 }
 
 export const PricingCard = ({
     label,
     memberLevy,
-    memberFee,
     memberTotal,
     nonMemberLevy,
-    nonMemberFee,
     nonMemberTotal,
 }: PricingCardProps) => {
     return (
@@ -31,8 +27,8 @@ export const PricingCard = ({
                 </p>
             </div>
             <div className="flex flex-col text-xs text-gray-500">
-                <p>*includes ${memberLevy} ANKC levy + ${memberFee} payment processing fee</p>
-                <p>^includes ${nonMemberLevy} ANKC levy + ${nonMemberFee} payment processing fee</p>
+                <p>*includes ${memberLevy} ANKC levy</p>
+                <p>^includes ${nonMemberLevy} ANKC levy</p>
             </div>
         </div>
     );
