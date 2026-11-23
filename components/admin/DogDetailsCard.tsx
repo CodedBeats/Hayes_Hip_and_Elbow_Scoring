@@ -23,7 +23,7 @@ export const DogDetailsCard = ({ dog }: DogDetailsCardProps) => {
                 <h3 className="text-lg font-bold text-brand-brown">Dog Details</h3>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            <div className="mt-5 grid grid-cols-3 gap-x-6 gap-y-4 text-sm">
                 <div>
                     <p className="text-gray-500">Pedigree Name</p>
                     <p className="mt-0.5 font-semibold text-brand-brown">{dog.registeredName}</p>
@@ -47,6 +47,10 @@ export const DogDetailsCard = ({ dog }: DogDetailsCardProps) => {
                 <div>
                     <p className="text-gray-500">Sex</p>
                     <p className="mt-0.5 font-semibold capitalize text-brand-brown">{dog.sex}</p>
+                </div>
+                <div>
+                    <p className="text-gray-500">Date of Birth</p>
+                    <p className="mt-0.5 font-semibold capitalize text-brand-brown">{dog.dateOfBirth}</p>
                 </div>
             </div>
         </div>
