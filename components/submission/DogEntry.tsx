@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DogCompleteSummary } from "./DogCompletedSummary";
 import { DogEntryOnlineForm } from "./DogEntryOnlineForm";
 import { ValidationSummary } from "../form/ValidationSummary";
+import { UploadActionBar } from "./UploadActionBar";
 // hooks
 import { useDogFileUpload, EMPTY_UPLOADED_NAMES } from "@/hooks/useDogFileUpload";
 import type { UploadedNames } from "@/hooks/useDogFileUpload";
@@ -109,6 +110,9 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dogId, dogData, ownerData, effectivePayer, uploadedFiles, uploadedNames, isComplete]);
 
+    // files selected but not uploaded yet
+    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
+
     const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
 
@@ -120,7 +124,7 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
      * and, if everything's present, marks the dog complete.
      */
     const handleMarkComplete = () => {
-        const issues = validateDogEntry(dogData, ownerData, uploadedFiles);
+        const issues = validateDogEntry(dogData, ownerData, uploadedFiles, uploadCount);
 
         if (issues.length > 0) {
             setValidationIssues(issues);
@@ -159,7 +163,9 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
         );
     }
 
-    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
+    const uploadedCount = uploadedFiles
+        ? uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length + (uploadedFiles.pdfForm ? 1 : 0)
+        : 0;
 
     // per-category duplicate filenames, surfaced inline at the relevant upload box
     // rather than flattened into one combined message
@@ -256,34 +262,21 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
                 duplicateDicomNames={duplicateDicomNames}
                 duplicateDocsNames={duplicateDocsNames}
                 onDeleteFile={handleDeleteFile}
+                uploadActions={
+                    <UploadActionBar
+                        pendingCount={uploadCount}
+                        uploadedCount={uploadedCount}
+                        isUploading={isUploading}
+                        uploadError={uploadError}
+                        onUpload={handleUploadAll}
+                    />
+                }
             />
 
-            {/* -- Upload + Mark Complete action card -- */}
+            {/* -- Mark Complete action card -- */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
                 <ValidationSummary issues={validationIssues} />
-                <div className="flex justify-between items-end">
-                    <div className="h-full flex flex-col align-bottom">
-                        {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
-
-                        <div className="h-full flex flex-col flex-wrap items-start gap-4">
-                            {uploadedFiles && (
-                                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 text-xs">✓</span>
-                                    {uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length +
-                                    (uploadedFiles.pdfForm ? 1 : 0)} files uploaded
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={handleUploadAll}
-                                disabled={isUploading || uploadCount === 0}
-                                className="rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isUploading ? "Uploading..." : `Upload Files (${uploadCount})`}
-                            </button>
-                        </div>
-                    </div>
-
+                <div className="flex justify-end">
                     <button
                         type="button"
                         onClick={handleMarkComplete}

@@ -30,6 +30,9 @@ type Props = {
     duplicateDicomNames: string[];
     duplicateDocsNames: string[];
     onDeleteFile: (category: keyof Files, file: UploadedFile) => void;
+    // the upload steps + button, rendered at the top of the Uploads card. Passed in
+    // as an element so this form doesn't need to know about the upload state
+    uploadActions: React.ReactNode;
 };
 
 
@@ -64,6 +67,7 @@ export const DogEntryOnlineForm = ({
     duplicateDicomNames,
     duplicateDocsNames,
     onDeleteFile,
+    uploadActions,
 }: Props) => {
     return (
         <div className="space-y-4">
@@ -77,8 +81,14 @@ export const DogEntryOnlineForm = ({
 
                 {/* Registration toggle */}
                 <div className="mb-5">
-                    <p className="mb-2 text-sm font-medium text-gray-700">
+                    <p className="mb-1 text-sm font-medium text-gray-700">
                         Dogs Australia Registration
+                    </p>
+                    {/* Overseas submitters were picking "Registered" for local-club registrations, underpaying at checkout */}
+                    <p className="mb-3 text-xs text-gray-500">
+                        Only select <span className="font-semibold">Registered</span> if your dog is registered with Dogs Australia.
+                        Dogs registered with an overseas kennel club (e.g. The Kennel Club UK, AKC) should select{" "}
+                        <span className="font-semibold">Not Registered</span>.
                     </p>
                     <div className="flex gap-6">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -266,6 +276,8 @@ export const DogEntryOnlineForm = ({
                     title="Uploads"
                 />
 
+                {uploadActions}
+
                 {/* Signed PDF submission form */}
                 <UploadBox
                     label="Canine Hip & Elbow Dysplasia Scheme Submission Form"
@@ -288,7 +300,7 @@ export const DogEntryOnlineForm = ({
                 {/* DICOM upload zone */}
                 <UploadBox
                     label="DICOM Files"
-                    hint="Select the .dcm files for Hips and/or Elbows, you can upload multiple files simultaneously"
+                    hint="Click to select the .dcm files for Hips and/or Elbows. Select them all at once (hold Ctrl, or Cmd on Mac)"
                     icon={<CloudIcon />}
                     isRequired
                     files={selectedDicom}

@@ -89,6 +89,13 @@ export const UploadBox = ({
                             {file.name}
                         </p>
                     )}
+                    {/* a filename showing in the box looked like a finished upload, so say plainly that it isn't */}
+                    {variant === "pending" && (
+                        <p className="mt-2 text-xs font-medium text-amber-700">
+                            Selected but not uploaded yet.{" "}
+                            {isMultiple ? "Choosing again replaces this selection." : "Choosing again replaces this file."}
+                        </p>
+                    )}
                     <input
                         key={resetKey}
                         type="file"
