@@ -308,7 +308,7 @@ export const DogEntryOnlineForm = ({
                 {/* Supporting documents */}
                 <UploadBox
                     label="Supporting Documents"
-                    hint="Click to upload supporting documents (optional)"
+                    hint="Click to upload supporting documents"
                     icon={<DocumentIcon />}
                     isRequired
                     description={"Please upload the Dogs Australia pedigree certificate, or if your dog is not registered with Dogs Australia then, please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number."}
