@@ -30,6 +30,9 @@ type Props = {
     duplicateDicomNames: string[];
     duplicateDocsNames: string[];
     onDeleteFile: (category: keyof Files, file: UploadedFile) => void;
+    // the upload steps + button, rendered at the top of the Uploads card. Passed in
+    // as an element so this form doesn't need to know about the upload state
+    uploadActions: React.ReactNode;
 };
 
 
@@ -64,6 +67,7 @@ export const DogEntryOnlineForm = ({
     duplicateDicomNames,
     duplicateDocsNames,
     onDeleteFile,
+    uploadActions,
 }: Props) => {
     return (
         <div className="space-y-4">
@@ -272,6 +276,8 @@ export const DogEntryOnlineForm = ({
                     title="Uploads"
                 />
 
+                {uploadActions}
+
                 {/* Signed PDF submission form */}
                 <UploadBox
                     label="Canine Hip & Elbow Dysplasia Scheme Submission Form"
@@ -294,7 +300,7 @@ export const DogEntryOnlineForm = ({
                 {/* DICOM upload zone */}
                 <UploadBox
                     label="DICOM Files"
-                    hint="Select the .dcm files for Hips and/or Elbows, you can upload multiple files simultaneously"
+                    hint="Click to select the .dcm files for Hips and/or Elbows. Select them all at once (hold Ctrl, or Cmd on Mac)"
                     icon={<CloudIcon />}
                     isRequired
                     files={selectedDicom}
