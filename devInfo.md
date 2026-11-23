@@ -287,6 +287,7 @@ submissions/
 - fix/old-node-version
 - fix/remove-optional
 - fix/admin-case-dob
+- fix/submission-clarity
 
 ### Commit format & Notes
 commitType(topic): small description
