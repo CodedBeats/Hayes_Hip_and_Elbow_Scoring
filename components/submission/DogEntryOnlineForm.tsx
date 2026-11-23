@@ -77,8 +77,14 @@ export const DogEntryOnlineForm = ({
 
                 {/* Registration toggle */}
                 <div className="mb-5">
-                    <p className="mb-2 text-sm font-medium text-gray-700">
+                    <p className="mb-1 text-sm font-medium text-gray-700">
                         Dogs Australia Registration
+                    </p>
+                    {/* Overseas submitters were picking "Registered" for local-club registrations, underpaying at checkout */}
+                    <p className="mb-3 text-xs text-gray-500">
+                        Only select <span className="font-semibold">Registered</span> if your dog is registered with Dogs Australia.
+                        Dogs registered with an overseas kennel club (e.g. The Kennel Club UK, AKC) should select{" "}
+                        <span className="font-semibold">Not Registered</span>.
                     </p>
                     <div className="flex gap-6">
                         <label className="flex items-center gap-2 cursor-pointer">
