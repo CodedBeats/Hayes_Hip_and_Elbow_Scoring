@@ -14,11 +14,16 @@ import type { ValidationIssue } from "@/types/validation";
  * @remarks
  * A supporting document is always required but the type depends on if a dof is registered with Dogs Australia
  * registered (registered dogs don't need one).
+ *
+ * @param pendingUploadCount - files selected but not uploaded yet. These are flagged on
+ * their own, because otherwise someone who picked their files but never clicked Upload
+ * Files would be told the files are "missing" with no clue why.
  */
 export const validateDogEntry = (
     dogData: DogEntryFormData,
     ownerData: OwnerDetails,
     uploadedFiles: Files | null,
+    pendingUploadCount = 0,
 ): ValidationIssue[] => {
     const issues: ValidationIssue[] = [];
 
@@ -35,6 +40,9 @@ export const validateDogEntry = (
     // if (isPhoneNumberEmpty(ownerData.phone)) issues.push({ section: "Owner Details", label: "Phone Number" });
 
     // uploads
+    if (pendingUploadCount > 0) {
+        issues.push({ section: "Uploads", label: `${pendingUploadCount} selected file${pendingUploadCount === 1 ? "" : "s"} not uploaded yet - click Upload Files` });
+    }
     if (!uploadedFiles?.pdfForm) issues.push({ section: "Uploads", label: "Completed & signed PDF submission form" });
     if (!uploadedFiles || uploadedFiles.dicomFiles.length === 0) issues.push({ section: "Uploads", label: "At least one DICOM file" });
     if (!uploadedFiles?.supportingDocuments || uploadedFiles?.supportingDocuments.length === 0) {
