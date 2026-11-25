@@ -1,3 +1,13 @@
+type Variant = "empty" | "pending" | "overLimit" | "uploaded" | "full";
+
+const VARIANT_CLASSES: Record<Variant, string> = {
+    empty: "border-gray-300 hover:border-brand-green-mid",
+    pending: "border-brand-green-mid bg-cream",
+    overLimit: "border-orange-400 bg-orange-50",
+    uploaded: "border-green-300 bg-green-50",
+    full: "border-gray-300 bg-gray-50",
+};
+
 export const UploadBox = ({
     label,
     hint,
@@ -14,6 +24,7 @@ export const UploadBox = ({
     uploadedCount,
     isUploaded,
     duplicateFileNames,
+    maxFiles,
 }: {
     label: string;
     hint: string;
@@ -30,11 +41,26 @@ export const UploadBox = ({
     uploadedCount?: number;
     isUploaded?: boolean;
     duplicateFileNames?: string[];
+    // multi-file boxes only - a single-file box just replaces its file, so it never fills up
+    maxFiles?: number;
 }) => {
-    const hasPending = isMultiple ? (files?.length ?? 0) > 0 : !!file;
-    const hasUploaded = isMultiple ? (uploadedCount ?? 0) > 0 : !!isUploaded;
+    const uploaded = uploadedCount ?? 0;
+    const selected = files?.length ?? 0;
+    const hasPending = isMultiple ? selected > 0 : !!file;
+    const hasUploaded = isMultiple ? uploaded > 0 : !!isUploaded;
+
+    const isAtLimit = maxFiles !== undefined && uploaded >= maxFiles;
+    const isOverLimit = maxFiles !== undefined && uploaded + selected > maxFiles;
+
     // "pending" (just selected, not yet uploaded) takes visual priority over "uploaded"
-    const variant: "empty" | "pending" | "uploaded" = hasPending ? "pending" : hasUploaded ? "uploaded" : "empty";
+    const getVariant = (): Variant => {
+        if (hasPending) return isOverLimit ? "overLimit" : "pending";
+        if (isAtLimit) return "full";
+        if (hasUploaded) return "uploaded";
+        return "empty";
+    };
+    const variant = getVariant();
+    const isSelecting = variant === "pending" || variant === "overLimit";
 
     return (
         <div>
@@ -50,16 +76,8 @@ export const UploadBox = ({
                     Already uploaded previously: {duplicateFileNames.join(", ")}
                 </p>
             )}
-            <label className="block cursor-pointer">
-                <div
-                    className={`rounded-xl border-2 border-dashed p-5 text-center transition ${
-                        variant === "pending"
-                            ? "border-brand-green-mid bg-cream"
-                            : variant === "uploaded"
-                                ? "border-green-300 bg-green-50"
-                                : "border-gray-300 hover:border-brand-green-mid"
-                    }`}
-                >
+            <label className={`block ${isAtLimit ? "cursor-not-allowed" : "cursor-pointer"}`}>
+                <div className={`rounded-xl border-2 border-dashed p-5 text-center transition ${VARIANT_CLASSES[variant]}`}>
                     {icon}
                     {variant === "empty" && (
                         <p className="mt-1 text-sm text-gray-500">{hint}</p>
@@ -67,8 +85,13 @@ export const UploadBox = ({
                     {variant === "uploaded" && (
                         <p className="mt-1 text-sm font-medium text-green-700">
                             {isMultiple
-                                ? `${uploadedCount} file${uploadedCount === 1 ? "" : "s"} uploaded - click to add more`
+                                ? `${uploaded}${maxFiles ? ` of ${maxFiles}` : ""} file${uploaded === 1 ? "" : "s"} uploaded - click to add more`
                                 : "Uploaded - click to replace"}
+                        </p>
+                    )}
+                    {variant === "full" && (
+                        <p className="mt-1 text-sm font-medium text-gray-600">
+                            {uploaded} of {maxFiles} files uploaded - maximum reached. Delete a file below to add a different one.
                         </p>
                     )}
                     {isMultiple && files && files.length > 0 && (
@@ -89,8 +112,15 @@ export const UploadBox = ({
                             {file.name}
                         </p>
                     )}
+                    {variant === "overLimit" && maxFiles !== undefined && (
+                        <p className="mt-2 text-sm font-semibold text-orange-700">
+                            Too many files: the limit is {maxFiles}
+                            {uploaded > 0 && ` and ${uploaded} ${uploaded === 1 ? "is" : "are"} already uploaded`}.
+                            {" "}Choose again with {maxFiles - uploaded} or fewer.
+                        </p>
+                    )}
                     {/* a filename showing in the box looked like a finished upload, so say plainly that it isn't */}
-                    {variant === "pending" && (
+                    {isSelecting && (
                         <p className="mt-2 text-xs font-medium text-amber-700">
                             Selected but not uploaded yet.{" "}
                             {isMultiple ? "Choosing again replaces this selection." : "Choosing again replaces this file."}
@@ -101,6 +131,7 @@ export const UploadBox = ({
                         type="file"
                         accept={accept}
                         multiple={isMultiple}
+                        disabled={isAtLimit}
                         className="hidden"
                         onChange={(e) => {
                             if (isMultiple && onMultiChange)
@@ -113,6 +144,7 @@ export const UploadBox = ({
             </label>
             <p className="mt-1 text-xs text-gray-400">
                 {accept.replace(/\./g, "").replace(/,/g, " / ").toUpperCase()}
+                {maxFiles !== undefined && ` · up to ${maxFiles} files`}
             </p>
         </div>
     );

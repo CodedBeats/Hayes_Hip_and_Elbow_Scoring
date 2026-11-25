@@ -18,6 +18,7 @@ import type { ValidationIssue } from "@/types/validation";
 // lib
 import { EXAM_LABELS, calculatePrice } from "@/lib/pricing";
 import { validateDogEntry } from "@/lib/validation";
+import { MAX_FILES_PER_DOG } from "@/lib/uploadLimits";
 
 // all serialisable per-dog state - persisted to localStorage by SubmissionFlow
 export type DogDraft = {
@@ -111,7 +112,7 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
     }, [dogId, dogData, ownerData, effectivePayer, uploadedFiles, uploadedNames, isComplete]);
 
     // files selected but not uploaded yet
-    const uploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
+    const toUploadCount = (pdfFormFile ? 1 : 0) + selectedDicom.length + selectedDocs.length;
 
     const setDog = (field: keyof DogEntryFormData, value: string | boolean) =>
         setDogData((prev) => ({ ...prev, [field]: value }));
@@ -124,7 +125,7 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
      * and, if everything's present, marks the dog complete.
      */
     const handleMarkComplete = () => {
-        const issues = validateDogEntry(dogData, ownerData, uploadedFiles, uploadCount);
+        const issues = validateDogEntry(dogData, ownerData, uploadedFiles, toUploadCount);
 
         if (issues.length > 0) {
             setValidationIssues(issues);
@@ -166,6 +167,12 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
     const uploadedCount = uploadedFiles
         ? uploadedFiles.dicomFiles.length + uploadedFiles.supportingDocuments.length + (uploadedFiles.pdfForm ? 1 : 0)
         : 0;
+
+    // checked per category, so a full DICOM box never blocks uploading the PDF form or
+    // supporting docs. The server re-checks this in app/api/upload-url/route.ts
+    const isOverUploadLimit =
+        (uploadedFiles?.dicomFiles.length ?? 0) + selectedDicom.length > MAX_FILES_PER_DOG.dicom ||
+        (uploadedFiles?.supportingDocuments.length ?? 0) + selectedDocs.length > MAX_FILES_PER_DOG["supporting-documents"];
 
     // per-category duplicate filenames, surfaced inline at the relevant upload box
     // rather than flattened into one combined message
@@ -264,8 +271,9 @@ export const DogEntry = ({ submissionId, dogIndex, submitterType, initialDraft, 
                 onDeleteFile={handleDeleteFile}
                 uploadActions={
                     <UploadActionBar
-                        pendingCount={uploadCount}
+                        pendingCount={toUploadCount}
                         uploadedCount={uploadedCount}
+                        isOverLimit={isOverUploadLimit}
                         isUploading={isUploading}
                         uploadError={uploadError}
                         onUpload={handleUploadAll}
