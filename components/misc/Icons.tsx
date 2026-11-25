@@ -1,6 +1,11 @@
 export const DogIcon = ({ className = "w-4 h-4 text-brand-green-mid flex-shrink-0" }: { className?: string }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+        {/* paw print: main pad + four toe beans */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.5c-2.5 0-5.25 3.1-5.25 5.6 0 1.6 1.2 2.4 2.6 2.4 1.1 0 1.7-.6 2.65-.6s1.55.6 2.65.6c1.4 0 2.6-.8 2.6-2.4 0-2.5-2.75-5.6-5.25-5.6z" />
+        <ellipse cx="9.4" cy="6.25" rx="1.75" ry="2.25" />
+        <ellipse cx="14.6" cy="6.25" rx="1.75" ry="2.25" />
+        <ellipse cx="5.25" cy="10.75" rx="1.6" ry="2.1" transform="rotate(-25 5.25 10.75)" />
+        <ellipse cx="18.75" cy="10.75" rx="1.6" ry="2.1" transform="rotate(25 18.75 10.75)" />
     </svg>
 );
 

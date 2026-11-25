@@ -14,7 +14,7 @@ import type { Submission, SubmissionStatus, Files } from "../types/submission";
 import type { OwnerDetails } from "../types/owner";
 import type { ClinicInfo } from "../types/clinic";
 import type { DogCase } from "../types/dog";
-import type { UploadedFile } from "../types/upload";
+import type { UploadedFile, FileCategory } from "../types/upload";
 // eslint-disable-next-line -- referenced only via TSDoc {@link} for docs generation
 import { createSubmission } from '@/lib/firebase';
 
@@ -357,6 +357,31 @@ export const getStaleUnpaidSubmissions = async (updatedBefore: Date): Promise<St
         id: docSnap.id,
         files: (docSnap.data().files ?? {}) as Files,
     }));
+};
+
+/**
+ * Counts how many files one dog already has recorded, per upload category.
+ *
+ * @remarks
+ * Used by `app/api/upload-url/route.ts` to enforce `MAX_FILES_PER_DOG` (`lib/uploadLimits.ts`).
+ * Reads the `files` field that `saveDraftFiles` keeps up to date after every upload and
+ * delete, so it's the same list the submitter sees in their upload boxes. A dog with no
+ * doc yet (nothing uploaded) counts as zero across the board.
+ *
+ * The doc ID must match `getSubmissionDraftId` in `lib/firebase.ts`. It's repeated here
+ * because that file is the client SDK and can't be imported into server code.
+ */
+export const getUploadedFileCounts = async (
+    s3SubmissionId: string,
+    dogIndex: number,
+): Promise<Record<FileCategory, number>> => {
+    const docSnap = await getAdminDb().doc(`submissions/${s3SubmissionId}_dog${dogIndex}`).get();
+    const files: Partial<Files> = docSnap.data()?.files ?? {};
+    return {
+        "dicom": files.dicomFiles?.length ?? 0,
+        "supporting-documents": files.supportingDocuments?.length ?? 0,
+        "pdf-forms": files.pdfForm ? 1 : 0,
+    };
 };
 
 /**

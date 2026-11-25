@@ -49,6 +49,21 @@ describe("validateDogEntry", () => {
             { section: "Uploads", label: "Dogs Australia pedigree certificate or supporting documents for non DA registered dogs" },
         ]);
     });
+
+    it("flags selected-but-not-uploaded files, pluralising the count", () => {
+        expect(validateDogEntry(makeDogFormData(), makeOwner(), makeFiles(), 1)).toEqual([
+            { section: "Uploads", label: "1 selected file not uploaded yet - click Upload Files" },
+        ]);
+        expect(validateDogEntry(makeDogFormData(), makeOwner(), makeFiles(), 3)).toEqual([
+            { section: "Uploads", label: "3 selected files not uploaded yet - click Upload Files" },
+        ]);
+    });
+
+    it("lists the pending-upload issue before the missing-upload issues it explains", () => {
+        const issues = validateDogEntry(makeDogFormData(), makeOwner(), null, 2);
+        expect(issues[0]).toEqual({ section: "Uploads", label: "2 selected files not uploaded yet - click Upload Files" });
+        expect(issues).toHaveLength(4);
+    });
 });
 
 describe("isPhoneNumberEmpty", () => {
