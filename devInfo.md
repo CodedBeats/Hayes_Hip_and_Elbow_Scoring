@@ -475,6 +475,20 @@ npm run test:integration  # live smoke tests against .env.local keys
 - **Fix idea:** log `err instanceof Error ? err.message : err` only (still enough to diagnose).
 - **Test:** `tests/unit/api/stripe-webhook.test.ts` - "never logs the event payload (customer PII)"
 
+### 7. Replacing the PDF form leaves the old file in S3 forever
+- **Where:** `hooks/useDogFileUpload.ts:162` (`pdfForm: dogFiles.pdfForm ?? uploadedFiles?.pdfForm`)
+- **Problem:** uploading a new PDF form swaps the reference in local state and the Firestore draft,
+  but never deletes the old S3 object. Nothing references it anymore, so neither cron job can
+  find it either - they only delete keys listed on a doc (`collectFileKeys`, `lib/s3.ts`). Every
+  replaced form is permanently orphaned under `submissions/{id}/dog{n}/pdf-forms/`. Found while
+  adding per-dog upload limits (it's also why `pdf-forms` isn't capped in `lib/uploadLimits.ts`).
+- **Fix idea:** after the upload + `saveDraftFiles` succeed, if a previous `pdfForm` was replaced,
+  delete its key via `/api/delete-file` - same order as `handleDeleteFile` (Firestore first, then
+  S3, failures only logged). Existing orphans need a one-off script: list each `pdf-forms/`
+  prefix and delete any key the doc doesn't reference.
+- **Test:** none yet - would belong in `tests/unit/hooks/useDogFileUpload.test.ts` ("deletes the
+  old PDF form from S3 when it's replaced"), as an `it.fails` like the others.
+
 ### Also worth a task (not bugs in the app logic)
 - **`npm audit`: 12 advisories, 1 critical on `next`** (several RCE advisories) plus `firebase`/
   grpc, `postcss`, `sharp`. Upgrade `next` + `firebase` in their own PR, then re-run both suites.

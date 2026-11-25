@@ -120,6 +120,61 @@ describe("POST /api/upload-url - request validation", () => {
     });
 });
 
+describe("POST /api/upload-url - per-dog file limits", () => {
+    const uploaded = (n: number) => Array.from({ length: n }, (_, i) => ({ key: `k${i}`, fileName: `f${i}` }));
+    const seedDraft = (dogIndex: number, dicomCount: number, docsCount = 0) =>
+        fake.current!.docs.set(`submissions/sub-1_dog${dogIndex}`, {
+            files: { dicomFiles: uploaded(dicomCount), supportingDocuments: uploaded(docsCount) },
+        });
+    const many = (n: number, overrides: Record<string, unknown> = {}) => Array.from({ length: n }, () => file(overrides));
+    const doc = { category: "supporting-documents", fileName: "pedigree.pdf", contentType: "application/pdf" };
+
+    it("accepts exactly the limit on a brand-new submission", async () => {
+        const res = await post({ files: many(10) });
+        expect(res.status).toBe(200);
+    });
+
+    it("rejects one over the limit in a single batch, without signing anything", async () => {
+        const res = await post({ files: many(11) });
+        expect(res.status).toBe(400);
+        expect((await res.json()).errors).toEqual([
+            "Dog 1 can have at most 10 dicom files (0 already uploaded, 11 more selected)",
+        ]);
+        expect(presign.spy).not.toHaveBeenCalled();
+    });
+
+    it("counts files already recorded on the dog's draft doc", async () => {
+        seedDraft(1, 8);
+        expect((await post({ submissionId: "sub-1", files: many(2) })).status).toBe(200);
+        const res = await post({ submissionId: "sub-1", files: many(3) });
+        expect(res.status).toBe(400);
+        expect((await res.json()).errors[0]).toContain("8 already uploaded, 3 more selected");
+    });
+
+    // the original UI bug: a full DICOM box blocked every other upload
+    it("caps each category on its own - a full DICOM box still allows docs and the PDF form", async () => {
+        seedDraft(1, 10);
+        const res = await post({
+            submissionId: "sub-1",
+            files: [file(doc), file({ category: "pdf-forms", fileName: "form.pdf", contentType: "application/pdf" })],
+        });
+        expect(res.status).toBe(200);
+    });
+
+    it("caps supporting documents too", async () => {
+        seedDraft(1, 0, 9);
+        const res = await post({ submissionId: "sub-1", files: many(2, doc) });
+        expect(res.status).toBe(400);
+        expect((await res.json()).errors[0]).toContain("at most 10 supporting-documents files");
+    });
+
+    it("counts each dog separately", async () => {
+        seedDraft(1, 10);
+        const res = await post({ submissionId: "sub-1", files: many(10, { dogIndex: 2 }) });
+        expect(res.status).toBe(200);
+    });
+});
+
 describe("POST /api/upload-url - presigned URLs", () => {
     it("keys files as submissions/{id}/dog{n}/{category}/{uuid}-{fileName}, in request order", async () => {
         const res = await post({
