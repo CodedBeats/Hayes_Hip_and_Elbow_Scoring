@@ -27,12 +27,13 @@ export const UploadActionBar = ({ pendingCount, uploadedCount, isOverLimit, isUp
         <>
             <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-gray-600">
                 <li>
-                    Click each box below to choose your files. For DICOMs, you can select several at once
-                    (hold <kbd className="font-semibold">Ctrl</kbd>, or <kbd className="font-semibold">Cmd</kbd> on Mac).
+                    Click each box below, or drag files onto it, to choose your files. For DICOMs, you can
+                    select several at once (hold <kbd className="font-semibold">Ctrl</kbd>, or{" "}
+                    <kbd className="font-semibold">Cmd</kbd> on Mac, in the file browser).
                 </li>
                 <li>
-                    Click <span className="font-semibold text-gray-900">Upload Files</span>. Choosing a file only
-                    selects it. Nothing is saved until you upload.
+                    Click <span className="font-semibold text-gray-900">Upload Files</span>. Choosing or dropping a
+                    file only selects it. Nothing is saved until you upload.
                 </li>
                 <li>
                     Uploaded files are listed under each box. To add more, choose more files and upload again.

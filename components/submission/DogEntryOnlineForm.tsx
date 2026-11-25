@@ -291,7 +291,7 @@ export const DogEntryOnlineForm = ({
                 {/* Signed PDF submission form */}
                 <UploadBox
                     label="Canine Hip & Elbow Dysplasia Scheme Submission Form"
-                    hint="Click to upload the completed & signed PDF submission form, or a photo of it"
+                    hint="Click or drag here to add the completed & signed submission form (a PDF, or a photo of it)"
                     icon={<DocumentIcon />}
                     isRequired
                     file={pdfFormFile}
@@ -310,7 +310,7 @@ export const DogEntryOnlineForm = ({
                 {/* DICOM upload zone */}
                 <UploadBox
                     label="DICOM Files"
-                    hint="Click to select the .dcm files for Hips and/or Elbows. Select them all at once (hold Ctrl, or Cmd on Mac)"
+                    hint="Click or drag your .dcm files here. To pick several in the file browser, hold Ctrl (Cmd on Mac)"
                     icon={<CloudIcon />}
                     isRequired
                     description={`${DICOM_IMAGES_NEEDED[dogData.examType]} Please choose your best image of each instead of uploading every image taken.`}
@@ -332,7 +332,7 @@ export const DogEntryOnlineForm = ({
                 {/* Supporting documents */}
                 <UploadBox
                     label="Supporting Documents"
-                    hint="Click to upload supporting documents"
+                    hint="Click or drag your supporting documents here"
                     icon={<DocumentIcon />}
                     isRequired
                     description={"Please upload the Dogs Australia pedigree certificate, or if your dog is not registered with Dogs Australia then, please upload a registration certificate or other document confirming dog's details, including date of birth, sex, and microchip number."}
