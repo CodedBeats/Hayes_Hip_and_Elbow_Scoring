@@ -406,6 +406,87 @@ are the exact surface this protects) but not urgent/blocking today.
 
 
 
+## Retrospective review (Nov 2026)
+Found reading through the whole project, not by tests - none of these have an `it.fails` yet.
+
+### Urgent (security / live data)
+#### A. `/admin` pages send every customer's PII to unauthenticated visitors
+- **Where:** `app/admin/layout.tsx` (client-only `useAuth()` gate), every admin page
+  (`app/admin/page.tsx`, `cases/[id]`, `pending-reviews`, `archive`, `test-data`)
+- **Problem:** the pages are Server Components that call `getAllSubmissions()` / `getSubmissionById()`
+  via the Admin SDK with no auth check, and pass the results to client components. The RSC payload
+  is serialized into the response *whether or not* the client layout renders `children` - so the
+  "Loading..." screen ships every owner's name/email/phone/address, and the case page ships
+  30-min presigned DICOM download URLs. A client-side auth gate is UX, not a security boundary.
+- **Check:** `curl -s localhost:3000/admin | grep -o '[a-z0-9.]*@[a-z0-9.]*' | sort -u`
+- **Fix idea:** Firebase session cookies (`createSessionCookie` on sign-in via a route/action,
+  `verifySessionCookie` server-side). A `requireAdmin()` helper called at the top of every admin
+  page and every admin mutation - close to the data, not just in the layout/`proxy.ts`.
+
+#### B. Any Firebase Auth account counts as admin
+- **Where:** `firestore.rules` (`isAdmin()` = `request.auth != null`), `verifyAdminToken` in `lib/firebaseAdmin.ts`
+- **Problem:** if Email/Password sign-up is still enabled in the Firebase project, anyone can create
+  an account via the REST API with the public `NEXT_PUBLIC_FIREBASE_API_KEY` (no sign-up page needed)
+  and then list all submissions / change statuses.
+- **Fix idea:** now: Firebase Console → Authentication → Settings → User actions → untick
+  "Enable create (sign-up)". Proper: an `admin: true` custom claim, checked in rules and `requireAdmin()`.
+
+### Bugs
+#### C. Checkout prices whatever the client says, not what's in Firestore
+- **Where:** `app/api/create-checkout-session/route.ts:88` (prices `items` from the request body)
+- **Problem:** `items` (examType, isDogsAustraliaRegistered) are never compared to the docs behind
+  `submissionIds`. Devtools can save a "Hips & Elbows" doc and send `elbowsOnly` → pay $60 not $130,
+  webhook marks it `paid`. `billing.amount` on the doc is also client-written.
+- **Fix idea:** load the docs by `submissionIds` with the Admin SDK and price from them (also check
+  they're `pendingReview` + `unpaid`). Drop `items` from the request entirely.
+
+#### D. "Edit" on a completed dog doesn't un-complete it - checkout submits the stale snapshot
+- **Where:** `components/submission/DogEntry.tsx:160` (`onEdit` only flips local `isComplete`)
+- **Problem:** parent `completedDogs` (`hooks/useSubmissionDraft.ts`) keeps the old entry, so
+  `allComplete` stays true and Pay stays enabled while editing. Change exam type or delete a file
+  during edit, hit Pay → old data (incl. already-deleted S3 keys) gets submitted.
+- **Fix idea:** derive "completed" from `dogDrafts[i].isComplete` instead of keeping a separate
+  `completedDogs` copy (duplicated state drifting apart). Quick patch: an `onUncomplete` callback
+  that deletes `completedDogs[dogIndex]`.
+
+### Architecture (bigger, do incrementally)
+- **One trust model:** right now there are three - browser → Firestore guarded by rules
+  (submissions, admin status/archive), route handler → Admin SDK (payments, uploads), Server
+  Component → Admin SDK (admin reads, unguarded - see A). Bugs A and C live in the gaps. Direction:
+  every write goes through server code (route handler or server action) using the Admin SDK, then
+  Firestore rules become `allow read, write: if false` (also removes the `allow get: if true`
+  trade-off and the `isUnpaidCheckout` special case).
+- **Server action candidates:** `create-checkout-session`, `upload-url`, `delete-file`, `contact`,
+  admin status/archive writes. Keep as route handlers: `webhooks/stripe`, crons (external callers).
+- **`/success` could be a Server Component** that reads `searchParams` and retrieves the Stripe
+  session directly - `app/api/verify-payment` then isn't needed.
+- **Runtime validation at boundaries:** `const body: UploadUrlRequest = await req.json()` is a type
+  assertion in disguise (bug #5 below is a symptom). Zod/Valibot schema per route/action.
+- **Two representations of the same files:** drafts write `files` (full objects), checkout also
+  writes `dog.dicomFilesRef` / `dog.supportingDocumentsRef` / `pdfFormRef` (keys only). Admin views
+  read one, crons read the other. Pick one.
+
+### Cleanup / could-be-better
+- **Stale comments:** `lib/firebase.ts:281,304,323` say rules allow admin writes "without auth" -
+  they require `isAdmin()`. `cleanup-drafts/route.ts` header says `RESEND_API_KEY` is empty/unused.
+  Also history-in-comments ("used to live here", "removed now that...") in `firestore.rules`,
+  `lib/firebase.ts` etc - move to git history, keep comments true for someone who never saw the old version.
+- **Duplicated comments:** `saveDraftFiles` explains `createdAt` + `deleteField()` twice (docblock + inline).
+- **`SubmissionFlow.tsx`:** progress/total block rendered twice (~lines 219-260 and 269-284); inline
+  SVGs despite `components/misc/Icons.tsx`; repeated clinic input classNames (→ `InputField`);
+  `setClinicInfo({ ...clinicInfo, ... })` breaks the `prev =>` convention.
+- **`"use client"` on whole pages** (`submit`, `success`) - push down to the components that need it.
+- **Joke comment** in `hooks/useDogFileUpload.ts:99-101`.
+- **Lint warnings (4 unused imports):** `app/admin/admin-settings/page.tsx`, `lib/firebase.ts`,
+  `lib/validation.ts`, `types/dog.ts`.
+- **"Planned project structure" above is stale** - replace with the actual one (or delete).
+- **Scale limits to know about (fine for now):** `getAllSubmissions()` reads the whole collection
+  and filters in JS on every admin page load; in-memory rate limiter is per-instance (already noted
+  in `lib/security.ts`).
+
+
+
+
 ## Known Bugs (found by Vitest)
 Each one has a test written for the *correct* behaviour, marked `it.fails` so the suite stays
 green. Once a bug is fixed, that test starts failing ("expected to fail but passed") - flip
