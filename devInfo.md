@@ -288,6 +288,7 @@ submissions/
 - fix/remove-optional
 - fix/admin-case-dob
 - fix/submission-clarity
+- fix/deps
 
 ### Commit format & Notes
 commitType(topic): small description
@@ -318,7 +319,8 @@ Fixed header vocabulary, flexible per PR - include only the headers relevant to 
 # terminal 1:
 npm run dev
 # terminal 2:
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+# needs the Stripe CLI (brew install stripe/stripe-cli/stripe) + `stripe login` to the sandbox
+stripe listen --events checkout.session.completed --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 ### Regular testing routine
@@ -571,8 +573,11 @@ npm run test:integration  # live smoke tests against .env.local keys
   old PDF form from S3 when it's replaced"), as an `it.fails` like the others.
 
 ### Also worth a task (not bugs in the app logic)
-- **`npm audit`: 12 advisories, 1 critical on `next`** (several RCE advisories) plus `firebase`/
-  grpc, `postcss`, `sharp`. Upgrade `next` + `firebase` in their own PR, then re-run both suites.
+- **`npm audit` leftovers (accepted, re-check periodically):** `next` critical/RCE + `postcss`/
+  `sharp` fixed by `next@16.4.6`. Remaining are upstream-only: `@grpc/grpc-js@1.9` (pinned by
+  `firebase` even at 13.x; server-side advisories, not reachable from our client usage),
+  `glob`/`minimatch` via `firebase-admin`'s `google-gax` (unused `rimraf`) and `typedoc` (dev-only).
+  Don't `npm audit fix --force` - it *downgrades* to `firebase@9` / `typedoc@0.23`.
 - **Dead code:** `hooks/useFileUpload.ts` + `components/upload/FileUploader.tsx` - nothing
   imports `FileUploader`. Delete alongside the other orphaned pre-launch pieces.
 - **Disposable-email subdomains slip through:** `isDisposableEmail("x@inbox.mailinator.com")`
